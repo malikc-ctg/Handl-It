@@ -97,14 +97,10 @@ async function generateInvoiceSentEmail(data: any, supabase: any) {
         <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Amount:</strong> $${parseFloat(invoice.total_amount).toFixed(2)}</p>
         <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Due Date:</strong> ${new Date(invoice.due_date).toLocaleDateString()}</p>
       </div>
-      <p>You can view and pay this invoice online by clicking the button below.</p>
-      <p style="margin-top: 12px; font-size: 13px; color: #666;">Or pay directly using this link:</p>
-      <p style="margin: 8px 0; font-size: 12px; word-break: break-all; color: #0D47A1;">
-        ${data.baseUrl || 'https://nfgone.ca'}/payment.html?invoice_id=${invoice.id}
-      </p>
+      <p>You can view this invoice online by clicking the button below.</p>
     `,
-    ctaText: 'Pay Invoice Now',
-    ctaLink: `${data.baseUrl || 'https://nfgone.ca'}/payment.html?invoice_id=${invoice.id}`,
+    ctaText: 'View Invoice',
+    ctaLink: `${data.baseUrl || 'https://nfgone.ca'}/client-portal.html?invoice=${invoice.id}`,
     footer: 'Thank you for your business!'
   })
 
@@ -157,9 +153,9 @@ async function generatePaymentReminderEmail(data: any, supabase: any) {
         <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Amount Due:</strong> $${parseFloat(invoice.balance_due || invoice.total_amount).toFixed(2)}</p>
         <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Due Date:</strong> ${new Date(invoice.due_date).toLocaleDateString()}</p>
       </div>
-      <p>Please pay online or contact us if you have any questions.</p>
+      <p>Please contact us if you have any questions or to arrange payment.</p>
     `,
-    ctaText: 'Pay Now',
+    ctaText: 'View Invoice',
     ctaLink: `${data.baseUrl || 'https://nfgone.ca'}/client-portal.html?invoice=${invoice.id}`,
     footer: 'Thank you!'
   })
@@ -186,9 +182,9 @@ async function generateInvoiceOverdueEmail(data: any, supabase: any) {
         <p style="margin: 8px 0 0; font-size: 14px; color: #666;"><strong>Due Date:</strong> ${new Date(invoice.due_date).toLocaleDateString()}</p>
         <p style="margin: 8px 0 0; font-size: 14px; color: #c62828;"><strong>Days Overdue:</strong> ${daysOverdue}</p>
       </div>
-      <p>Please pay this invoice as soon as possible to avoid any service interruptions.</p>
+      <p>Please contact us as soon as possible to arrange payment and avoid any service interruptions.</p>
     `,
-    ctaText: 'Pay Invoice Now',
+    ctaText: 'View Invoice',
     ctaLink: `${data.baseUrl || 'https://nfgone.ca'}/client-portal.html?invoice=${invoice.id}`,
     footer: 'Please contact us if you have any questions about this invoice.'
   })

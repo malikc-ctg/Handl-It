@@ -5883,9 +5883,6 @@
               <div class="flex gap-2">
                 <button onclick="viewInvoice('${invoice.id}')" class="text-nfgblue dark:text-blue-400 hover:underline text-sm">View</button>
                 <button onclick="downloadInvoicePDF('${invoice.id}')" class="text-gray-600 dark:text-gray-400 hover:underline text-sm">PDF</button>
-                ${invoice.status !== 'paid' && parseFloat(invoice.balance_due || invoice.total_amount) > 0 ? `
-                  <a href="payment.html?invoice_id=${invoice.id}" target="_blank" class="text-green-600 dark:text-green-400 hover:underline text-sm font-medium">Pay</a>
-                ` : ''}
               </div>
             </td>
           </tr>
