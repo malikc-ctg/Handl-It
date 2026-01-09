@@ -321,8 +321,8 @@ function createEmailTemplate(options: {
   ctaLink?: string
   footer?: string
 }) {
-  // Platform logo (handl.it) - default for non-white-label companies
-  const HANDL_IT_LOGO_URL = 'https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/Untitled%20design.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL1VudGl0bGVkIGRlc2lnbi5wbmciLCJpYXQiOjE3NjQ5NzExMTUsImV4cCI6NDg4NzAzNTExNX0.gLGPNDBFahGt3_dmWSFIny3YZbuU3eWBA86Gnu2Umpw'
+  // NFG Logo
+  const NFG_LOGO_URL = 'https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU'
   const NFG_LOGO_URL = 'https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU'
 
   return `
@@ -353,7 +353,7 @@ function createEmailTemplate(options: {
         <table role="presentation" cellpadding="0" cellspacing="0" class="email-container" style="max-width: 600px; background-color: #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-radius: 12px; overflow: hidden;">
           <tr>
             <td class="header">
-              <img src="${HANDL_IT_LOGO_URL}" alt="handl.it" class="logo" style="max-width: 250px; height: auto;">
+              <img src="${NFG_LOGO_URL}" alt="NFG" class="logo" style="max-width: 250px; height: auto;">
             </td>
           </tr>
           <tr>
