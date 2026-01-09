@@ -118,8 +118,14 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
         <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
       </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="routes.html">
+        <i data-lucide="route" class="w-4 h-4"></i> Routes
+      </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
         <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a id="nav-sales" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sales.html">
+        <i data-lucide="trending-up" class="w-4 h-4"></i> Sales
       </a>
       <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
         <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
@@ -154,23 +160,13 @@
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <!-- Notification Bell (will be injected by notification-center.js) -->
           
-          <!-- Filter Button - Icon only on mobile -->
-          <div class="relative">
-            <button class="flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl border border-nfgray bg-white dark:bg-gray-800 hover:bg-nfglight dark:hover:bg-gray-600 transition flex-shrink-0"
-                    data-action="toggle-dropdown" data-target="sites-filter"
-                    title="Filter sites">
-              <i data-lucide="filter" class="w-4 h-4"></i>
-              <span id="filter-label" class="hidden sm:inline text-xs sm:text-sm">All Sites</span>
-              <i data-lucide="chevron-down" class="w-3 h-3 sm:w-4 sm:h-4 hidden sm:inline"></i>
-            </button>
-            <!-- dropdown -->
-            <div id="sites-filter" class="hidden absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-xl border border-nfgray shadow-nfg z-50">
-              <button class="w-full text-left px-3 py-2 hover:bg-nfglight rounded-t-xl" data-action="filter-sites" data-value="all">All Sites</button>
-              <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-action="filter-sites" data-value="Active">Active</button>
-              <button class="w-full text-left px-3 py-2 hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700" data-action="filter-sites" data-value="Paused">Paused</button>
-              <button class="w-full text-left px-3 py-2 hover:bg-nfglight rounded-b-xl" data-action="filter-sites" data-value="In Setup">In Setup</button>
-            </div>
-          </div>
+          <!-- Sales Mode Toggle Button -->
+          <button id="sales-mode-toggle" 
+                  class="flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 rounded-lg sm:rounded-xl border border-nfgray bg-white dark:bg-gray-800 hover:bg-nfglight dark:hover:bg-gray-600 transition flex-shrink-0"
+                  title="Toggle Sales Mode">
+            <i data-lucide="trending-up" class="w-4 h-4"></i>
+            <span id="sales-mode-label" class="hidden sm:inline text-xs sm:text-sm">Sales Mode</span>
+          </button>
 
           <!-- Add Site Button (Admin/Client Only) - Icon only on mobile -->
           <button id="add-site-btn" class="hidden md:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-nfgblue text-white hover:bg-nfgdark"
@@ -226,6 +222,18 @@
             <span>Emergency Requests</span>
           </div>
           <p id="stat-emergencies" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">—</p>
+        </div>
+      </section>
+
+      <!-- Sales Pipeline Widget (Only visible when Sales Mode ON) -->
+      <section id="sales-pipeline-widget" class="hidden bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-nfgblue dark:text-blue-400 font-semibold">Sales Pipeline</h3>
+          <a href="sales.html" class="text-xs text-nfgblue dark:text-blue-400 hover:underline">View All</a>
+        </div>
+        <div id="sales-pipeline-content">
+          <!-- Will be populated by JavaScript -->
+          <div class="text-center py-4 text-gray-500 dark:text-gray-400">Loading pipeline...</div>
         </div>
       </section>
 
