@@ -376,62 +376,6 @@
         </div>
       </div>
 
-      <!-- Deal Detail View (Overlay - shown when viewing a deal) -->
-      <div id="deal-detail-view" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-        <!-- Performance Widgets (Managers/Admins) -->
-        <div id="performance-widgets" class="hidden mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Total Calls</span>
-              <i data-lucide="phone" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-            </div>
-            <p id="total-calls" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
-          </div>
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</span>
-              <i data-lucide="file-text" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-            </div>
-            <p id="total-quotes" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
-          </div>
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
-            <div class="flex items-center justify-between mb-2">
-              <span class="text-sm text-gray-500 dark:text-gray-400">Deals Won</span>
-              <i data-lucide="trophy" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-            </div>
-            <p id="total-wins" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
-          </div>
-        </div>
-
-        <!-- Header with Actions -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Deal Queue</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
-          </div>
-          <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> New Deal
-          </button>
-        </div>
-
-        <!-- Deal List -->
-        <div id="deals-list" class="space-y-4">
-          <!-- Deals will be rendered here -->
-        </div>
-
-        <!-- Empty State -->
-        <div id="empty-state" class="hidden text-center py-16">
-          <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md mx-auto">
-            <i data-lucide="trending-up" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"></i>
-            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Deals Yet</h3>
-            <p class="text-nftext dark:text-gray-300 text-sm mb-6">Get started by creating your first deal from a site.</p>
-            <button id="create-first-deal-btn" class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
-              <i data-lucide="plus" class="w-5 h-5"></i> Create Your First Deal
-            </button>
-          </div>
-        </div>
-      </div>
-
       <!-- Deal Detail View (Modal Overlay) -->
       <div id="deal-detail-view" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
@@ -680,16 +624,371 @@
     import { initializeUI } from './js/ui.js';
     import * as sales from './js/sales.js';
 
+    // Tab switching functionality
+    function initTabs() {
+      const tabs = document.querySelectorAll('.sales-tab');
+      const tabContents = document.querySelectorAll('.sales-tab-content');
+      
+      tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+          const targetTab = tab.dataset.tab;
+          
+          // Update active tab
+          tabs.forEach(t => {
+            t.classList.remove('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
+            t.classList.add('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+          });
+          tab.classList.add('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
+          tab.classList.remove('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+          
+          // Show/hide tab content
+          tabContents.forEach(content => {
+            if (content.id === `tab-${targetTab}`) {
+              content.classList.remove('hidden');
+            } else {
+              content.classList.add('hidden');
+            }
+          });
+          
+          // Load data for the active tab
+          loadTabData(targetTab);
+        });
+      });
+    }
+    
+    // Load data for specific tab
+    async function loadTabData(tabName) {
+      try {
+        switch(tabName) {
+          case 'dashboard':
+            await loadDashboardData();
+            break;
+          case 'deals':
+            await sales.loadDeals();
+            break;
+          case 'quotes':
+            await loadQuotes();
+            break;
+          case 'leads':
+            await loadLeads();
+            break;
+          case 'contacts':
+            await loadContacts();
+            break;
+          case 'calls':
+            await loadCalls();
+            break;
+          case 'sequences':
+            await loadSequences();
+            break;
+        }
+      } catch (error) {
+        console.error(`Error loading ${tabName} data:`, error);
+        toast.error(`Failed to load ${tabName}`, 'Error');
+      }
+    }
+    
+    // Load functions for each tab
+    async function loadDashboardData() {
+      // Load pipeline and metrics
+      await sales.loadDeals();
+      // Load performance metrics if manager
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+        
+        if (profile && ['admin', 'manager', 'super_admin'].includes(profile.role)) {
+          await loadPerformanceMetrics();
+          document.getElementById('performance-widgets')?.classList.remove('hidden');
+        }
+      }
+    }
+    
+    async function loadQuotes() {
+      const quotesList = document.getElementById('quotes-list');
+      if (!quotesList) return;
+      
+      try {
+        const { data: quotes, error } = await supabase
+          .from('quotes')
+          .select('*, deals:deal_id(id, title)')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (!quotes || quotes.length === 0) {
+          quotesList.innerHTML = `
+            <div class="text-center py-12">
+              <i data-lucide="file-text" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+              <p class="text-gray-500">No quotes yet</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        quotesList.innerHTML = quotes.map(quote => `
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition cursor-pointer" onclick="viewQuote(${quote.id})">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${quote.title || 'Untitled Quote'}</h3>
+                <p class="text-sm text-gray-500 mt-1">${quote.deals?.title || 'No deal'}</p>
+                <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
+                  <span>Value: $${Number(quote.quote_value || 0).toLocaleString()}</span>
+                  <span>Status: ${quote.status || 'draft'}</span>
+                </div>
+              </div>
+              <span class="px-3 py-1 rounded-lg text-xs font-medium bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400">
+                ${quote.status || 'draft'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+        
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading quotes:', error);
+        quotesList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load quotes</div>`;
+      }
+    }
+    
+    async function loadLeads() {
+      const leadsList = document.getElementById('leads-list');
+      if (!leadsList) return;
+      
+      try {
+        const { data: leads, error } = await supabase
+          .from('leads')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (!leads || leads.length === 0) {
+          leadsList.innerHTML = `
+            <div class="text-center py-12">
+              <i data-lucide="user-plus" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+              <p class="text-gray-500">No leads yet</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        leadsList.innerHTML = leads.map(lead => `
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${lead.name || 'Unnamed Lead'}</h3>
+                <p class="text-sm text-gray-500 mt-1">${lead.email || lead.phone || 'No contact info'}</p>
+                <p class="text-sm text-gray-600 mt-2">${lead.notes || 'No notes'}</p>
+              </div>
+              <span class="px-3 py-1 rounded-lg text-xs font-medium bg-nfglight dark:bg-gray-700">
+                ${lead.status || 'new'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+        
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading leads:', error);
+        leadsList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load leads</div>`;
+      }
+    }
+    
+    async function loadContacts() {
+      const contactsList = document.getElementById('contacts-list');
+      if (!contactsList) return;
+      
+      try {
+        const { data: contacts, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (!contacts || contacts.length === 0) {
+          contactsList.innerHTML = `
+            <div class="text-center py-12">
+              <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+              <p class="text-gray-500">No contacts yet</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        contactsList.innerHTML = contacts.map(contact => `
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${contact.name || 'Unnamed Contact'}</h3>
+                <p class="text-sm text-gray-500 mt-1">${contact.email || contact.phone || 'No contact info'}</p>
+                <p class="text-sm text-gray-600 mt-2">${contact.company || 'No company'}</p>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading contacts:', error);
+        contactsList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load contacts</div>`;
+      }
+    }
+    
+    async function loadCalls() {
+      const callsList = document.getElementById('calls-list');
+      if (!callsList) return;
+      
+      try {
+        const { data: calls, error } = await supabase
+          .from('calls')
+          .select('*, deals:deal_id(id, title)')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (!calls || calls.length === 0) {
+          callsList.innerHTML = `
+            <div class="text-center py-12">
+              <i data-lucide="phone" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+              <p class="text-gray-500">No calls yet</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        callsList.innerHTML = calls.map(call => `
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${call.deals?.title || 'No deal'}</h3>
+                <p class="text-sm text-gray-500 mt-1">${call.phone_number || 'No phone'}</p>
+                <p class="text-sm text-gray-600 mt-2">${call.outcome || 'No outcome'}</p>
+                <p class="text-xs text-gray-400 mt-1">${new Date(call.created_at).toLocaleString()}</p>
+              </div>
+            </div>
+          </div>
+        `).join('');
+        
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading calls:', error);
+        callsList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load calls</div>`;
+      }
+    }
+    
+    async function loadSequences() {
+      const sequencesList = document.getElementById('sequences-list');
+      if (!sequencesList) return;
+      
+      try {
+        const { data: sequences, error } = await supabase
+          .from('sequences')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (!sequences || sequences.length === 0) {
+          sequencesList.innerHTML = `
+            <div class="text-center py-12">
+              <i data-lucide="repeat" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+              <p class="text-gray-500">No sequences yet</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        sequencesList.innerHTML = sequences.map(seq => `
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${seq.name || 'Unnamed Sequence'}</h3>
+                <p class="text-sm text-gray-500 mt-1">${seq.description || 'No description'}</p>
+                <p class="text-sm text-gray-600 mt-2">Steps: ${seq.steps?.length || 0}</p>
+              </div>
+              <span class="px-3 py-1 rounded-lg text-xs font-medium bg-nfglight dark:bg-gray-700">
+                ${seq.status || 'active'}
+              </span>
+            </div>
+          </div>
+        `).join('');
+        
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('Error loading sequences:', error);
+        sequencesList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load sequences</div>`;
+      }
+    }
+    
+    async function loadPerformanceMetrics() {
+      try {
+        const { count: dealsCount } = await supabase
+          .from('deals')
+          .select('*', { count: 'exact', head: true });
+        
+        const { count: callsCount } = await supabase
+          .from('calls')
+          .select('*', { count: 'exact', head: true });
+        
+        const { count: quotesCount } = await supabase
+          .from('quotes')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'sent');
+        
+        const { count: winsCount } = await supabase
+          .from('deals')
+          .select('*', { count: 'exact', head: true })
+          .eq('stage', 'closed_won');
+        
+        const totalDealsEl = document.getElementById('total-deals');
+        const totalCallsEl = document.getElementById('total-calls');
+        const totalQuotesEl = document.getElementById('total-quotes');
+        const totalWinsEl = document.getElementById('total-wins');
+        
+        if (totalDealsEl) totalDealsEl.textContent = dealsCount || 0;
+        if (totalCallsEl) totalCallsEl.textContent = callsCount || 0;
+        if (totalQuotesEl) totalQuotesEl.textContent = quotesCount || 0;
+        if (totalWinsEl) totalWinsEl.textContent = winsCount || 0;
+      } catch (error) {
+        console.error('Error loading performance metrics:', error);
+      }
+    }
+    
+    // Close deal detail modal
+    document.getElementById('close-deal-detail')?.addEventListener('click', () => {
+      document.getElementById('deal-detail-view')?.classList.add('hidden');
+    });
+    
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       if (window.lucide) lucide.createIcons();
+      initTabs();
       await sales.init();
       hideLoader();
       initializeUI();
+      // Load dashboard tab by default
+      await loadDashboardData();
     });
 
     // Make sales module available globally
     window.sales = sales;
+    window.loadTabData = loadTabData;
   </script>
   <script type="module" src="./js/auth.js"></script>
 </body>
