@@ -608,26 +608,28 @@ async function fetchRecurringJobs() {
 async function fetchDashboardStats() {
   try {
     // Fetch active jobs (pending + in-progress) count
-    // Use a simpler query to avoid RLS issues
-    const { count: activeJobsCount, error: jobsError } = await supabase
-      .from('jobs')
-      .select('id', { count: 'exact', head: true })
-      .or('status.eq.pending,status.eq.in-progress');
-    
-    if (jobsError) {
+    // Use separate queries to avoid complex OR syntax issues
+    let activeJobsCount = 0;
+    try {
+      const { count: pendingCount } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      
+      const { count: inProgressCount } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'in-progress');
+      
+      activeJobsCount = (pendingCount || 0) + (inProgressCount || 0);
+    } catch (jobsError) {
       console.error('Error fetching active jobs:', jobsError);
-      // Set to 0 on error to avoid showing undefined
-      const activeJobsEl = document.getElementById('stat-active-jobs');
-      if (activeJobsEl) {
-        activeJobsEl.textContent = '0';
-      }
-    } else {
-      const activeJobsEl = document.getElementById('stat-active-jobs');
-      if (activeJobsEl) {
-        activeJobsEl.textContent = activeJobsCount || 0;
-      }
-      console.log('📊 Active Jobs:', activeJobsCount);
+    
+    const activeJobsEl = document.getElementById('stat-active-jobs');
+    if (activeJobsEl) {
+      activeJobsEl.textContent = activeJobsCount || 0;
     }
+    console.log('📊 Active Jobs:', activeJobsCount);
 
     // Fetch upcoming bookings count
     const today = new Date().toISOString().split('T')[0];
@@ -647,26 +649,30 @@ async function fetchDashboardStats() {
     }
 
     // Fetch emergency requests count
-    const { count: emergenciesCount, error: emergError } = await supabase
-      .from('jobs')
-      .select('id', { count: 'exact', head: true })
-      .eq('job_type', 'emergency')
-      .or('status.eq.pending,status.eq.in-progress');
-    
-    if (emergError) {
+    let emergenciesCount = 0;
+    try {
+      const { count: emergPending } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_type', 'emergency')
+        .eq('status', 'pending');
+      
+      const { count: emergInProgress } = await supabase
+        .from('jobs')
+        .select('id', { count: 'exact', head: true })
+        .eq('job_type', 'emergency')
+        .eq('status', 'in-progress');
+      
+      emergenciesCount = (emergPending || 0) + (emergInProgress || 0);
+    } catch (emergError) {
       console.error('Error fetching emergencies:', emergError);
-      // Set to 0 on error to avoid showing undefined
-      const emergenciesEl = document.getElementById('stat-emergencies');
-      if (emergenciesEl) {
-        emergenciesEl.textContent = '0';
-      }
-    } else {
-      const emergenciesEl = document.getElementById('stat-emergencies');
-      if (emergenciesEl) {
-        emergenciesEl.textContent = emergenciesCount || 0;
-      }
-      console.log('🚨 Emergency Requests:', emergenciesCount);
     }
+    
+    const emergenciesEl = document.getElementById('stat-emergencies');
+    if (emergenciesEl) {
+      emergenciesEl.textContent = emergenciesCount || 0;
+    }
+    console.log('🚨 Emergency Requests:', emergenciesCount);
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
