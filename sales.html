@@ -664,7 +664,9 @@
             await loadDashboardData();
             break;
           case 'deals':
-            await sales.loadDeals();
+            if (sales && typeof sales.loadDeals === 'function') {
+              await sales.loadDeals();
+            }
             break;
           case 'quotes':
             await loadQuotes();
@@ -690,21 +692,27 @@
     
     // Load functions for each tab
     async function loadDashboardData() {
-      // Load pipeline and metrics
-      await sales.loadDeals();
-      // Load performance metrics if manager
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-        
-        if (profile && ['admin', 'manager', 'super_admin'].includes(profile.role)) {
-          await loadPerformanceMetrics();
-          document.getElementById('performance-widgets')?.classList.remove('hidden');
+      try {
+        // Load pipeline and metrics
+        if (sales && typeof sales.loadDeals === 'function') {
+          await sales.loadDeals();
         }
+        // Load performance metrics if manager
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('role')
+            .eq('id', user.id)
+            .single();
+          
+          if (profile && ['admin', 'manager', 'super_admin'].includes(profile.role)) {
+            await loadPerformanceMetrics();
+            document.getElementById('performance-widgets')?.classList.remove('hidden');
+          }
+        }
+      } catch (error) {
+        console.error('Error loading dashboard data:', error);
       }
     }
     
@@ -733,7 +741,7 @@
         }
         
         quotesList.innerHTML = quotes.map(quote => `
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition cursor-pointer" onclick="viewQuote(${quote.id})">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition">
             <div class="flex items-start justify-between">
               <div class="flex-1">
                 <h3 class="font-semibold text-nfgblue dark:text-blue-400">${quote.title || 'Untitled Quote'}</h3>
@@ -977,13 +985,45 @@
     
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
-      if (window.lucide) lucide.createIcons();
-      initTabs();
-      await sales.init();
-      hideLoader();
-      initializeUI();
-      // Load dashboard tab by default
-      await loadDashboardData();
+      try {
+        if (window.lucide) lucide.createIcons();
+        initTabs();
+        
+        // Initialize sales module
+        if (sales && typeof sales.init === 'function') {
+          await sales.init();
+        }
+        
+        hideLoader();
+        
+        // Initialize UI
+        if (typeof initializeUI === 'function') {
+          initializeUI();
+        }
+        
+        // Load dashboard tab by default
+        await loadDashboardData();
+      } catch (error) {
+        console.error('Error initializing sales dashboard:', error);
+        hideLoader();
+        // Show error message
+        const main = document.querySelector('main');
+        if (main) {
+          main.innerHTML = `
+            <div class="flex items-center justify-center h-full p-6">
+              <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-8 max-w-md text-center">
+                <i data-lucide="alert-circle" class="w-16 h-16 mx-auto text-red-500 mb-4"></i>
+                <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Failed to Load</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">${error.message || 'An error occurred while loading the sales dashboard'}</p>
+                <button onclick="window.location.reload()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+                  Reload Page
+                </button>
+              </div>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+        }
+      }
     });
 
     // Make sales module available globally
