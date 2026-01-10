@@ -405,7 +405,7 @@ export function initializeUI() {
 }
 
 // Mobile sidebar toggle functionality
-function initMobileSidebar() {
+export function initMobileSidebar() {
   const sidebar = document.getElementById('sidebar');
   
   // Find all toggle buttons (hamburger menu buttons)
