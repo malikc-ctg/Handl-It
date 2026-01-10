@@ -243,24 +243,63 @@ async function loadDeals() {
   try {
     showLoading('deals-list', 'Loading deals...');
     
+    // Build base query without relationships to avoid FK errors
     let query = supabase
       .from('deals')
-      .select(`
-        *,
-        sites:site_id (id, name, address),
-        assigned_user:assigned_to (id, email)
-      `)
+      .select('*')
       .order('created_at', { ascending: false });
 
     // Filter by assigned user if rep
     if (currentUserProfile && currentUserProfile.role === 'rep') {
-      query = query.eq('assigned_to', currentUser.id);
+      // Try both assigned_to and assigned_user_id columns
+      const assignedColumn = currentDeal?.assigned_to ? 'assigned_to' : 'assigned_user_id';
+      query = query.eq(assignedColumn, currentUser.id);
     }
 
     const { data, error } = await query;
     
-    if (error) throw error;
-    deals = data || [];
+    if (error) {
+      // If assigned_to doesn't exist, try without the filter
+      if (currentUserProfile && currentUserProfile.role === 'rep') {
+        console.warn('[Sales] assigned_to column not found, loading all deals');
+        const retryQuery = supabase
+          .from('deals')
+          .select('*')
+          .order('created_at', { ascending: false });
+        const retryResult = await retryQuery;
+        if (retryResult.error) throw retryResult.error;
+        deals = retryResult.data || [];
+      } else {
+        throw error;
+      }
+    } else {
+      deals = data || [];
+      
+      // Optionally enrich with site data if site_id exists
+      if (deals.length > 0 && deals[0].site_id) {
+        try {
+          const siteIds = [...new Set(deals.map(d => d.site_id).filter(Boolean))];
+          if (siteIds.length > 0) {
+            const { data: sitesData } = await supabase
+              .from('sites')
+              .select('id, name, address')
+              .in('id', siteIds);
+            
+            // Attach site data to deals
+            if (sitesData) {
+              const sitesMap = new Map(sitesData.map(s => [s.id, s]));
+              deals = deals.map(deal => ({
+                ...deal,
+                sites: deal.site_id ? sitesMap.get(deal.site_id) : null
+              }));
+            }
+          }
+        } catch (siteError) {
+          console.warn('[Sales] Could not load site data:', siteError);
+          // Continue without site data
+        }
+      }
+    }
     
     renderDealQueue();
   } catch (error) {
@@ -612,16 +651,30 @@ export async function openDealDetail(dealId) {
   try {
     const { data, error } = await supabase
       .from('deals')
-      .select(`
-        *,
-        sites:site_id (id, name, address, contact_phone, contact_email)
-      `)
+      .select('*')
       .eq('id', dealId)
       .single();
 
     if (error) throw error;
     
     currentDeal = data;
+    
+    // Optionally load site data if site_id exists
+    if (currentDeal && currentDeal.site_id) {
+      try {
+        const { data: siteData } = await supabase
+          .from('sites')
+          .select('id, name, address, contact_phone, contact_email')
+          .eq('id', currentDeal.site_id)
+          .single();
+        if (siteData) {
+          currentDeal.sites = siteData;
+        }
+      } catch (siteError) {
+        console.warn('[Sales] Could not load site data for deal:', siteError);
+        // Continue without site data
+      }
+    }
     await renderDealDetail(data);
   } catch (error) {
     console.error('[Sales] Error opening deal detail:', error);
