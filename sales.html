@@ -1024,28 +1024,71 @@
     });
 
     // Initialize
+    console.log('[Sales Dashboard] Setting up DOMContentLoaded handler...');
+    
+    // Check if DOM is already loaded
+    if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', async () => {
+        console.log('[Sales Dashboard] DOMContentLoaded fired, starting initialization...');
+        await initializeSalesDashboard();
+      });
+    } else {
+      // DOM already loaded
+      console.log('[Sales Dashboard] DOM already loaded, starting initialization immediately...');
+      initializeSalesDashboard();
+    }
+    
+    async function initializeSalesDashboard() {
       try {
+        console.log('[Sales Dashboard] Step 1: Initializing icons...');
       if (window.lucide) lucide.createIcons();
+        
+        console.log('[Sales Dashboard] Step 2: Initializing tabs...');
         initTabs();
         
-        // Initialize sales module
+        console.log('[Sales Dashboard] Step 3: Initializing UI...');
+        // Initialize UI first
+        if (typeof initializeUI === 'function') {
+          initializeUI();
+        }
+        
+        console.log('[Sales Dashboard] Step 4: Hiding loader...');
+        // Hide loader early, before sales.init() which might redirect
+        if (typeof hideLoader === 'function') {
+          hideLoader();
+        } else {
+          // Fallback: directly hide loader
+          const loader = document.getElementById('page-loader');
+          if (loader) {
+            loader.classList.add('hidden');
+            console.log('[Sales Dashboard] ✅ Loader hidden (fallback)');
+          }
+        }
+        
+        console.log('[Sales Dashboard] Step 5: Initializing sales module...');
+        // Initialize sales module (this might redirect if no user)
         if (sales && typeof sales.init === 'function') {
       await sales.init();
+          console.log('[Sales Dashboard] ✅ Sales module initialized');
+        } else {
+          console.warn('[Sales Dashboard] ⚠️ Sales module or init function not available');
         }
         
-      hideLoader();
-        
-        // Initialize UI
-        if (typeof initializeUI === 'function') {
-      initializeUI();
-        }
-        
+        console.log('[Sales Dashboard] Step 6: Loading dashboard data...');
         // Load dashboard tab by default
         await loadDashboardData();
+        console.log('[Sales Dashboard] ✅ Initialization complete!');
       } catch (error) {
-        console.error('Error initializing sales dashboard:', error);
-        hideLoader();
+        console.error('[Sales Dashboard] ❌ Error during initialization:', error);
+        
+        // Always hide loader on error
+        if (typeof hideLoader === 'function') {
+      hideLoader();
+        } else {
+          const loader = document.getElementById('page-loader');
+          if (loader) loader.classList.add('hidden');
+        }
+        
         // Show error message
         const main = document.querySelector('main');
         if (main) {
@@ -1055,6 +1098,7 @@
                 <i data-lucide="alert-circle" class="w-16 h-16 mx-auto text-red-500 mb-4"></i>
                 <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Failed to Load</h3>
                 <p class="text-gray-600 dark:text-gray-400 mb-4">${error.message || 'An error occurred while loading the sales dashboard'}</p>
+                <pre class="text-xs bg-gray-100 dark:bg-gray-700 p-2 rounded mb-4 text-left overflow-auto max-h-24">${error.stack || error.toString()}</pre>
                 <button onclick="window.location.reload()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
                   Reload Page
                 </button>
@@ -1064,7 +1108,7 @@
           if (window.lucide) lucide.createIcons();
         }
       }
-    });
+    }
 
     // Make sales module available globally
     window.sales = sales;
