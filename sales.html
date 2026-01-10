@@ -899,13 +899,33 @@
       if (!callsList) return;
       
       try {
+        // Load calls without relationship syntax to avoid FK errors
         const { data: calls, error } = await supabase
           .from('calls')
-          .select('*, deals:deal_id(id, title)')
+          .select('*')
           .order('created_at', { ascending: false })
           .limit(50);
         
         if (error) throw error;
+        
+        // Optionally load deal titles if deal_id exists
+        let dealsMap = new Map();
+        if (calls && calls.length > 0 && calls[0].deal_id) {
+          try {
+            const dealIds = [...new Set(calls.map(c => c.deal_id).filter(Boolean))];
+            if (dealIds.length > 0) {
+              const { data: dealsData } = await supabase
+                .from('deals')
+                .select('id, title')
+                .in('id', dealIds);
+              if (dealsData) {
+                dealsMap = new Map(dealsData.map(d => [d.id, d]));
+              }
+            }
+          } catch (dealError) {
+            console.warn('[Sales] Could not load deal data for calls:', dealError);
+          }
+        }
         
         if (!calls || calls.length === 0) {
           callsList.innerHTML = `
@@ -918,23 +938,33 @@
           return;
         }
         
-        callsList.innerHTML = calls.map(call => `
+        callsList.innerHTML = calls.map(call => {
+          const deal = call.deal_id ? dealsMap.get(call.deal_id) : null;
+          return `
           <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
             <div class="flex items-start justify-between">
               <div class="flex-1">
-                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${call.deals?.title || 'No deal'}</h3>
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${deal?.title || call.deal_id || 'No deal'}</h3>
                 <p class="text-sm text-gray-500 mt-1">${call.phone_number || 'No phone'}</p>
                 <p class="text-sm text-gray-600 mt-2">${call.outcome || 'No outcome'}</p>
-                <p class="text-xs text-gray-400 mt-1">${new Date(call.created_at).toLocaleString()}</p>
+                <p class="text-xs text-gray-400 mt-1">${call.created_at ? new Date(call.created_at).toLocaleString() : ''}</p>
               </div>
             </div>
           </div>
-        `).join('');
+        `;
+        }).join('');
         
         if (window.lucide) lucide.createIcons();
       } catch (error) {
         console.error('Error loading calls:', error);
-        callsList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load calls</div>`;
+        callsList.innerHTML = `
+          <div class="text-center py-12">
+            <i data-lucide="phone" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+            <p class="text-gray-500 mb-2">Failed to load calls</p>
+            <p class="text-sm text-gray-400">${error.message || 'Unknown error'}</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
       }
     }
     
