@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en" class="h-full overflow-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Routes</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
+  
+  <!-- Offline Sync -->
+  <script type="module" src="./js/offline-sync.js"></script>
+  <script type="module" src="./js/offline-indicator.js"></script>
+
+  <!-- Map Library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Prevent page scrollbar -->
+  <style>
+    html {
+      height: 100% !important;
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      position: fixed !important;
+    }
+    body {
+      height: 100vh !important;
+      width: 100vw !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: hidden !important;
+      display: flex !important;
+    }
+    body > aside {
+      overflow-y: auto;
+      overflow-x: hidden;
+      scrollbar-width: thin;
+    }
+    body > div.flex-1 {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      flex: 1;
+      min-width: 0;
+      height: 100vh;
+    }
+    body > div.flex-1 > main {
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    body > div.flex-1 > main > div.scrollable-content {
+      flex: 1;
+      overflow-y: scroll;
+      overflow-x: hidden;
+      scrollbar-width: none !important;
+      -ms-overflow-style: none !important;
+    }
+    body > div.flex-1 > main > div.scrollable-content::-webkit-scrollbar {
+      width: 0px !important;
+      display: none !important;
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-nfbg dark:bg-gray-900 text-nftext dark:text-gray-200">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU" 
+        alt="NFG"
+        class="company-logo"
+      >
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Routes...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/2.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzLzIucG5nIiwiaWF0IjoxNzYxODY2MTE0LCJleHAiOjQ4ODM5MzAxMTR9.E1JoQZxqPy0HOKna6YfjPCfin5Pc3QF0paEV7qzVfDw" 
+        alt="Northern Facilities Group" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="routes.html">
+        <i data-lucide="route" class="w-4 h-4"></i> Routes
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
+        <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
+      <div class="h-14 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+          <button class="md:hidden p-1.5 sm:p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400 flex-shrink-0" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </button>
+          <h1 class="text-nfgblue dark:text-blue-400 font-semibold text-sm sm:text-base truncate">Routes</h1>
+        </div>
+
+        <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          <!-- Notification Bell (will be injected by notification-center.js) -->
+          
+          <button id="create-route-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition flex-shrink-0">
+            <i data-lucide="plus" class="w-4 h-4"></i>
+            <span class="hidden sm:inline text-xs sm:text-sm">New Route</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- CONTENT -->
+    <main class="flex-1 flex flex-col overflow-hidden">
+      <div class="flex-shrink-0 p-4 md:p-6 pb-0">
+        <div>
+          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Door-to-Door Routes</h2>
+          <p class="text-sm text-gray-500 mt-1">Manage and track door-to-door sales routes</p>
+        </div>
+
+        <!-- Status Tabs -->
+        <div class="flex items-center gap-1 sm:gap-2 border-b border-nfgray overflow-x-auto mt-6 pb-2">
+          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
+            All Routes
+          </button>
+          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="draft">
+            Draft
+          </button>
+          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="active">
+            Active
+          </button>
+          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="completed">
+            Completed
+          </button>
+        </div>
+      </div>
+
+      <!-- Scrollable content area -->
+      <div class="scrollable-content flex-1 p-4 md:p-6 pt-4">
+        <!-- Routes Grid -->
+        <div id="routes-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Route Modal -->
+  <div id="create-route-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Create New Route</h3>
+        <button data-action="close-modal" data-target="create-route-modal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="create-route-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Route Name <span class="text-red-500">*</span></label>
+          <input type="text" id="route-name" required class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700" placeholder="e.g., Downtown Route - Jan 15" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Route Date <span class="text-red-500">*</span></label>
+          <input type="date" id="route-date" required class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Assign to Rep <span class="text-red-500">*</span></label>
+          <select id="route-assigned-rep" required data-custom-dropdown="true" data-placeholder="Select a rep">
+            <option value="">Select a rep</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Territory (Optional)</label>
+          <select id="route-territory" data-custom-dropdown="true" data-placeholder="Select a territory">
+            <option value="">No territory</option>
+          </select>
+        </div>
+        <div id="create-route-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="create-route-modal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark">
+            Create Route
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { supabase } from './js/supabase.js';
+    import { initMobileSidebar } from './js/ui.js';
+    import { toast } from './js/notifications.js';
+    import { 
+      fetchRoutes, 
+      createRoute, 
+      ROUTE_STATUS,
+      getRouteProgress 
+    } from './js/routes.js';
+    import { getCurrentUser, canManageUsers } from './js/user-management.js';
+
+    // Initialize
+    let currentUser = null;
+    let currentUserProfile = null;
+    let allRoutes = [];
+    let currentFilter = 'all';
+
+    // Initialize UI
+    initMobileSidebar();
+    lucide.createIcons();
+
+    // Hide loader when page loads
+    window.addEventListener('load', () => {
+      const loader = document.getElementById('page-loader');
+      if (loader) loader.style.display = 'none';
+    });
+
+    // Get current user
+    async function init() {
+      try {
+        currentUser = await getCurrentUser();
+        if (currentUser) {
+          const { data: profile } = await supabase
+            .from('user_profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+          currentUserProfile = profile;
+        }
+        await loadRoutes();
+        await loadUsers();
+        await loadTerritories();
+        setupEventListeners();
+      } catch (error) {
+        console.error('Error initializing:', error);
+        toast.error('Failed to load routes');
+      }
+    }
+
+    // Load routes
+    async function loadRoutes() {
+      try {
+        const filters = currentFilter !== 'all' ? { status: currentFilter } : {};
+        allRoutes = await fetchRoutes(filters);
+        renderRoutes(allRoutes);
+      } catch (error) {
+        console.error('Error loading routes:', error);
+        toast.error('Failed to load routes');
+      }
+    }
+
+    // Render routes
+    function renderRoutes(routes) {
+      const grid = document.getElementById('routes-grid');
+      if (!grid) return;
+
+      if (routes.length === 0) {
+        grid.innerHTML = `
+          <div class="col-span-full text-center py-12">
+            <i data-lucide="route" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+            <p class="text-gray-500">No routes found</p>
+            <button id="create-route-btn-empty" class="mt-4 px-4 py-2 bg-nfgblue text-white rounded-xl hover:bg-nfgdark">
+              Create Your First Route
+            </button>
+          </div>
+        `;
+        lucide.createIcons();
+        document.getElementById('create-route-btn-empty')?.addEventListener('click', () => {
+          document.getElementById('create-route-btn').click();
+        });
+        return;
+      }
+
+      grid.innerHTML = routes.map(route => {
+        const statusColors = {
+          draft: 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+          active: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+          completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+          cancelled: 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+        };
+
+        return `
+          <div class="bg-white dark:bg-gray-800 rounded-xl border border-nfgray p-4 hover:shadow-lg transition cursor-pointer route-card" data-route-id="${route.id}">
+            <div class="flex items-start justify-between mb-3">
+              <h3 class="font-semibold text-nfgblue dark:text-blue-400">${route.name || 'Unnamed Route'}</h3>
+              <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColors[route.status] || statusColors.draft}">
+                ${route.status || 'draft'}
+              </span>
+            </div>
+            <div class="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+              <div class="flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4"></i>
+                <span>${new Date(route.route_date).toLocaleDateString()}</span>
+              </div>
+              ${route.assigned_rep ? `
+                <div class="flex items-center gap-2">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+                  <span>${route.assigned_rep.full_name || route.assigned_rep.email}</span>
+                </div>
+              ` : ''}
+            </div>
+            <div class="mt-4 pt-4 border-t border-nfgray">
+              <button class="w-full px-4 py-2 bg-nfgblue text-white rounded-lg hover:bg-nfgdark text-sm font-medium view-route-btn" data-route-id="${route.id}">
+                View Route
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+      
+      // Add click handlers
+      document.querySelectorAll('.route-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('view-route-btn')) {
+            const routeId = card.dataset.routeId;
+            window.location.href = `route-detail.html?id=${routeId}`;
+          }
+        });
+      });
+
+      document.querySelectorAll('.view-route-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const routeId = btn.dataset.routeId;
+          window.location.href = `route-detail.html?id=${routeId}`;
+        });
+      });
+    }
+
+    // Load users for assignment
+    async function loadUsers() {
+      try {
+        const { data: users, error } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email, role')
+          .eq('status', 'active')
+          .order('full_name');
+
+        if (error) throw error;
+
+        const select = document.getElementById('route-assigned-rep');
+        if (select) {
+          select.innerHTML = '<option value="">Select a rep</option>' +
+            users.map(user => 
+              `<option value="${user.id}">${user.full_name || user.email}</option>`
+            ).join('');
+        }
+      } catch (error) {
+        console.error('Error loading users:', error);
+      }
+    }
+
+    // Load territories
+    async function loadTerritories() {
+      try {
+        const { fetchTerritories } = await import('./js/routes.js');
+        const territories = await fetchTerritories();
+        
+        const select = document.getElementById('route-territory');
+        if (select) {
+          select.innerHTML = '<option value="">No territory</option>' +
+            territories.map(territory => 
+              `<option value="${territory.id}">${territory.name}</option>`
+            ).join('');
+        }
+      } catch (error) {
+        console.error('Error loading territories:', error);
+      }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // Create route button
+      document.getElementById('create-route-btn')?.addEventListener('click', () => {
+        document.getElementById('create-route-modal').classList.remove('hidden');
+      });
+
+      // Filter tabs
+      document.querySelectorAll('.route-filter-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.route-filter-tab').forEach(t => {
+            t.classList.remove('text-nfgblue', 'border-nfgblue', 'dark:text-blue-400');
+            t.classList.add('text-gray-500', 'border-transparent');
+          });
+          tab.classList.remove('text-gray-500', 'border-transparent');
+          tab.classList.add('text-nfgblue', 'border-nfgblue', 'dark:text-blue-400');
+          currentFilter = tab.dataset.status;
+          loadRoutes();
+        });
+      });
+
+      // Create route form
+      document.getElementById('create-route-form')?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorDiv = document.getElementById('create-route-error');
+        errorDiv.classList.add('hidden');
+
+        try {
+          const routeData = {
+            name: document.getElementById('route-name').value.trim(),
+            route_date: document.getElementById('route-date').value,
+            assigned_rep_id: document.getElementById('route-assigned-rep').value,
+            territory_id: document.getElementById('route-territory').value || null
+          };
+
+          const route = await createRoute(routeData);
+          toast.success('Route created successfully');
+          document.getElementById('create-route-modal').classList.add('hidden');
+          document.getElementById('create-route-form').reset();
+          await loadRoutes();
+          
+          // Navigate to route detail
+          window.location.href = `route-detail.html?id=${route.id}`;
+        } catch (error) {
+          console.error('Error creating route:', error);
+          errorDiv.textContent = error.message || 'Failed to create route';
+          errorDiv.classList.remove('hidden');
+        }
+      });
+
+      // Logout
+      document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        await supabase.auth.signOut();
+        window.location.href = './index.html';
+      });
+
+      // Modal close handlers
+      document.querySelectorAll('[data-action="close-modal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          if (target) {
+            document.getElementById(target)?.classList.add('hidden');
+          }
+        });
+      });
+    }
+
+    // Initialize on load
+    init();
+  </script>
+
+  <!-- Notification Center -->
+  <script type="module" src="./js/notification-center.js"></script>
+  
+  <!-- UI Helpers -->
+  <script type="module" src="./js/ui.js"></script>
+</body>
+</html>

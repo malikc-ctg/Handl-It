@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="en" class="h-full overflow-hidden">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Route Details</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Map Library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  <link rel="stylesheet" href="./css/notifications.css">
+  <link rel="stylesheet" href="./css/loader.css">
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  <link rel="stylesheet" href="./css/notification-center.css">
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    #map {
+      height: 100%;
+      width: 100%;
+    }
+    .route-map-container {
+      height: 400px;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-nfbg dark:bg-gray-900 text-nftext dark:text-gray-200">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU" 
+        alt="NFG"
+        class="company-logo"
+      >
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Route...</div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="flex flex-col h-screen overflow-hidden">
+    <!-- Header -->
+    <header class="sticky top-0 z-20 bg-white dark:bg-gray-800 border-b border-nfgray flex-shrink-0">
+      <div class="h-14 px-4 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <a href="routes.html" class="p-1 rounded-lg hover:bg-nfglight">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+          </a>
+          <h1 id="route-name-header" class="text-nfgblue dark:text-blue-400 font-semibold">Route Details</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="start-route-btn" class="hidden px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+            <i data-lucide="play" class="w-4 h-4 inline mr-1"></i>
+            Start Route
+          </button>
+          <button id="stop-route-btn" class="hidden px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+            <i data-lucide="square" class="w-4 h-4 inline mr-1"></i>
+            Stop Route
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-hidden flex flex-col">
+      <!-- Route Stats -->
+      <div class="flex-shrink-0 p-4 bg-white dark:bg-gray-800 border-b border-nfgray">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Total Doors</p>
+            <p id="stat-total" class="text-2xl font-semibold text-nfgblue">0</p>
+          </div>
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Visited</p>
+            <p id="stat-visited" class="text-2xl font-semibold text-green-600">0</p>
+          </div>
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Remaining</p>
+            <p id="stat-remaining" class="text-2xl font-semibold text-orange-600">0</p>
+          </div>
+          <div class="bg-nfglight/30 border border-nfgblue/20 rounded-xl p-3">
+            <p class="text-xs text-gray-500 mb-1">Progress</p>
+            <p id="stat-progress" class="text-2xl font-semibold text-nfgblue">0%</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- View Toggle -->
+      <div class="flex-shrink-0 p-4 border-b border-nfgray bg-white dark:bg-gray-800">
+        <div class="flex gap-2">
+          <button id="view-list-btn" class="view-toggle-btn px-4 py-2 rounded-lg bg-nfgblue text-white font-medium">
+            <i data-lucide="list" class="w-4 h-4 inline mr-1"></i>
+            List
+          </button>
+          <button id="view-map-btn" class="view-toggle-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight font-medium">
+            <i data-lucide="map" class="w-4 h-4 inline mr-1"></i>
+            Map
+          </button>
+        </div>
+      </div>
+
+      <!-- Next Door Card (shown when route is active) -->
+      <div id="next-door-card" class="hidden flex-shrink-0 p-4 bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-green-200 dark:border-green-800">
+          <div class="flex items-center justify-between">
+            <div class="flex-1">
+              <p class="text-xs text-gray-500 mb-1">Next Door</p>
+              <p id="next-door-address" class="font-semibold text-nfgblue">Loading...</p>
+              <p id="next-door-distance" class="text-sm text-gray-500 mt-1"></p>
+            </div>
+            <button id="visit-next-door-btn" class="px-4 py-2 bg-nfgblue text-white rounded-lg hover:bg-nfgdark font-medium">
+              Visit Now
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- List View -->
+      <div id="list-view" class="flex-1 overflow-y-auto p-4">
+        <div id="doors-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Map View -->
+      <div id="map-view" class="hidden flex-1 overflow-hidden">
+        <div id="route-map" class="route-map-container"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Door Visit Modal -->
+  <div id="door-visit-modal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-[60]">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Record Door Visit</h3>
+        <button data-action="close-modal" data-target="door-visit-modal" class="p-1 rounded-lg hover:bg-nfglight">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="door-visit-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Address</label>
+          <p id="visit-address" class="text-nfgblue font-semibold"></p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Outcome <span class="text-red-500">*</span></label>
+          <select id="visit-outcome" required data-custom-dropdown="true" class="w-full">
+            <option value="">Select outcome</option>
+            <option value="knocked">Knocked</option>
+            <option value="no_answer">No Answer</option>
+            <option value="not_interested">Not Interested</option>
+            <option value="follow_up_requested">Follow Up Requested</option>
+            <option value="dm_not_present">Decision Maker Not Present</option>
+            <option value="appointment_set">Appointment Set</option>
+          </select>
+        </div>
+        <div id="appointment-fields" class="hidden space-y-3">
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
+            <input type="date" id="appointment-date" class="w-full border border-nfgray rounded-xl p-2.5" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Scheduled Time</label>
+            <input type="time" id="appointment-time" class="w-full border border-nfgray rounded-xl p-2.5" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Contact Name</label>
+            <input type="text" id="appointment-name" class="w-full border border-nfgray rounded-xl p-2.5" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium mb-1.5">Contact Phone</label>
+            <input type="tel" id="appointment-phone" class="w-full border border-nfgray rounded-xl p-2.5" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Notes</label>
+          <textarea id="visit-note" rows="3" class="w-full border border-nfgray rounded-xl p-2.5" placeholder="Add any notes about this visit..."></textarea>
+        </div>
+        <div id="door-visit-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray">
+          <button type="button" data-action="close-modal" data-target="door-visit-modal" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 rounded-xl bg-nfgblue text-white hover:bg-nfgdark">
+            Record Visit
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module">
+    import { supabase } from './js/supabase.js';
+    import { initMobileSidebar } from './js/ui.js';
+    import { toast } from './js/notifications.js';
+    import { 
+      fetchRoute, 
+      fetchDoorTargets, 
+      startRoute, 
+      completeRoute,
+      recordDoorVisit,
+      getNextDoor,
+      recordRouteLocation,
+      getRouteProgress,
+      ROUTE_STATUS,
+      DOOR_OUTCOMES
+    } from './js/routes.js';
+    import { createAppointmentFromVisit } from './js/route-leads.js';
+    import { getCurrentUser } from './js/user-management.js';
+
+    // State
+    let currentRoute = null;
+    let currentRouteId = null;
+    let doorTargets = [];
+    let currentView = 'list';
+    let map = null;
+    let locationWatchId = null;
+    let currentLocation = null;
+
+    // Initialize
+    initMobileSidebar();
+    lucide.createIcons();
+
+    // Hide loader
+    window.addEventListener('load', () => {
+      document.getElementById('page-loader').style.display = 'none';
+    });
+
+    // Get route ID from URL
+    const urlParams = new URLSearchParams(window.location.search);
+    currentRouteId = urlParams.get('id');
+
+    if (!currentRouteId) {
+      toast.error('No route ID provided');
+      window.location.href = 'routes.html';
+    }
+
+    // Initialize
+    async function init() {
+      try {
+        await loadRoute();
+        await loadDoorTargets();
+        setupEventListeners();
+        updateStats();
+        renderDoorsList();
+      } catch (error) {
+        console.error('Error initializing:', error);
+        toast.error('Failed to load route');
+      }
+    }
+
+    // Load route
+    async function loadRoute() {
+      try {
+        currentRoute = await fetchRoute(currentRouteId);
+        document.getElementById('route-name-header').textContent = currentRoute.name || 'Route Details';
+        
+        // Show/hide start/stop buttons
+        if (currentRoute.status === ROUTE_STATUS.DRAFT) {
+          document.getElementById('start-route-btn').classList.remove('hidden');
+        } else if (currentRoute.status === ROUTE_STATUS.ACTIVE) {
+          document.getElementById('stop-route-btn').classList.remove('hidden');
+          document.getElementById('next-door-card').classList.remove('hidden');
+          startLocationTracking();
+          updateNextDoor();
+        }
+      } catch (error) {
+        console.error('Error loading route:', error);
+        throw error;
+      }
+    }
+
+    // Load door targets
+    async function loadDoorTargets() {
+      try {
+        doorTargets = await fetchDoorTargets(currentRouteId);
+        updateStats();
+      } catch (error) {
+        console.error('Error loading door targets:', error);
+        throw error;
+      }
+    }
+
+    // Update stats
+    function updateStats() {
+      const total = doorTargets.length;
+      const visited = doorTargets.filter(d => d.status === 'visited').length;
+      const remaining = total - visited;
+      const progress = total > 0 ? Math.round((visited / total) * 100) : 0;
+
+      document.getElementById('stat-total').textContent = total;
+      document.getElementById('stat-visited').textContent = visited;
+      document.getElementById('stat-remaining').textContent = remaining;
+      document.getElementById('stat-progress').textContent = progress + '%';
+    }
+
+    // Render doors list
+    function renderDoorsList() {
+      const list = document.getElementById('doors-list');
+      if (!list) return;
+
+      if (doorTargets.length === 0) {
+        list.innerHTML = '<p class="text-center text-gray-500 py-8">No door targets added yet</p>';
+        return;
+      }
+
+      list.innerHTML = doorTargets.map(door => {
+        const statusColors = {
+          pending: 'bg-gray-100 text-gray-700',
+          visited: 'bg-green-100 text-green-700',
+          skipped: 'bg-yellow-100 text-yellow-700',
+          not_available: 'bg-red-100 text-red-700'
+        };
+
+        const isInCooldown = door.cooldown_until && new Date(door.cooldown_until) > new Date();
+
+        return `
+          <div class="bg-white dark:bg-gray-800 rounded-xl border border-nfgray p-4 ${isInCooldown ? 'opacity-50' : ''}">
+            <div class="flex items-start justify-between mb-2">
+              <div class="flex-1">
+                <p class="font-semibold text-nfgblue">${door.address}</p>
+                ${door.city ? `<p class="text-sm text-gray-500">${door.city}, ${door.state_province || ''} ${door.postal_code || ''}</p>` : ''}
+              </div>
+              <span class="px-2 py-1 text-xs font-medium rounded-full ${statusColors[door.status] || statusColors.pending}">
+                ${door.status}
+              </span>
+            </div>
+            ${isInCooldown ? `<p class="text-xs text-orange-600 mb-2">Cooldown until ${new Date(door.cooldown_until).toLocaleDateString()}</p>` : ''}
+            ${door.status === 'pending' && !isInCooldown ? `
+              <button class="w-full mt-2 px-4 py-2 bg-nfgblue text-white rounded-lg hover:bg-nfgdark text-sm font-medium visit-door-btn" data-door-id="${door.id}">
+                Record Visit
+              </button>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+
+      // Add click handlers
+      document.querySelectorAll('.visit-door-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const doorId = btn.dataset.doorId;
+          openDoorVisitModal(doorId);
+        });
+      });
+    }
+
+    // Update next door
+    async function updateNextDoor() {
+      try {
+        const nextDoor = await getNextDoor(currentRouteId, currentLocation?.lat, currentLocation?.lng);
+        if (nextDoor) {
+          document.getElementById('next-door-address').textContent = nextDoor.address;
+          if (nextDoor.distance) {
+            document.getElementById('next-door-distance').textContent = `${nextDoor.distance.toFixed(2)} km away`;
+          }
+          document.getElementById('visit-next-door-btn').dataset.doorId = nextDoor.id;
+        } else {
+          document.getElementById('next-door-card').classList.add('hidden');
+        }
+      } catch (error) {
+        console.error('Error updating next door:', error);
+      }
+    }
+
+    // Open door visit modal
+    function openDoorVisitModal(doorId) {
+      const door = doorTargets.find(d => d.id === doorId);
+      if (!door) return;
+
+      document.getElementById('visit-address').textContent = door.address;
+      document.getElementById('door-visit-form').dataset.doorId = doorId;
+      document.getElementById('door-visit-modal').classList.remove('hidden');
+    }
+
+    // Start location tracking
+    function startLocationTracking() {
+      if (!navigator.geolocation) {
+        console.warn('Geolocation not supported');
+        return;
+      }
+
+      locationWatchId = navigator.geolocation.watchPosition(
+        async (position) => {
+          currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy
+          };
+
+          // Record location (privacy-safe, only when route is active)
+          if (currentRoute.status === ROUTE_STATUS.ACTIVE) {
+            await recordRouteLocation(currentRouteId, currentLocation);
+          }
+
+          // Update next door with new location
+          await updateNextDoor();
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    }
+
+    // Stop location tracking
+    function stopLocationTracking() {
+      if (locationWatchId !== null) {
+        navigator.geolocation.clearWatch(locationWatchId);
+        locationWatchId = null;
+      }
+    }
+
+    // Setup event listeners
+    function setupEventListeners() {
+      // View toggle
+      document.getElementById('view-list-btn').addEventListener('click', () => {
+        currentView = 'list';
+        document.getElementById('list-view').classList.remove('hidden');
+        document.getElementById('map-view').classList.add('hidden');
+        document.getElementById('view-list-btn').classList.add('bg-nfgblue', 'text-white');
+        document.getElementById('view-list-btn').classList.remove('border', 'border-nfgray');
+        document.getElementById('view-map-btn').classList.remove('bg-nfgblue', 'text-white');
+        document.getElementById('view-map-btn').classList.add('border', 'border-nfgray');
+      });
+
+      document.getElementById('view-map-btn').addEventListener('click', () => {
+        currentView = 'map';
+        document.getElementById('list-view').classList.add('hidden');
+        document.getElementById('map-view').classList.remove('hidden');
+        document.getElementById('view-map-btn').classList.add('bg-nfgblue', 'text-white');
+        document.getElementById('view-map-btn').classList.remove('border', 'border-nfgray');
+        document.getElementById('view-list-btn').classList.remove('bg-nfgblue', 'text-white');
+        document.getElementById('view-list-btn').classList.add('border', 'border-nfgray');
+        
+        if (!map) {
+          initMap();
+        }
+      });
+
+      // Start route
+      document.getElementById('start-route-btn').addEventListener('click', async () => {
+        try {
+          await startRoute(currentRouteId);
+          toast.success('Route started');
+          await loadRoute();
+        } catch (error) {
+          console.error('Error starting route:', error);
+          toast.error(error.message || 'Failed to start route');
+        }
+      });
+
+      // Stop route
+      document.getElementById('stop-route-btn').addEventListener('click', async () => {
+        try {
+          await completeRoute(currentRouteId);
+          toast.success('Route completed');
+          stopLocationTracking();
+          document.getElementById('stop-route-btn').classList.add('hidden');
+          document.getElementById('next-door-card').classList.add('hidden');
+          await loadRoute();
+        } catch (error) {
+          console.error('Error stopping route:', error);
+          toast.error(error.message || 'Failed to stop route');
+        }
+      });
+
+      // Visit next door
+      document.getElementById('visit-next-door-btn').addEventListener('click', () => {
+        const doorId = document.getElementById('visit-next-door-btn').dataset.doorId;
+        if (doorId) {
+          openDoorVisitModal(doorId);
+        }
+      });
+
+      // Door visit form
+      document.getElementById('door-visit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const errorDiv = document.getElementById('door-visit-error');
+        errorDiv.classList.add('hidden');
+
+        try {
+          const doorId = document.getElementById('door-visit-form').dataset.doorId;
+          const outcome = document.getElementById('visit-outcome').value;
+          const note = document.getElementById('visit-note').value;
+
+          const visitData = {
+            door_target_id: doorId,
+            route_id: currentRouteId,
+            outcome: outcome,
+            note: note,
+            latitude: currentLocation?.lat,
+            longitude: currentLocation?.lng
+          };
+
+          await recordDoorVisit(visitData);
+
+          // If appointment was set, create appointment
+          if (outcome === DOOR_OUTCOMES.APPOINTMENT_SET) {
+            const appointmentDate = document.getElementById('appointment-date').value;
+            const appointmentTime = document.getElementById('appointment-time').value;
+            const appointmentName = document.getElementById('appointment-name').value;
+            const appointmentPhone = document.getElementById('appointment-phone').value;
+
+            if (appointmentDate) {
+              // Get the visit ID (would need to be returned from recordDoorVisit)
+              // For now, we'll create it separately
+              const { data: visits } = await supabase
+                .from('door_visits')
+                .select('id')
+                .eq('door_target_id', doorId)
+                .order('visited_at', { ascending: false })
+                .limit(1)
+                .single();
+
+              if (visits) {
+                await createAppointmentFromVisit(visits.id, {
+                  scheduled_date: appointmentDate,
+                  scheduled_time: appointmentTime,
+                  first_name: appointmentName,
+                  phone: appointmentPhone,
+                  notes: note
+                });
+              }
+            }
+          }
+
+          toast.success('Visit recorded');
+          document.getElementById('door-visit-modal').classList.add('hidden');
+          document.getElementById('door-visit-form').reset();
+          await loadDoorTargets();
+          renderDoorsList();
+          updateNextDoor();
+        } catch (error) {
+          console.error('Error recording visit:', error);
+          errorDiv.textContent = error.message || 'Failed to record visit';
+          errorDiv.classList.remove('hidden');
+        }
+      });
+
+      // Show appointment fields when outcome is appointment_set
+      document.getElementById('visit-outcome').addEventListener('change', (e) => {
+        if (e.target.value === DOOR_OUTCOMES.APPOINTMENT_SET) {
+          document.getElementById('appointment-fields').classList.remove('hidden');
+        } else {
+          document.getElementById('appointment-fields').classList.add('hidden');
+        }
+      });
+
+      // Modal close
+      document.querySelectorAll('[data-action="close-modal"]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.target;
+          if (target) {
+            document.getElementById(target)?.classList.add('hidden');
+          }
+        });
+      });
+    }
+
+    // Initialize map
+    function initMap() {
+      map = L.map('route-map').setView([40.7128, -74.0060], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(map);
+
+      // Add markers for door targets
+      doorTargets.forEach(door => {
+        if (door.latitude && door.longitude) {
+          const color = door.status === 'visited' ? 'green' : door.status === 'pending' ? 'blue' : 'gray';
+          const marker = L.marker([parseFloat(door.latitude), parseFloat(door.longitude)], {
+            icon: L.divIcon({
+              className: 'custom-marker',
+              html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
+              iconSize: [20, 20]
+            })
+          }).addTo(map);
+          marker.bindPopup(door.address);
+        }
+      });
+    }
+
+    // Initialize
+    init();
+  </script>
+
+  <!-- Notification Center -->
+  <script type="module" src="./js/notification-center.js"></script>
+  
+  <!-- UI Helpers -->
+  <script type="module" src="./js/ui.js"></script>
+  
+  <!-- Offline Sync -->
+  <script type="module" src="./js/offline-sync.js"></script>
+  <script type="module" src="./js/offline-indicator.js"></script>
+</body>
+</html>
