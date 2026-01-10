@@ -164,9 +164,10 @@ export async function init() {
 
     // Check role-based access
     if (profile && !hasSalesAccess(profile)) {
-      toast.error('You do not have access to the sales portal', 'Access Denied');
-      window.location.href = './dashboard.html';
-      return;
+      console.warn('[Sales] User does not have sales access, but allowing view with limited functionality');
+      // Don't redirect - allow view but show warning
+      // User can still see the dashboard but some features may be restricted
+      toast.warning('Limited access mode - some features may be restricted', 'Notice');
     }
 
     // Load initial data
@@ -191,8 +192,8 @@ export async function init() {
 function hasSalesAccess(profile) {
   if (!profile) return false;
   const role = profile.role;
-  // Allow admin, manager, and rep roles (assuming 'rep' is a role)
-  return ['admin', 'manager', 'super_admin'].includes(role) || role === 'rep';
+  // Allow admin, manager, worker, and rep roles to access sales portal
+  return ['admin', 'manager', 'super_admin', 'worker', 'rep'].includes(role);
 }
 
 async function checkRoleBasedUI() {
