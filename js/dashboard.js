@@ -624,6 +624,7 @@ async function fetchDashboardStats() {
       activeJobsCount = (pendingCount || 0) + (inProgressCount || 0);
     } catch (jobsError) {
       console.error('Error fetching active jobs:', jobsError);
+    }
     
     const activeJobsEl = document.getElementById('stat-active-jobs');
     if (activeJobsEl) {

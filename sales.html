@@ -191,9 +191,193 @@
     </header>
 
     <!-- MAIN CONTENT -->
-    <main class="flex-1 overflow-hidden">
-      <!-- Deal Queue View -->
-      <div id="deal-queue-view" class="h-full overflow-y-auto p-4 md:p-6">
+    <main class="flex-1 overflow-hidden flex flex-col">
+      <!-- Sales Dashboard Tabs -->
+      <div class="border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div class="px-4 md:px-6 flex gap-1 overflow-x-auto">
+          <button class="sales-tab active px-4 py-3 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue dark:border-blue-400 whitespace-nowrap" data-tab="dashboard">
+            <i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-2"></i> Dashboard
+          </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="deals">
+            <i data-lucide="briefcase" class="w-4 h-4 inline mr-2"></i> Deals
+          </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="quotes">
+            <i data-lucide="file-text" class="w-4 h-4 inline mr-2"></i> Quotes
+          </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="leads">
+            <i data-lucide="user-plus" class="w-4 h-4 inline mr-2"></i> Leads
+          </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="contacts">
+            <i data-lucide="users" class="w-4 h-4 inline mr-2"></i> Contacts
+          </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="calls">
+            <i data-lucide="phone" class="w-4 h-4 inline mr-2"></i> Calls
+          </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="sequences">
+            <i data-lucide="repeat" class="w-4 h-4 inline mr-2"></i> Sequences
+          </button>
+        </div>
+      </div>
+
+      <!-- Tab Content Container -->
+      <div class="flex-1 overflow-hidden">
+        <!-- Dashboard Tab (Pipeline View) -->
+        <div id="tab-dashboard" class="sales-tab-content h-full overflow-y-auto p-4 md:p-6">
+          <!-- Performance Widgets (Managers/Admins) -->
+          <div id="performance-widgets" class="hidden mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Total Deals</span>
+                <i data-lucide="briefcase" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <p id="total-deals" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Total Calls</span>
+                <i data-lucide="phone" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <p id="total-calls" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</span>
+                <i data-lucide="file-text" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <p id="total-quotes" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            </div>
+            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+              <div class="flex items-center justify-between mb-2">
+                <span class="text-sm text-gray-500 dark:text-gray-400">Deals Won</span>
+                <i data-lucide="trophy" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <p id="total-wins" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+            </div>
+          </div>
+
+          <!-- Sales Pipeline -->
+          <div class="mb-6">
+            <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-4">Sales Pipeline</h2>
+            <div id="pipeline-kanban" class="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <!-- Pipeline stages will be rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Deals Tab -->
+        <div id="tab-deals" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <!-- Deal Queue View -->
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Deal Queue</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
+            </div>
+            <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> New Deal
+            </button>
+          </div>
+
+          <!-- Deal List -->
+          <div id="deals-list" class="space-y-4">
+            <!-- Deals will be rendered here -->
+          </div>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="hidden text-center py-16">
+            <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md mx-auto">
+              <i data-lucide="trending-up" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"></i>
+              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Deals Yet</h3>
+              <p class="text-nftext dark:text-gray-300 text-sm mb-6">Get started by creating your first deal from a site.</p>
+              <button id="create-first-deal-btn" class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-5 h-5"></i> Create Your First Deal
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quotes Tab -->
+        <div id="tab-quotes" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Quotes</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage and track all quotes</p>
+            </div>
+            <button id="new-quote-btn-tab" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> New Quote
+            </button>
+          </div>
+          <div id="quotes-list" class="space-y-4">
+            <!-- Quotes will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Leads Tab -->
+        <div id="tab-leads" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Leads</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track and manage sales leads</p>
+            </div>
+            <button id="create-lead-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> New Lead
+            </button>
+          </div>
+          <div id="leads-list" class="space-y-4">
+            <!-- Leads will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Contacts Tab -->
+        <div id="tab-contacts" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Contacts</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your contact database</p>
+            </div>
+            <button id="create-contact-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> New Contact
+            </button>
+          </div>
+          <div id="contacts-list" class="space-y-4">
+            <!-- Contacts will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Calls Tab -->
+        <div id="tab-calls" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Calls</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">View call history and recordings</p>
+            </div>
+            <button id="new-call-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="phone" class="w-4 h-4"></i> New Call
+            </button>
+          </div>
+          <div id="calls-list" class="space-y-4">
+            <!-- Calls will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Sequences Tab -->
+        <div id="tab-sequences" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+            <div>
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Follow-Up Sequences</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Automate your follow-up workflows</p>
+            </div>
+            <button id="create-sequence-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-4 h-4"></i> New Sequence
+            </button>
+          </div>
+          <div id="sequences-list" class="space-y-4">
+            <!-- Sequences will be rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Deal Detail View (Overlay - shown when viewing a deal) -->
+      <div id="deal-detail-view" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
         <!-- Performance Widgets (Managers/Admins) -->
         <div id="performance-widgets" class="hidden mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
@@ -248,9 +432,16 @@
         </div>
       </div>
 
-      <!-- Deal Detail View (Single-Scroll) -->
-      <div id="deal-detail-view" class="hidden h-full overflow-hidden">
-        <div class="single-scroll-container p-4 md:p-6">
+      <!-- Deal Detail View (Modal Overlay) -->
+      <div id="deal-detail-view" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Deal Details</h3>
+            <button id="close-deal-detail" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4 md:p-6">
           <!-- Deal Header -->
           <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 mb-6 shadow-nfg">
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
