@@ -251,9 +251,8 @@ async function loadDeals() {
 
     // Filter by assigned user if rep
     if (currentUserProfile && currentUserProfile.role === 'rep') {
-      // Try both assigned_to and assigned_user_id columns
-      const assignedColumn = currentDeal?.assigned_to ? 'assigned_to' : 'assigned_user_id';
-      query = query.eq(assignedColumn, currentUser.id);
+      // Try both assigned_to and assigned_user_id columns using OR
+      query = query.or(`assigned_to.eq.${currentUser.id},assigned_user_id.eq.${currentUser.id}`);
     }
 
     const { data, error } = await query;
