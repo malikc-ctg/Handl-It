@@ -1,6 +1,5 @@
 import { supabase } from './supabase.js'
 import { renderSites, initializeUI, closeAddSiteModal, setSubmitLoading, showFormError } from './ui.js'
-import { salesMode } from './sales-mode.js'
 
 let currentUser = null;
 let currentUserProfile = null;
@@ -674,127 +673,6 @@ async function fetchDashboardStats() {
   }
 }
 
-// Fetch and render sales pipeline data
-async function fetchSalesPipeline() {
-  if (!salesMode.isEnabled()) {
-    return;
-  }
-  
-  try {
-    // Check if deals table exists before querying
-    // Use simpler select to avoid column issues
-    const { data: deals, error } = await supabase
-      .from('deals')
-      .select('id, title, stage, deal_value, expected_close_date')
-      .neq('stage', 'closed_lost')
-      .order('expected_close_date', { ascending: true })
-      .limit(5);
-    
-    if (error) {
-      console.error('Error fetching deals:', error);
-      // Handle different error cases
-      if (error.code === '42P01' || error.message.includes('does not exist') || 
-          error.code === 'PGRST116' || error.status === 400) {
-        // Table doesn't exist or RLS policy issue - show empty state
-        console.warn('Deals table not accessible - this is OK if SQL migrations haven\'t run yet');
-        renderSalesPipeline([]);
-        return;
-      }
-      // For other errors, still show empty state gracefully
-      renderSalesPipeline([]);
-      return;
-    }
-    
-    renderSalesPipeline(deals || []);
-  } catch (error) {
-    console.error('Error fetching sales pipeline:', error);
-    renderSalesPipeline([]);
-  }
-}
-
-// Render sales pipeline deals
-function renderSalesPipeline(deals) {
-  const container = document.getElementById('sales-pipeline-content');
-  if (!container) return;
-  
-  if (!deals || deals.length === 0) {
-    container.innerHTML = '<div class="text-center py-4 text-gray-500 dark:text-gray-400">No active deals. <a href="sales.html" class="text-nfgblue dark:text-blue-400 hover:underline">Create one</a></div>';
-    return;
-  }
-  
-  // Render deals list
-  container.innerHTML = deals.map(deal => {
-    const value = deal.deal_value ? `$${Number(deal.deal_value).toLocaleString()}` : '—';
-    const date = deal.expected_close_date 
-      ? new Date(deal.expected_close_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-      : '—';
-    
-    return `
-      <div class="border-b border-nfgray dark:border-gray-700 py-2 last:border-0 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg px-2 -mx-2 cursor-pointer transition"
-           onclick="window.location.href='sales.html?deal=${deal.id}'">
-        <div class="flex items-center justify-between">
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-sm text-nfgblue dark:text-blue-400 truncate">${deal.title || 'Untitled Deal'}</p>
-            <div class="flex items-center gap-2 mt-1">
-              <span class="text-xs text-gray-500 dark:text-gray-400">${deal.stage || 'prospecting'}</span>
-              <span class="text-xs text-gray-400">•</span>
-              <span class="text-xs text-gray-500 dark:text-gray-400">${date}</span>
-            </div>
-          </div>
-          <div class="text-right ml-4">
-            <p class="font-semibold text-sm text-nfgblue dark:text-blue-400">${value}</p>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
-  
-  // Re-initialize icons
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-}
-
-// Update sales mode UI based on current state
-function updateSalesModeUI() {
-  const toggleBtn = document.getElementById('sales-mode-toggle');
-  const label = document.getElementById('sales-mode-label');
-  const widget = document.getElementById('sales-pipeline-widget');
-  
-  if (!toggleBtn || !label) return;
-  
-  const isEnabled = salesMode.isEnabled();
-  
-  // Update button appearance
-  if (isEnabled) {
-    toggleBtn.classList.remove('border-nfgray', 'bg-white', 'dark:bg-gray-800');
-    toggleBtn.classList.add('border-nfgblue', 'bg-nfgblue', 'text-white');
-    label.textContent = 'Sales Mode ON';
-    label.classList.add('text-white');
-    label.classList.remove('text-gray-700', 'dark:text-gray-300');
-  } else {
-    toggleBtn.classList.remove('border-nfgblue', 'bg-nfgblue', 'text-white');
-    toggleBtn.classList.add('border-nfgray', 'bg-white', 'dark:bg-gray-800');
-    label.textContent = 'Sales Mode';
-    label.classList.remove('text-white');
-    label.classList.add('text-gray-700', 'dark:text-gray-300');
-  }
-  
-  // Show/hide sales pipeline widget
-  if (widget) {
-    if (isEnabled) {
-      widget.classList.remove('hidden');
-      fetchSalesPipeline();
-    } else {
-      widget.classList.add('hidden');
-    }
-  }
-  
-  // Re-initialize icons
-  if (window.lucide) {
-    lucide.createIcons();
-  }
-}
 
 // Initialize dashboard
 async function initDashboard() {
@@ -804,23 +682,6 @@ async function initDashboard() {
   const sites = await fetchSites()
   renderSites(sites)
   initializeUI()
-  
-  // Initialize sales mode
-  updateSalesModeUI();
-  
-  // Attach sales mode toggle handler
-  const salesModeToggle = document.getElementById('sales-mode-toggle');
-  if (salesModeToggle) {
-    salesModeToggle.addEventListener('click', () => {
-      salesMode.toggle();
-      updateSalesModeUI();
-    });
-  }
-  
-  // Listen for sales mode changes
-  salesMode.onChanged(() => {
-    updateSalesModeUI();
-  });
   
   // Fetch and display dashboard statistics
   await fetchDashboardStats()
