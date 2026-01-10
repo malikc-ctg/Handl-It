@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NFG — Sales Portal</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+  
+  <!-- PWA Support -->
+  <link rel="manifest" href="/manifest.json">
+  <meta name="theme-color" content="#0D47A1">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="NFG">
+  <link rel="apple-touch-icon" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN + NFG theme -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] },
+          borderRadius: { xl: '12px' },
+          boxShadow: { nfg: '0 4px 14px rgba(13,71,161,0.06)' }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Custom Dropdown Styles -->
+  <link rel="stylesheet" href="./css/custom-dropdown.css">
+  
+  <!-- Mobile Menu Styles -->
+  <link rel="stylesheet" href="./css/mobile-menu.css">
+  
+  <!-- Notification System -->
+  <link rel="stylesheet" href="./css/notifications.css">
+  
+  <!-- Page Loader -->
+  <link rel="stylesheet" href="./css/loader.css">
+  
+  <!-- Dark Mode -->
+  <link rel="stylesheet" href="./css/dark-mode.css">
+  <script src="./js/dark-mode.js"></script>
+  
+  <!-- Notification Center -->
+  <link rel="stylesheet" href="./css/notification-center.css">
+  
+  <!-- Offline Sync -->
+  <script type="module" src="./js/offline-sync.js"></script>
+  <script type="module" src="./js/offline-indicator.js"></script>
+
+  <!-- Sales Portal Styles -->
+  <style>
+    .health-bar {
+      height: 4px;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+    .health-excellent { background: #10b981; }
+    .health-good { background: #3b82f6; }
+    .health-fair { background: #f59e0b; }
+    .health-poor { background: #ef4444; }
+    .timeline-item {
+      position: relative;
+      padding-left: 2rem;
+    }
+    .timeline-item::before {
+      content: '';
+      position: absolute;
+      left: 0.5rem;
+      top: 0;
+      bottom: -1rem;
+      width: 2px;
+      background: #E5E7EB;
+    }
+    .timeline-item:last-child::before {
+      display: none;
+    }
+    .single-scroll-container {
+      max-height: calc(100vh - 8rem);
+      overflow-y: auto;
+    }
+  </style>
+</head>
+
+<body class="font-inter bg-nfbg dark:bg-gray-900 min-h-screen flex text-nftext dark:text-gray-200">
+  <!-- Full-Page Loader -->
+  <div id="page-loader">
+    <div class="loader-logo">
+      <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU" alt="NFG">
+    </div>
+    <div class="banter-loader">
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+      <div class="banter-loader__box"></div>
+    </div>
+    <div class="loader-text">Loading Sales Portal...</div>
+    <div class="loader-text-subtitle">Please wait</div>
+  </div>
+
+  
+  <!-- ========== SIDEBAR ========== -->
+  <aside id="sidebar" class="w-64 shrink-0 bg-white dark:bg-gray-800 border-r border-nfgray hidden md:flex md:flex-col transition-all">
+    <div class="p-5 flex items-center justify-center">
+      <img 
+        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU" 
+        alt="NFG" 
+        class="h-32 w-auto"
+      />
+    </div>
+    <nav class="px-3 pb-4 flex-1 space-y-1">
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="dashboard.html">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> Overview
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="sites.html">
+        <i data-lucide="map-pin" class="w-4 h-4"></i> Sites
+      </a>
+      <a id="nav-bookings" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="bookings.html">
+        <i data-lucide="calendar" class="w-4 h-4"></i> Bookings
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="jobs.html">
+        <i data-lucide="clipboard-check" class="w-4 h-4"></i> Jobs
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="inventory.html">
+        <i data-lucide="package" class="w-4 h-4"></i> Inventory
+      </a>
+      <a id="nav-sales" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="sales.html">
+        <i data-lucide="trending-up" class="w-4 h-4"></i> Sales
+      </a>
+      <a id="nav-reports" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="reports.html">
+        <i data-lucide="file-chart-column" class="w-4 h-4"></i> Reports
+      </a>
+      <a id="nav-messages" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="messages.html">
+        <i data-lucide="message-circle" class="w-4 h-4"></i> Messages
+      </a>
+      <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight w-full text-left" href="settings.html">
+        <i data-lucide="settings" class="w-4 h-4"></i> Settings
+      </a>
+    </nav>
+    <div class="p-4 border-t border-nfgray dark:border-gray-700">
+      <button id="logout-btn" data-action="logout" class="w-full border border-nfgblue text-nfgblue dark:text-blue-400 hover:bg-nfglight rounded-xl py-2 font-medium">
+        Logout
+      </button>
+    </div>
+  </aside>
+
+  <!-- ========== MAIN ========== -->
+  <div class="flex-1 flex flex-col min-w-0">
+    <!-- TOPBAR -->
+    <header class="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
+      <div class="h-14 px-2 sm:px-4 md:px-6 flex items-center justify-between gap-1 sm:gap-2">
+        <div class="flex items-center gap-1 sm:gap-2 min-w-0 flex-1">
+          <button class="md:hidden p-1.5 sm:p-2 rounded-lg border border-nfgray text-nfgblue dark:text-blue-400 flex-shrink-0" data-action="toggle-sidebar" aria-label="Toggle sidebar">
+            <i data-lucide="menu" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+          </button>
+          <h1 id="page-title" class="text-nfgblue dark:text-blue-400 font-semibold text-sm sm:text-base truncate">Sales Portal</h1>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="back-to-queue-btn" class="hidden px-3 py-1.5 text-sm bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 rounded-lg hover:bg-nfgray dark:hover:bg-gray-600 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i> Back to Queue
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 overflow-hidden">
+      <!-- Deal Queue View -->
+      <div id="deal-queue-view" class="h-full overflow-y-auto p-4 md:p-6">
+        <!-- Performance Widgets (Managers/Admins) -->
+        <div id="performance-widgets" class="hidden mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Total Calls</span>
+              <i data-lucide="phone" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+            </div>
+            <p id="total-calls" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</span>
+              <i data-lucide="file-text" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+            </div>
+            <p id="total-quotes" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Deals Won</span>
+              <i data-lucide="trophy" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+            </div>
+            <p id="total-wins" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+        </div>
+
+        <!-- Header with Actions -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Deal Queue</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
+          </div>
+          <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Deal
+          </button>
+        </div>
+
+        <!-- Deal List -->
+        <div id="deals-list" class="space-y-4">
+          <!-- Deals will be rendered here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-16">
+          <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md mx-auto">
+            <i data-lucide="trending-up" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"></i>
+            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Deals Yet</h3>
+            <p class="text-nftext dark:text-gray-300 text-sm mb-6">Get started by creating your first deal from a site.</p>
+            <button id="create-first-deal-btn" class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-5 h-5"></i> Create Your First Deal
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Deal Detail View (Single-Scroll) -->
+      <div id="deal-detail-view" class="hidden h-full overflow-hidden">
+        <div class="single-scroll-container p-4 md:p-6">
+          <!-- Deal Header -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 mb-6 shadow-nfg">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <div class="flex-1">
+                <h2 id="deal-detail-name" class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-2">Deal Name</h2>
+                <p id="deal-detail-site" class="text-gray-500 dark:text-gray-400">Site Name</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span id="deal-detail-status" class="px-3 py-1 rounded-lg text-sm font-medium bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300">Active</span>
+                <span id="deal-detail-priority" class="px-3 py-1 rounded-lg text-sm font-medium bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300">High</span>
+              </div>
+            </div>
+            
+            <!-- Health Score -->
+            <div class="mb-4">
+              <div class="flex justify-between items-center mb-2">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Deal Health</span>
+                <span id="deal-health-score" class="text-sm font-semibold text-nfgblue dark:text-blue-400">50%</span>
+              </div>
+              <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                <div id="deal-health-bar" class="health-bar h-2 rounded-full" style="width: 50%"></div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex flex-wrap gap-2">
+              <button id="call-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="phone" class="w-4 h-4"></i> Call
+              </button>
+              <button id="text-deal-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="message-square" class="w-4 h-4"></i> Text
+              </button>
+              <button id="email-deal-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="mail" class="w-4 h-4"></i> Email
+              </button>
+              <button id="create-quote-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Create Quote
+              </button>
+              <button id="set-appointment-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4"></i> Set Appointment
+              </button>
+            </div>
+          </div>
+
+          <!-- Timeline Section -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 mb-6 shadow-nfg">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Timeline</h3>
+            <div id="timeline-container" class="space-y-4">
+              <!-- Timeline items will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Post-Call Next Action Panel -->
+          <div id="post-call-panel" class="hidden bg-nfglight dark:bg-gray-700 border border-nfgray dark:border-gray-600 rounded-xl p-6 mb-6">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Next Action</h3>
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Action</label>
+                <input type="text" id="next-action-input" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g., Follow up in 3 days">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date</label>
+                <input type="datetime-local" id="next-action-date-input" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+              </div>
+              <button id="save-next-action-btn" class="w-full px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+                Save Next Action
+              </button>
+            </div>
+          </div>
+
+          <!-- Follow-Up Sequences -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 mb-6 shadow-nfg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Follow-Up Sequences</h3>
+              <button id="assign-sequence-btn" class="px-3 py-1.5 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg transition">
+                Assign Sequence
+              </button>
+            </div>
+            <div id="sequences-container" class="space-y-3">
+              <!-- Sequences will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Quotes Section -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 mb-6 shadow-nfg">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Quotes</h3>
+              <button id="new-quote-btn" class="px-3 py-1.5 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg transition">
+                New Quote
+              </button>
+            </div>
+            <div id="quotes-container" class="space-y-3">
+              <!-- Quotes will be rendered here -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Create Deal Modal -->
+  <div id="create-deal-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create New Deal</h3>
+          <button id="close-create-deal-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <form id="create-deal-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Site</label>
+          <select id="deal-site-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+            <option value="">Select a site...</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+          <select id="deal-priority-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+            <option value="low">Low</option>
+            <option value="medium" selected>Medium</option>
+            <option value="high">High</option>
+            <option value="urgent">Urgent</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Estimated Value</label>
+          <input type="number" id="deal-value-input" step="0.01" min="0" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0.00">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+          <textarea id="deal-notes-input" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Add any notes..."></textarea>
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="cancel-create-deal" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+            Create Deal
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Quote Builder Modal -->
+  <div id="quote-builder-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create Quote</h3>
+          <button id="close-quote-builder-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <form id="quote-builder-form" class="p-6 space-y-6">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Template</label>
+          <select id="quote-template-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+            <option value="">Start from scratch</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quote Title</label>
+          <input type="text" id="quote-title-input" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g., Monthly Cleaning Service" required>
+        </div>
+        
+        <!-- Good/Better/Best Tiers -->
+        <div class="space-y-4">
+          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <h4 class="font-semibold text-green-600 dark:text-green-400 mb-3">Good</h4>
+            <div id="good-tier-items" class="space-y-3">
+              <!-- Line items will be added here -->
+            </div>
+            <button type="button" data-tier="good" class="add-line-item-btn mt-3 px-3 py-1.5 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
+              + Add Item
+            </button>
+          </div>
+          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <h4 class="font-semibold text-blue-600 dark:text-blue-400 mb-3">Better</h4>
+            <div id="better-tier-items" class="space-y-3">
+              <!-- Line items will be added here -->
+            </div>
+            <button type="button" data-tier="better" class="add-line-item-btn mt-3 px-3 py-1.5 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
+              + Add Item
+            </button>
+          </div>
+          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4">
+            <h4 class="font-semibold text-purple-600 dark:text-purple-400 mb-3">Best</h4>
+            <div id="best-tier-items" class="space-y-3">
+              <!-- Line items will be added here -->
+            </div>
+            <button type="button" data-tier="best" class="add-line-item-btn mt-3 px-3 py-1.5 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
+              + Add Item
+            </button>
+          </div>
+        </div>
+
+        <div class="flex justify-end items-center gap-4 pt-4 border-t border-nfgray dark:border-gray-700">
+          <div class="text-right">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
+            <p id="quote-total" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0.00</p>
+          </div>
+        </div>
+
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="cancel-quote-builder" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+            Cancel
+          </button>
+          <button type="button" id="save-draft-quote" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+            Save Draft
+          </button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+            Send Quote
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script type="module">
+    // Initialize environment
+    window.ENV = {
+      SUPABASE_URL: 'https://zqcbldgheimqrnqmbbed.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3MDM5NjIsImV4cCI6MjA3NjI3OTk2Mn0.UYlnTQeCjNLed6g9oNRLQIXD69OgzRrXupl3LXUvh4I'
+    };
+
+    // Import modules
+    import { supabase } from './js/supabase.js';
+    import { showNotification, toast } from './js/notifications.js';
+    import { hideLoader } from './js/loader.js';
+    import { initializeUI } from './js/ui.js';
+    import * as sales from './js/sales.js';
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (window.lucide) lucide.createIcons();
+      await sales.init();
+      hideLoader();
+      initializeUI();
+    });
+
+    // Make sales module available globally
+    window.sales = sales;
+  </script>
+  <script src="./js/auth.js"></script>
+</body>
+</html>
