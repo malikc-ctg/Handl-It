@@ -223,7 +223,7 @@
       <div class="flex-1 overflow-hidden">
         <!-- Dashboard Tab (Pipeline View) -->
         <div id="tab-dashboard" class="sales-tab-content h-full overflow-y-auto p-4 md:p-6">
-          <!-- Performance Widgets (Managers/Admins) -->
+        <!-- Performance Widgets (Managers/Admins) -->
           <div id="performance-widgets" class="hidden mb-6 grid grid-cols-1 md:grid-cols-4 gap-4">
             <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
               <div class="flex items-center justify-between mb-2">
@@ -232,28 +232,28 @@
               </div>
               <p id="total-deals" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
             </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-500 dark:text-gray-400">Total Calls</span>
-                <i data-lucide="phone" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              </div>
-              <p id="total-calls" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Total Calls</span>
+              <i data-lucide="phone" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
             </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</span>
-                <i data-lucide="file-text" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              </div>
-              <p id="total-quotes" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
-              <div class="flex items-center justify-between mb-2">
-                <span class="text-sm text-gray-500 dark:text-gray-400">Deals Won</span>
-                <i data-lucide="trophy" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
-              </div>
-              <p id="total-wins" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
-            </div>
+            <p id="total-calls" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
           </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</span>
+              <i data-lucide="file-text" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+            </div>
+            <p id="total-quotes" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm text-gray-500 dark:text-gray-400">Deals Won</span>
+              <i data-lucide="trophy" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+            </div>
+            <p id="total-wins" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+          </div>
+        </div>
 
           <!-- Sales Pipeline -->
           <div class="mb-6">
@@ -267,33 +267,33 @@
         <!-- Deals Tab -->
         <div id="tab-deals" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
           <!-- Deal Queue View -->
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Deal Queue</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
-            </div>
-            <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-              <i data-lucide="plus" class="w-4 h-4"></i> New Deal
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <div>
+            <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Deal Queue</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
+          </div>
+          <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i> New Deal
+          </button>
+        </div>
+
+        <!-- Deal List -->
+        <div id="deals-list" class="space-y-4">
+          <!-- Deals will be rendered here -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden text-center py-16">
+          <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md mx-auto">
+            <i data-lucide="trending-up" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"></i>
+            <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Deals Yet</h3>
+            <p class="text-nftext dark:text-gray-300 text-sm mb-6">Get started by creating your first deal from a site.</p>
+            <button id="create-first-deal-btn" class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="plus" class="w-5 h-5"></i> Create Your First Deal
             </button>
           </div>
-
-          <!-- Deal List -->
-          <div id="deals-list" class="space-y-4">
-            <!-- Deals will be rendered here -->
-          </div>
-
-          <!-- Empty State -->
-          <div id="empty-state" class="hidden text-center py-16">
-            <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray dark:border-gray-700 rounded-xl p-12 max-w-md mx-auto">
-              <i data-lucide="trending-up" class="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4"></i>
-              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Deals Yet</h3>
-              <p class="text-nftext dark:text-gray-300 text-sm mb-6">Get started by creating your first deal from a site.</p>
-              <button id="create-first-deal-btn" class="bg-nfgblue hover:bg-nfgdark text-white rounded-xl px-6 py-3 font-medium transition inline-flex items-center gap-2">
-                <i data-lucide="plus" class="w-5 h-5"></i> Create Your First Deal
-              </button>
-            </div>
-          </div>
         </div>
+      </div>
 
         <!-- Quotes Tab -->
         <div id="tab-quotes" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
@@ -618,11 +618,51 @@
     };
 
     // Import modules
-    import { supabase } from './js/supabase.js';
-    import { showNotification, toast } from './js/notifications.js';
-    import { hideLoader } from './js/loader.js';
-    import { initializeUI } from './js/ui.js';
-    import * as sales from './js/sales.js';
+    console.log('[Sales Dashboard] Starting module imports...');
+    let supabase, showNotification, toast, hideLoader, initializeUI, sales;
+    
+    try {
+      const supabaseModule = await import('./js/supabase.js');
+      supabase = supabaseModule.supabase;
+      console.log('[Sales Dashboard] ✅ supabase module loaded');
+      
+      const notificationsModule = await import('./js/notifications.js');
+      toast = notificationsModule.toast;
+      showNotification = notificationsModule.showNotification;
+      console.log('[Sales Dashboard] ✅ notifications module loaded');
+      
+      const loaderModule = await import('./js/loader.js');
+      hideLoader = loaderModule.hideLoader;
+      console.log('[Sales Dashboard] ✅ loader module loaded');
+      
+      const uiModule = await import('./js/ui.js');
+      initializeUI = uiModule.initializeUI;
+      console.log('[Sales Dashboard] ✅ ui module loaded');
+      
+      sales = await import('./js/sales.js');
+      console.log('[Sales Dashboard] ✅ sales module loaded');
+      
+      console.log('[Sales Dashboard] ✅ All modules loaded successfully');
+    } catch (error) {
+      console.error('[Sales Dashboard] ❌ Error loading modules:', error);
+      // Show error immediately if modules can't load
+      document.body.innerHTML = `
+        <div class="flex items-center justify-center min-h-screen p-6 bg-gray-50 dark:bg-gray-900">
+          <div class="bg-white dark:bg-gray-800 border border-red-300 dark:border-red-700 rounded-xl p-8 max-w-md text-center shadow-xl">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 mx-auto text-red-500 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Failed to Load</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-4">Could not load required modules. Please check your browser console for details.</p>
+            <pre class="text-xs bg-gray-100 dark:bg-gray-700 p-3 rounded mb-4 text-left overflow-auto max-h-32">${error.message}\n${error.stack || ''}</pre>
+            <button onclick="window.location.reload()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+              Reload Page
+            </button>
+          </div>
+        </div>
+      `;
+      throw error; // Stop execution
+    }
 
     // Tab switching functionality
     function initTabs() {
@@ -982,23 +1022,23 @@
     document.getElementById('close-deal-detail')?.addEventListener('click', () => {
       document.getElementById('deal-detail-view')?.classList.add('hidden');
     });
-    
+
     // Initialize
     document.addEventListener('DOMContentLoaded', async () => {
       try {
-        if (window.lucide) lucide.createIcons();
+      if (window.lucide) lucide.createIcons();
         initTabs();
         
         // Initialize sales module
         if (sales && typeof sales.init === 'function') {
-          await sales.init();
+      await sales.init();
         }
         
-        hideLoader();
+      hideLoader();
         
         // Initialize UI
         if (typeof initializeUI === 'function') {
-          initializeUI();
+      initializeUI();
         }
         
         // Load dashboard tab by default
