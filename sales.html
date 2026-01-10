@@ -949,7 +949,22 @@
           .order('created_at', { ascending: false })
           .limit(50);
         
-        if (error) throw error;
+        if (error) {
+          // Handle permission denied or table doesn't exist
+          if (error.code === '42501' || error.message?.includes('permission denied')) {
+            console.warn('[Sales] Sequences table not accessible - may need RLS policies or table may not exist');
+            sequencesList.innerHTML = `
+              <div class="text-center py-12">
+                <i data-lucide="repeat" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+                <p class="text-gray-500 mb-2">Sequences feature not available</p>
+                <p class="text-sm text-gray-400">This feature requires database setup</p>
+              </div>
+            `;
+            if (window.lucide) lucide.createIcons();
+            return;
+          }
+          throw error;
+        }
         
         if (!sequences || sequences.length === 0) {
           sequencesList.innerHTML = `
@@ -980,7 +995,14 @@
         if (window.lucide) lucide.createIcons();
       } catch (error) {
         console.error('Error loading sequences:', error);
-        sequencesList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load sequences</div>`;
+        sequencesList.innerHTML = `
+          <div class="text-center py-12">
+            <i data-lucide="repeat" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+            <p class="text-gray-500 mb-2">Failed to load sequences</p>
+            <p class="text-sm text-gray-400">${error.message || 'Unknown error'}</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
       }
     }
     
