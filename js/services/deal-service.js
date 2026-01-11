@@ -386,25 +386,26 @@ function getNextActionSuggestions(deal, timeline) {
         });
       }
       break;
-    }
     
-    case 'proposal': {
+    case 'proposal':
       // Check if quote exists and is sent
-      const sentQuote = timeline.find(t => t.type === 'quote' && t.action === 'sent');
-      if (!sentQuote) {
-        actions.push({
-          type: 'quote',
-          label: 'Send quote',
-          priority: 'high',
-          allowed: true
-        });
-      } else if (daysSinceTouch > 2) {
-        actions.push({
-          type: 'message',
-          label: 'Follow up on quote',
-          priority: 'high',
-          allowed: true
-        });
+      {
+        const sentQuote = timeline.find(t => t.type === 'quote' && t.action === 'sent');
+        if (!sentQuote) {
+          actions.push({
+            type: 'quote',
+            label: 'Send quote',
+            priority: 'high',
+            allowed: true
+          });
+        } else if (daysSinceTouch > 2) {
+          actions.push({
+            type: 'message',
+            label: 'Follow up on quote',
+            priority: 'high',
+            allowed: true
+          });
+        }
       }
       break;
     
