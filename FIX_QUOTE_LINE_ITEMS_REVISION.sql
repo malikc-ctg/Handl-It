@@ -21,48 +21,26 @@ BEGIN
     AND column_name = 'display_order'
   ) THEN
     ALTER TABLE quote_line_items ADD COLUMN display_order INTEGER DEFAULT 0;
-    -- Update existing rows to have display_order based on created_at or id
+    -- Update existing rows to have display_order = 0
     UPDATE quote_line_items SET display_order = 0 WHERE display_order IS NULL;
     RAISE NOTICE 'Added display_order column to quote_line_items';
   END IF;
 END $$;
 
--- Recreate unique constraint if needed (only after columns exist)
+-- Drop and recreate unique constraint (only after columns exist)
 DO $$
 BEGIN
-  -- Drop old constraint if it exists (with any name variations)
+  -- Drop existing constraint if it exists (try all possible names)
   IF EXISTS (
     SELECT 1 FROM pg_constraint 
-    WHERE conname = 'quote_line_items_quote_id_revision_number_display_order_key'
+    WHERE conrelid = 'quote_line_items'::regclass
+    AND conname = 'quote_line_items_quote_id_revision_number_display_order_key'
   ) THEN
     ALTER TABLE quote_line_items DROP CONSTRAINT quote_line_items_quote_id_revision_number_display_order_key;
+    RAISE NOTICE 'Dropped old unique constraint';
   END IF;
   
-  -- Drop constraint if it exists without display_order (old version)
-  IF EXISTS (
-    SELECT 1 FROM pg_constraint 
-    WHERE conname LIKE 'quote_line_items_quote_id%key'
-    AND conname != 'quote_line_items_quote_id_revision_number_display_order_key'
-  ) THEN
-    -- Get the constraint name
-    DECLARE
-      constraint_name TEXT;
-    BEGIN
-      SELECT conname INTO constraint_name
-      FROM pg_constraint 
-      WHERE conrelid = 'quote_line_items'::regclass
-      AND contype = 'u'
-      AND conname LIKE 'quote_line_items_quote_id%key'
-      AND conname != 'quote_line_items_quote_id_revision_number_display_order_key'
-      LIMIT 1;
-      
-      IF constraint_name IS NOT NULL THEN
-        EXECUTE format('ALTER TABLE quote_line_items DROP CONSTRAINT %I', constraint_name);
-      END IF;
-    END;
-  END IF;
-  
-  -- Add new constraint (only if both columns exist now)
+  -- Only create constraint if both columns exist
   IF EXISTS (
     SELECT 1 FROM information_schema.columns 
     WHERE table_name = 'quote_line_items' 
@@ -72,9 +50,11 @@ BEGIN
     WHERE table_name = 'quote_line_items' 
     AND column_name = 'display_order'
   ) THEN
+    -- Create the unique constraint
     IF NOT EXISTS (
       SELECT 1 FROM pg_constraint 
-      WHERE conname = 'quote_line_items_quote_id_revision_number_display_order_key'
+      WHERE conrelid = 'quote_line_items'::regclass
+      AND conname = 'quote_line_items_quote_id_revision_number_display_order_key'
     ) THEN
       ALTER TABLE quote_line_items ADD CONSTRAINT quote_line_items_quote_id_revision_number_display_order_key 
         UNIQUE(quote_id, revision_number, display_order);
