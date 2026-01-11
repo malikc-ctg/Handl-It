@@ -1626,14 +1626,38 @@
       URL.revokeObjectURL(url)
     })
 
-    // Clear data
-    document.getElementById('clear-data-btn')?.addEventListener('click', async () => {
-      // First, prompt for password (using browser prompt for password input)
-      const password = prompt('Enter password to clear all system data:');
-      
-      if (!password) {
-        return; // User cancelled
+    // Clear data modal handlers
+    const clearDataModal = document.getElementById('clear-data-modal');
+    const closeClearDataModal = document.getElementById('close-clear-data-modal');
+    const cancelClearData = document.getElementById('cancel-clear-data');
+    
+    function openClearDataModal() {
+      if (clearDataModal) {
+        clearDataModal.classList.remove('hidden');
+        clearDataModal.classList.add('flex');
+        lucide.createIcons();
       }
+    }
+    
+    function closeClearDataModalFn() {
+      if (clearDataModal) {
+        clearDataModal.classList.add('hidden');
+        clearDataModal.classList.remove('flex');
+      }
+    }
+    
+    closeClearDataModal?.addEventListener('click', closeClearDataModalFn);
+    cancelClearData?.addEventListener('click', closeClearDataModalFn);
+    clearDataModal?.addEventListener('click', (e) => {
+      if (e.target === clearDataModal) {
+        closeClearDataModalFn();
+      }
+    });
+    
+    // Clear data button - password prompt then show modal
+    document.getElementById('clear-data-btn')?.addEventListener('click', async () => {
+      // First, prompt for password
+      const password = prompt('Enter password to clear system data:');
       
       if (!password) {
         return; // User cancelled
@@ -1644,9 +1668,30 @@
         return;
       }
       
-      // Double confirmation after password
+      // Password correct, show selection modal
+      openClearDataModal();
+    });
+    
+    // Confirm clear data button
+    document.getElementById('confirm-clear-data')?.addEventListener('click', async () => {
+      // Get selected checkboxes
+      const clearSites = document.getElementById('clear-sites')?.checked || false;
+      const clearJobs = document.getElementById('clear-jobs')?.checked || false;
+      const clearBookings = document.getElementById('clear-bookings')?.checked || false;
+      const clearInventory = document.getElementById('clear-inventory')?.checked || false;
+      const clearRoutes = document.getElementById('clear-routes')?.checked || false;
+      const clearNotifications = document.getElementById('clear-notifications')?.checked || false;
+      const clearLocalStorage = document.getElementById('clear-local-storage')?.checked || false;
+      
+      // Check if at least one item is selected
+      if (!clearSites && !clearJobs && !clearBookings && !clearInventory && !clearRoutes && !clearNotifications && !clearLocalStorage) {
+        toast.error('Please select at least one item to clear.', 'No Selection');
+        return;
+      }
+      
+      // Final confirmation
       const confirmed = await showConfirm(
-        '⚠️ WARNING: This will permanently delete all your data from the system. This action cannot be undone.\n\nAre you absolutely sure you want to continue?',
+        '⚠️ WARNING: This will permanently delete the selected data. This action cannot be undone.\n\nAre you absolutely sure you want to continue?',
         'Final Confirmation',
         'error'
       );
@@ -1663,69 +1708,188 @@
         }
         
         // Show loading state
-        const clearBtn = document.getElementById('clear-data-btn');
-        const originalHTML = clearBtn.innerHTML;
-        clearBtn.disabled = true;
-        clearBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> Clearing...';
+        const confirmBtn = document.getElementById('confirm-clear-data');
+        const originalHTML = confirmBtn.innerHTML;
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> Clearing...';
         if (window.lucide) lucide.createIcons();
         
-        // Clear user-specific data from database tables
-        const tablesToClear = [
-          { table: 'notification_preferences', userIdColumn: 'user_id' },
-          { table: 'user_settings', userIdColumn: 'user_id' },
-        ];
-        
         let clearedCount = 0;
-        for (const { table, userIdColumn } of tablesToClear) {
+        const errors = [];
+        
+        // Clear selected data
+        if (clearSites) {
           try {
-            const { error } = await supabase
-              .from(table)
-              .delete()
-              .eq(userIdColumn, user.id);
+            // Clear site assignments first (foreign key constraint)
+            try {
+              const { error: assignError } = await supabase
+                .from('worker_site_assignments')
+                .delete()
+                .neq('id', '00000000-0000-0000-0000-000000000000');
+              if (assignError && assignError.code !== '42P01') {
+                console.warn('Error clearing site assignments:', assignError);
+              }
+            } catch (e) {
+              // Ignore if table doesn't exist
+            }
             
-            if (error && error.code !== '42P01') { // Ignore table doesn't exist errors (PostgreSQL)
-              console.warn(`Error clearing ${table}:`, error);
+            // Then clear sites - use a filter that matches all rows
+            const { error: sitesError } = await supabase
+              .from('sites')
+              .delete()
+              .gte('id', 0);
+            
+            if (sitesError && sitesError.code !== '42P01') {
+              errors.push(`Sites: ${sitesError.message}`);
             } else {
               clearedCount++;
             }
           } catch (err) {
-            console.warn(`Error clearing ${table}:`, err);
+            errors.push(`Sites: ${err.message}`);
           }
         }
         
-        // Clear localStorage
-        localStorage.clear();
-        
-        // Clear sessionStorage (except sales mode if set)
-        const salesMode = sessionStorage.getItem('isSalesMode');
-        sessionStorage.clear();
-        if (salesMode) {
-          sessionStorage.setItem('isSalesMode', salesMode);
+        if (clearJobs) {
+          try {
+            // Clear job-related tables first (foreign keys)
+            const jobTables = ['job_tasks', 'job_employees', 'job_photos'];
+            for (const table of jobTables) {
+              try {
+                await supabase.from(table).delete().neq('id', '');
+              } catch (e) {
+                // Table might not exist, ignore
+                console.warn(`Table ${table} might not exist or error:`, e);
+              }
+            }
+            
+            // Then clear jobs - UUIDs are always != empty string
+            const { error: jobsError } = await supabase
+              .from('jobs')
+              .delete()
+              .neq('id', '');
+            
+            if (jobsError && jobsError.code !== '42P01') {
+              errors.push(`Jobs: ${jobsError.message}`);
+            } else {
+              clearedCount++;
+            }
+          } catch (err) {
+            errors.push(`Jobs: ${err.message}`);
+          }
         }
         
-        toast.success(`Data cleared successfully. ${clearedCount} table(s) cleared.`, 'Success');
+        if (clearBookings) {
+          try {
+            const { error: bookingsError } = await supabase
+              .from('bookings')
+              .delete()
+              .neq('id', '');
+            
+            if (bookingsError && bookingsError.code !== '42P01') {
+              errors.push(`Bookings: ${bookingsError.message}`);
+            } else {
+              clearedCount++;
+            }
+          } catch (err) {
+            errors.push(`Bookings: ${err.message}`);
+          }
+        }
         
-        // Restore button temporarily
-        clearBtn.disabled = false;
-        clearBtn.innerHTML = originalHTML;
+        if (clearInventory) {
+          try {
+            const inventoryTables = ['inventory_items', 'inventory_transactions', 'inventory_categories'];
+            for (const table of inventoryTables) {
+              try {
+                await supabase.from(table).delete().neq('id', '');
+              } catch (e) {
+                // Table might not exist, ignore
+                console.warn(`Table ${table} might not exist or error:`, e);
+              }
+            }
+            clearedCount++;
+          } catch (err) {
+            errors.push(`Inventory: ${err.message}`);
+          }
+        }
+        
+        if (clearRoutes) {
+          try {
+            const routeTables = ['routes', 'territories', 'door_targets', 'door_visits', 'route_locations', 'leads', 'appointments', 'follow_up_tasks', 'deals', 'quotes', 'calls', 'connections', 'wins'];
+            for (const table of routeTables) {
+              try {
+                await supabase.from(table).delete().neq('id', '');
+              } catch (e) {
+                // Table might not exist, ignore
+                console.warn(`Table ${table} might not exist or error:`, e);
+              }
+            }
+            clearedCount++;
+          } catch (err) {
+            errors.push(`Routes/Sales: ${err.message}`);
+          }
+        }
+        
+        if (clearNotifications) {
+          try {
+            const { error: notifError } = await supabase
+              .from('notification_preferences')
+              .delete()
+              .neq('user_id', '00000000-0000-0000-0000-000000000000');
+            
+            if (notifError && notifError.code !== '42P01') {
+              errors.push(`Notifications: ${notifError.message}`);
+            } else {
+              clearedCount++;
+            }
+          } catch (err) {
+            errors.push(`Notifications: ${err.message}`);
+          }
+        }
+        
+        if (clearLocalStorage) {
+          localStorage.clear();
+          const salesMode = sessionStorage.getItem('isSalesMode');
+          sessionStorage.clear();
+          if (salesMode) {
+            sessionStorage.setItem('isSalesMode', salesMode);
+          }
+          clearedCount++;
+        }
+        
+        // Close modal
+        closeClearDataModalFn();
+        
+        // Show results
+        if (errors.length > 0) {
+          toast.warning(`Cleared ${clearedCount} item(s), but some errors occurred. Check console for details.`, 'Partial Success');
+          console.error('Clear data errors:', errors);
+        } else {
+          toast.success(`Successfully cleared ${clearedCount} item(s).`, 'Success');
+        }
+        
+        // Restore button
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = originalHTML;
         if (window.lucide) lucide.createIcons();
         
         // Reload page after a short delay
         setTimeout(() => {
           window.location.reload();
-        }, 1500);
+        }, 2000);
         
       } catch (error) {
         console.error('Error clearing data:', error);
         toast.error('Failed to clear data: ' + (error.message || 'Unknown error'), 'Error');
         
         // Restore button
-        const clearBtn = document.getElementById('clear-data-btn');
-        clearBtn.disabled = false;
-        clearBtn.innerHTML = originalHTML;
-        if (window.lucide) lucide.createIcons();
+        const confirmBtn = document.getElementById('confirm-clear-data');
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = 'Clear Selected Data';
+          if (window.lucide) lucide.createIcons();
+        }
       }
-    })
+    });
 
     // Logout
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
