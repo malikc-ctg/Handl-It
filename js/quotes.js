@@ -216,18 +216,26 @@ export async function loadQuoteDetail(quoteId) {
 // ==========================================
 export async function createQuote(formData) {
   try {
+    // Build insert object, conditionally include cleaning_metrics
+    const insertData = {
+      account_id: formData.account_id ? parseInt(formData.account_id) : null,
+      primary_contact_id: formData.primary_contact_id || null,
+      deal_id: formData.deal_id || null,
+      owner_user_id: currentUser.id,
+      quote_type: formData.quote_type || 'walkthrough_required',
+      status: 'draft',
+      active_revision_number: 1
+    };
+    
+    // Only include cleaning_metrics if it exists and has data
+    // Note: This column must exist in the database (run ADD_CLEANING_QUOTE_FIELDS.sql)
+    if (formData.cleaning_metrics && Object.keys(formData.cleaning_metrics).length > 0) {
+      insertData.cleaning_metrics = formData.cleaning_metrics;
+    }
+    
     const { data, error } = await supabase
       .from('quotes')
-      .insert({
-        account_id: formData.account_id ? parseInt(formData.account_id) : null,
-        primary_contact_id: formData.primary_contact_id || null,
-        deal_id: formData.deal_id || null,
-        owner_user_id: currentUser.id,
-        quote_type: formData.quote_type || 'walkthrough_required',
-        status: 'draft',
-        active_revision_number: 1,
-        cleaning_metrics: formData.cleaning_metrics || null
-      })
+      .insert(insertData)
       .select()
       .single();
 
