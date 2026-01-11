@@ -75,7 +75,7 @@ async function loadDeals() {
   try {
     const { data, error } = await supabase
       .from('deals')
-      .select('id, site_id, stage, assigned_to')
+      .select('id, stage, assigned_to')
       .order('created_at', { ascending: false });
     if (error) throw error;
     deals = data || [];
