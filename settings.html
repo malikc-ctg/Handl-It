@@ -1846,30 +1846,32 @@
             let reportsCleared = 0;
             for (const table of reportTables) {
               try {
-                // Try to delete all rows - use a filter that matches all rows
-                // For UUID tables, use .neq('id', '00000000-0000-0000-0000-000000000000')
-                // For other types, try different approaches
-                const { error } = await supabase
+                // Fetch all IDs first, then delete them
+                const { data: rows, error: fetchError } = await supabase
+                  .from(table)
+                  .select('id')
+                  .limit(10000); // Limit to prevent issues with very large tables
+                
+                if (fetchError) {
+                  console.warn(`Error fetching ${table}:`, fetchError);
+                  continue;
+                }
+                
+                if (!rows || rows.length === 0) {
+                  // Table is already empty
+                  reportsCleared++;
+                  continue;
+                }
+                
+                // Delete rows by ID (batch delete)
+                const ids = rows.map(row => row.id);
+                const { error: deleteError } = await supabase
                   .from(table)
                   .delete()
-                  .neq('id', '00000000-0000-0000-0000-000000000000');
+                  .in('id', ids);
                 
-                if (error) {
-                  // If that fails, try a different approach - delete with gte filter for numeric IDs
-                  try {
-                    const { error: error2 } = await supabase
-                      .from(table)
-                      .delete()
-                      .gte('id', 0);
-                    
-                    if (error2) {
-                      console.warn(`Error clearing ${table}:`, error2);
-                    } else {
-                      reportsCleared++;
-                    }
-                  } catch (e2) {
-                    console.warn(`Error clearing ${table} (second attempt):`, e2);
-                  }
+                if (deleteError) {
+                  console.warn(`Error deleting from ${table}:`, deleteError);
                 } else {
                   reportsCleared++;
                 }
