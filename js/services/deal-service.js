@@ -386,6 +386,7 @@ function getNextActionSuggestions(deal, timeline) {
         });
       }
       break;
+    }
     
     case 'proposal': {
       // Check if quote exists and is sent

@@ -184,8 +184,8 @@ export async function linkCallToSite(callData) {
  * @param {object} options - Additional options
  * @returns {string} - Deep link URL or tel: link
  */
-export function generateClickToCallLink(phoneNumber, options = {}) {
-  // const { siteId, siteName } = options // Unused for now
+export function generateClickToCallLink(phoneNumber, _options = {}) {
+  // const { siteId, siteName } = _options // Unused for now
   
   // Normalize phone number
   const normalized = normalizePhoneNumber(phoneNumber)
