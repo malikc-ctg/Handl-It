@@ -401,6 +401,7 @@ async function executeStepAction(step, deal) {
       if (error) throw error;
       
       return { type: 'message', message_id: message.id };
+    }
     
     case 'task':
       // TODO: Create task/reminder
