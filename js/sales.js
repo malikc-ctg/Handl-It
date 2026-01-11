@@ -1089,8 +1089,8 @@ function closeCreateDealModal() {
 
 function closeQuoteBuilderModal() {
   document.getElementById('quote-builder-modal').classList.add('hidden');
-  document.getElementById('quote-builder-form').reset();
-  quoteLineItems = { good: [], better: [], best: [] };
+  // Note: The new quote wizard uses closeWizard() from quote-wizard.js instead
+  // This function is kept for backward compatibility but the wizard handles its own cleanup
 }
 
 // ==========================================
