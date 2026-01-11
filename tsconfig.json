@@ -13,7 +13,6 @@
     "moduleResolution": "node",
     "resolveJsonModule": true
   },
-  "include": ["js/**/*", "js/global.d.ts"],
-  "exclude": ["node_modules", "tests"],
-  "typeRoots": ["./node_modules/@types"]
+  "include": ["js/**/*"],
+  "exclude": ["node_modules", "tests"]
 }

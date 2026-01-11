@@ -103,10 +103,6 @@ async function loadContacts() {
 // ==========================================
 export async function loadQuotes(filters = {}) {
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:104',message:'loadQuotes called',data:{filters},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-    
     let query = supabase
       .from('quotes')
       .select(`
@@ -126,19 +122,7 @@ export async function loadQuotes(filters = {}) {
       query = query.eq('owner_user_id', filters.owner_user_id);
     }
 
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:125',message:'About to execute query',data:{hasFilters:!!filters.status||!!filters.quote_type||!!filters.owner_user_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    // #endregion
-
     const { data, error } = await query;
-    
-    // #region agent log
-    if (error) {
-      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:131',message:'Query error',data:{errorCode:error.code,errorMessage:error.message,errorHint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    } else {
-      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:133',message:'Query successful',data:{quoteCount:data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    }
-    // #endregion
     
     if (error) throw error;
 
@@ -233,10 +217,6 @@ export async function loadQuoteDetail(quoteId) {
 // ==========================================
 export async function createQuote(formData) {
   try {
-    // #region agent log
-    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:217',message:'createQuote called',data:{formDataKeys:Object.keys(formData||{}),hasCleaningMetrics:!!formData?.cleaning_metrics},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    // #endregion
-    
     // Build insert object, conditionally include cleaning_metrics
     const insertData = {
       account_id: formData.account_id ? parseInt(formData.account_id) : null,
@@ -267,17 +247,9 @@ export async function createQuote(formData) {
       .from('quotes')
       .insert(insertData)
       .select()
-      .single();
-
-    // #region agent log
-    if (error) {
-      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:245',message:'Quote insert error',data:{errorCode:error.code,errorMessage:error.message,errorHint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-    } else {
-      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:247',message:'Quote inserted successfully',data:{quoteId:data?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
-    }
-    // #endregion
-
-    if (error) throw error;
+              .single();
+        
+            if (error) throw error;
 
     // Create initial draft revision
     await createRevision(data.id, 1, {
