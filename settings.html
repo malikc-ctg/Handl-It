@@ -1688,11 +1688,12 @@
       const clearBookings = document.getElementById('clear-bookings')?.checked || false;
       const clearInventory = document.getElementById('clear-inventory')?.checked || false;
       const clearRoutes = document.getElementById('clear-routes')?.checked || false;
+      const clearReports = document.getElementById('clear-reports')?.checked || false;
       const clearNotifications = document.getElementById('clear-notifications')?.checked || false;
       const clearLocalStorage = document.getElementById('clear-local-storage')?.checked || false;
       
       // Check if at least one item is selected
-      if (!clearSites && !clearJobs && !clearBookings && !clearInventory && !clearRoutes && !clearNotifications && !clearLocalStorage) {
+      if (!clearSites && !clearJobs && !clearBookings && !clearInventory && !clearRoutes && !clearReports && !clearNotifications && !clearLocalStorage) {
         toast.error('Please select at least one item to clear.', 'No Selection');
         return;
       }
