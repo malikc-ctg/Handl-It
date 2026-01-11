@@ -111,8 +111,8 @@ export async function loadQuotes(filters = {}) {
       .from('quotes')
       .select(`
         *,
-        sites:account_id(id, name, address),
-        deals:deal_id(id, stage)
+        account_id:sites(id, name, address),
+        deal_id:deals(id, stage)
       `)
       .order('updated_at', { ascending: false });
 
@@ -161,8 +161,8 @@ export async function loadQuoteDetail(quoteId) {
       .from('quotes')
       .select(`
         *,
-        sites:account_id(id, name, address, contact_email, contact_phone),
-        deals:deal_id(id, stage)
+        account_id:sites(id, name, address, contact_email, contact_phone),
+        deal_id:deals(id, stage)
       `)
       .eq('id', quoteId)
       .single();
@@ -527,8 +527,8 @@ export async function sendRevision(quoteId, revisionNumber, emails, expiryDays =
       .from('quotes')
       .select(`
         *,
-        sites:account_id(id, name),
-        contacts:primary_contact_id(id, full_name)
+        account_id:sites(id, name),
+        primary_contact_id:contacts(id, full_name)
       `)
       .eq('id', quoteId)
       .single();
@@ -544,8 +544,8 @@ export async function sendRevision(quoteId, revisionNumber, emails, expiryDays =
           publicToken,
           quoteType: quote?.quote_type,
           revisionType: revision.revision_type,
-          siteName: quote?.sites?.name || null,
-          contactName: quote?.contacts?.full_name || null,
+          siteName: quote?.account_id?.name || null,
+          contactName: quote?.primary_contact_id?.full_name || null,
         },
       });
 
@@ -944,7 +944,7 @@ export async function getRevisionByToken(publicToken) {
           primary_contact_id,
           quote_type,
           status,
-          sites:account_id(id, name, address, contact_email, contact_phone)
+          account_id:sites(id, name, address, contact_email, contact_phone)
         )
       `)
       .eq('public_token', publicToken)
