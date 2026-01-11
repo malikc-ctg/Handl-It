@@ -40,7 +40,7 @@ export async function openQuoteDetail(quoteId) {
 // Render quote detail
 function renderQuoteDetail(quote) {
   // Header
-  const site = quote.sites;
+  const site = quote.account_id;
   const titleEl = document.getElementById('quote-detail-title');
   const subtitleEl = document.getElementById('quote-detail-subtitle');
   

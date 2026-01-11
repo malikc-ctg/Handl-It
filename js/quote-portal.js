@@ -73,7 +73,7 @@ function renderWalkthroughProposal(revision) {
   view.classList.remove('hidden');
 
   const quote = revision.quotes;
-  const site = quote.sites;
+  const site = quote.account_id;
 
   // Account info
   document.getElementById('proposal-account-info').innerHTML = `
@@ -133,7 +133,7 @@ function renderFinalQuote(revision) {
   view.classList.remove('hidden');
 
   const quote = revision.quotes;
-  const site = quote.sites;
+  const site = quote.account_id;
 
   // Account info
   document.getElementById('final-account-info').innerHTML = `
