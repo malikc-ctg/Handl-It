@@ -516,139 +516,154 @@
             </div>
           </div>
           
-          <!-- General Preferences -->
-          <div class="mb-6 pb-4 border-b border-nfgray dark:border-gray-700">
-            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">General Settings</h4>
-            <div class="space-y-4">
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Email Notifications</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Receive notifications via email</p>
-                </div>
-                <input type="checkbox" id="notif-email-enabled" class="toggle-checkbox" data-pref="email_enabled">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">In-App Notifications</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Show notifications in the app</p>
-                </div>
-                <input type="checkbox" id="notif-in-app-enabled" class="toggle-checkbox" data-pref="in_app_enabled">
-              </label>
-              
-              <div class="p-4 bg-nfglight/40 dark:bg-gray-700/40 rounded-xl border border-nfgblue/20 dark:border-blue-900/30">
-                <div class="flex items-start gap-3">
-                  <div class="w-9 h-9 rounded-full bg-nfgblue/10 text-nfgblue dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center">
-                    <i data-lucide="bell" class="w-4 h-4"></i>
+          <!-- Compact Dropdown Style -->
+          <div class="space-y-3">
+            <!-- General Settings Dropdown -->
+            <div class="notification-category">
+              <button type="button" class="notification-category-toggle w-full flex items-center justify-between p-3 bg-nfglight dark:bg-gray-700 rounded-lg hover:bg-nfgray dark:hover:bg-gray-600 transition" data-category="general">
+                <span class="font-medium text-nfgblue dark:text-blue-400">General Settings</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+              </button>
+              <div class="notification-category-content hidden mt-2 space-y-3 pl-4">
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Email Notifications</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Receive notifications via email</p>
                   </div>
-                  <div class="flex-1">
-                    <div class="flex items-center gap-2 mb-1">
-                      <span class="font-medium">Push Notifications</span>
-                      <span id="push-permission-badge" class="text-xs px-2 py-0.5 rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"></span>
+                  <input type="checkbox" id="notif-email-enabled" class="toggle-checkbox" data-pref="email_enabled">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">In-App Notifications</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Show notifications in the app</p>
+                  </div>
+                  <input type="checkbox" id="notif-in-app-enabled" class="toggle-checkbox" data-pref="in_app_enabled">
+                </label>
+                
+                <div class="p-3 bg-nfglight/40 dark:bg-gray-700/40 rounded-lg border border-nfgblue/20 dark:border-blue-900/30">
+                  <div class="flex items-start gap-2">
+                    <div class="w-8 h-8 rounded-full bg-nfgblue/10 text-nfgblue dark:text-blue-400 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                      <i data-lucide="bell" class="w-3 h-3"></i>
                     </div>
-                    <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                      Receive instant alerts even when the app is closed. Browser permission required.
-                    </p>
-                    <div class="flex items-center gap-3 flex-wrap">
-                      <button id="settings-toggle-push-btn" class="px-4 py-2 text-sm font-medium rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-600 transition">
-                        Loading...
-                      </button>
-                      <span id="settings-push-status" class="text-xs text-gray-500 dark:text-gray-400"></span>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-2 mb-1">
+                        <span class="font-medium text-sm">Push Notifications</span>
+                        <span id="push-permission-badge" class="text-xs px-1.5 py-0.5 rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300"></span>
+                      </div>
+                      <p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                        Receive instant alerts even when the app is closed
+                      </p>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <button id="settings-toggle-push-btn" class="px-3 py-1.5 text-xs font-medium rounded-lg border border-nfgblue text-nfgblue hover:bg-nfglight dark:text-blue-400 dark:border-blue-400 dark:hover:bg-gray-600 transition">
+                          Loading...
+                        </button>
+                        <span id="settings-push-status" class="text-xs text-gray-500 dark:text-gray-400"></span>
+                      </div>
+                      <input type="hidden" id="notif-push-enabled" value="true">
                     </div>
-                    <input type="hidden" id="notif-push-enabled" value="true">
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          
-          <!-- Job Notifications -->
-          <div class="mb-6 pb-4 border-b border-nfgray dark:border-gray-700">
-            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Job Notifications</h4>
-            <div class="space-y-4">
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Job Assigned</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When you're assigned to a job</p>
-                </div>
-                <input type="checkbox" id="notif-job-assigned" class="toggle-checkbox" data-pref="job_assigned">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Job Completed</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When a job you're watching is completed</p>
-                </div>
-                <input type="checkbox" id="notif-job-completed" class="toggle-checkbox" data-pref="job_completed">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Job Updated</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When a job is modified</p>
-                </div>
-                <input type="checkbox" id="notif-job-updated" class="toggle-checkbox" data-pref="job_updated">
-              </label>
+
+            <!-- Job Notifications Dropdown -->
+            <div class="notification-category">
+              <button type="button" class="notification-category-toggle w-full flex items-center justify-between p-3 bg-nfglight dark:bg-gray-700 rounded-lg hover:bg-nfgray dark:hover:bg-gray-600 transition" data-category="job">
+                <span class="font-medium text-nfgblue dark:text-blue-400">Job Notifications</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+              </button>
+              <div class="notification-category-content hidden mt-2 space-y-3 pl-4">
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Job Assigned</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When you're assigned to a job</p>
+                  </div>
+                  <input type="checkbox" id="notif-job-assigned" class="toggle-checkbox" data-pref="job_assigned">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Job Completed</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When a job you're watching is completed</p>
+                  </div>
+                  <input type="checkbox" id="notif-job-completed" class="toggle-checkbox" data-pref="job_completed">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Job Updated</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When a job is modified</p>
+                  </div>
+                  <input type="checkbox" id="notif-job-updated" class="toggle-checkbox" data-pref="job_updated">
+                </label>
+              </div>
             </div>
-          </div>
-          
-          <!-- Site & Booking Notifications -->
-          <div class="mb-6 pb-4 border-b border-nfgray dark:border-gray-700">
-            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Site & Booking Notifications</h4>
-            <div class="space-y-4">
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Site Assigned</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When you're assigned to a site</p>
-                </div>
-                <input type="checkbox" id="notif-site-assigned" class="toggle-checkbox" data-pref="site_assigned">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Booking Created</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When a new booking is created</p>
-                </div>
-                <input type="checkbox" id="notif-booking-created" class="toggle-checkbox" data-pref="booking_created">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Booking Updated</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When a booking is modified</p>
-                </div>
-                <input type="checkbox" id="notif-booking-updated" class="toggle-checkbox" data-pref="booking_updated">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Booking Cancelled</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When a booking is cancelled</p>
-                </div>
-                <input type="checkbox" id="notif-booking-cancelled" class="toggle-checkbox" data-pref="booking_cancelled">
-              </label>
+
+            <!-- Site & Booking Notifications Dropdown -->
+            <div class="notification-category">
+              <button type="button" class="notification-category-toggle w-full flex items-center justify-between p-3 bg-nfglight dark:bg-gray-700 rounded-lg hover:bg-nfgray dark:hover:bg-gray-600 transition" data-category="site-booking">
+                <span class="font-medium text-nfgblue dark:text-blue-400">Site & Booking Notifications</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+              </button>
+              <div class="notification-category-content hidden mt-2 space-y-3 pl-4">
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Site Assigned</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When you're assigned to a site</p>
+                  </div>
+                  <input type="checkbox" id="notif-site-assigned" class="toggle-checkbox" data-pref="site_assigned">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Booking Created</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When a new booking is created</p>
+                  </div>
+                  <input type="checkbox" id="notif-booking-created" class="toggle-checkbox" data-pref="booking_created">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Booking Updated</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When a booking is modified</p>
+                  </div>
+                  <input type="checkbox" id="notif-booking-updated" class="toggle-checkbox" data-pref="booking_updated">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Booking Cancelled</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When a booking is cancelled</p>
+                  </div>
+                  <input type="checkbox" id="notif-booking-cancelled" class="toggle-checkbox" data-pref="booking_cancelled">
+                </label>
+              </div>
             </div>
-          </div>
-          
-          <!-- Other Notifications -->
-          <div>
-            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Other Notifications</h4>
-            <div class="space-y-4">
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">Mentions</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">When you're mentioned in comments</p>
-                </div>
-                <input type="checkbox" id="notif-mention" class="toggle-checkbox" data-pref="mention">
-              </label>
-              
-              <label class="flex items-center justify-between cursor-pointer">
-                <div>
-                  <span class="font-medium">System Notifications</span>
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Important system updates and alerts</p>
-                </div>
-                <input type="checkbox" id="notif-system" class="toggle-checkbox" data-pref="system">
-              </label>
+
+            <!-- Other Notifications Dropdown -->
+            <div class="notification-category">
+              <button type="button" class="notification-category-toggle w-full flex items-center justify-between p-3 bg-nfglight dark:bg-gray-700 rounded-lg hover:bg-nfgray dark:hover:bg-gray-600 transition" data-category="other">
+                <span class="font-medium text-nfgblue dark:text-blue-400">Other Notifications</span>
+                <i data-lucide="chevron-down" class="w-4 h-4 transition-transform"></i>
+              </button>
+              <div class="notification-category-content hidden mt-2 space-y-3 pl-4">
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">Mentions</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">When you're mentioned in comments</p>
+                  </div>
+                  <input type="checkbox" id="notif-mention" class="toggle-checkbox" data-pref="mention">
+                </label>
+                
+                <label class="flex items-center justify-between cursor-pointer py-2">
+                  <div>
+                    <span class="font-medium text-sm">System Notifications</span>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Important system updates and alerts</p>
+                  </div>
+                  <input type="checkbox" id="notif-system" class="toggle-checkbox" data-pref="system">
+                </label>
+              </div>
             </div>
           </div>
           
@@ -960,6 +975,38 @@
   <script>
     document.addEventListener('DOMContentLoaded', () => {
       lucide.createIcons();
+      
+      // Initialize notification category dropdowns
+      document.querySelectorAll('.notification-category-toggle').forEach(toggle => {
+        toggle.addEventListener('click', () => {
+          const category = toggle.dataset.category;
+          const content = toggle.nextElementSibling;
+          const icon = toggle.querySelector('i[data-lucide="chevron-down"]');
+          
+          if (content) {
+            const isHidden = content.classList.contains('hidden');
+            
+            // Close all other categories
+            document.querySelectorAll('.notification-category-content').forEach(c => {
+              if (c !== content) {
+                c.classList.add('hidden');
+              }
+            });
+            document.querySelectorAll('.notification-category-toggle i[data-lucide="chevron-down"]').forEach(i => {
+              i.style.transform = 'rotate(0deg)';
+            });
+            
+            // Toggle current category
+            if (isHidden) {
+              content.classList.remove('hidden');
+              if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+              content.classList.add('hidden');
+              if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+          }
+        });
+      });
       
       // Initialize mobile sidebar
       const sidebar = document.getElementById('sidebar');
