@@ -6118,6 +6118,41 @@
       if (window.lucide) lucide.createIcons();
     }
     
+    // Delete invoice
+    window.deleteInvoice = async function(invoiceId) {
+      const confirmed = await showConfirm(
+        'Are you sure you want to delete this invoice? This action cannot be undone.',
+        'Delete Invoice',
+        'error'
+      );
+      
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        const { error } = await supabase
+          .from('invoices')
+          .delete()
+          .eq('id', invoiceId);
+        
+        if (error) {
+          console.error('[Billing] Error deleting invoice:', error);
+          toast.error('Failed to delete invoice: ' + error.message, 'Error');
+          return;
+        }
+        
+        toast.success('Invoice deleted successfully', 'Success');
+        
+        // Reload invoices
+        await loadInvoices();
+        
+      } catch (error) {
+        console.error('[Billing] Error deleting invoice:', error);
+        toast.error('Failed to delete invoice: ' + (error.message || 'Unknown error'), 'Error');
+      }
+    };
+    
     // Load payments
     async function loadPayments() {
       try {
