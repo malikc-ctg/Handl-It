@@ -14,9 +14,9 @@ serve(async (req) => {
 
   try {
     // Get Resend API key from environment
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
+    const RESEND_API_KEY = Deno.env.get('resend_api_key') || Deno.env.get('RESEND_API_KEY')
     if (!RESEND_API_KEY) {
-      throw new Error('RESEND_API_KEY is not set. Please set it in Supabase secrets.')
+      throw new Error('resend_api_key is not set. Please set it in Supabase secrets.')
     }
 
     // Get request body
@@ -27,7 +27,9 @@ serve(async (req) => {
     }
 
     // Build the quote portal URL
-    const baseUrl = Deno.env.get('QUOTE_PORTAL_URL') || 'https://your-domain.com'
+    const baseUrl = Deno.env.get('quote_portal_url') || 
+                    Deno.env.get('QUOTE_PORTAL_URL') || 
+                    'https://your-domain.com'
     const quoteUrl = `${baseUrl}/quote.html?token=${publicToken}`
 
     // Determine email subject and content based on quote type
@@ -163,9 +165,14 @@ serve(async (req) => {
 </html>
     `
 
+    // Get from email from environment or use default
+    const fromEmail = Deno.env.get('resend_from_email') || 
+                      Deno.env.get('RESEND_FROM_EMAIL') || 
+                      'NFG Facilities <noreply@northernfacilitiesgroup.ca>'
+
     // Send email via Resend API
     const emailPayload = {
-      from: Deno.env.get('RESEND_FROM_EMAIL') || 'NFG Facilities <noreply@northernfacilitiesgroup.ca>',
+      from: fromEmail,
       to: emails,
       subject: subject,
       html: emailHTML,
