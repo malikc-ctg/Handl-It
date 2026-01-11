@@ -244,7 +244,7 @@ export async function createQuote(formData) {
       deal_id: formData.deal_id || null,
       owner_user_id: currentUser.id,
       quote_type: formData.quote_type || 'walkthrough_required',
-      status: 'draft',
+      status: 'sent',  // Use 'sent' to match old schema constraint (will be updated when schema is migrated)
       active_revision_number: 1,
       total_amount: 0  // Add total_amount to handle old schema requirement
     };
