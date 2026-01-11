@@ -2199,20 +2199,14 @@
         await renderUsersList()
         console.log('Users list rendered')
         
-        // Show/hide invite button based on role
+        // Show invite button for all users
         const inviteBtn = document.getElementById('invite-user-btn')
         if (inviteBtn) {
+          inviteBtn.classList.remove('hidden')
+          inviteBtn.classList.add('flex')
+          // Load pending invitations if user can manage users
           if (currentUserData && canManageUsers()) {
-            console.log('User can manage - showing invite button')
-            inviteBtn.classList.remove('hidden')
-            inviteBtn.classList.add('inline-flex')
             await renderPendingInvitations()
-          } else {
-            console.log('User cannot manage - hiding invite button')
-            inviteBtn.classList.add('hidden')
-            inviteBtn.classList.remove('inline-flex')
-            const pendingContainer = document.getElementById('pending-invitations-container')
-            if (pendingContainer) pendingContainer.classList.add('hidden')
           }
         }
         
