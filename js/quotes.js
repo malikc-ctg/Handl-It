@@ -332,8 +332,7 @@ export async function saveRevision(quoteId, revisionNumber, revisionData, lineIt
     const { error: revError } = await supabase
       .from('quote_revisions')
       .update({
-        ...revisionData,
-        updated_at: new Date().toISOString()
+        ...revisionData
       })
       .eq('quote_id', quoteId)
       .eq('revision_number', revisionNumber);
