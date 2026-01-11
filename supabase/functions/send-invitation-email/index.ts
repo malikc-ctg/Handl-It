@@ -400,15 +400,15 @@ serve(async (req) => {
     `
 
     // Send email using Resend (modern, reliable transactional email service)
-    const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY')
-    const RESEND_FROM_EMAIL = Deno.env.get('RESEND_FROM_EMAIL') || 'NFG <onboarding@resend.dev>'
+    const RESEND_API_KEY = Deno.env.get('resend_api_key') || Deno.env.get('RESEND_API_KEY')
+    const RESEND_FROM_EMAIL = Deno.env.get('resend_from_email') || Deno.env.get('RESEND_FROM_EMAIL') || 'NFG <onboarding@resend.dev>'
     
     if (!RESEND_API_KEY) {
       console.warn('Resend API key not set')
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Email service not configured. Please set RESEND_API_KEY in Edge Function secrets.' 
+          error: 'Email service not configured. Please set resend_api_key or RESEND_API_KEY in Edge Function secrets.' 
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )

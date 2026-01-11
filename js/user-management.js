@@ -156,38 +156,36 @@ export async function sendInvitation(email, role) {
     console.log('Invitation created:', data);
     console.log('Invitation link:', invitationLink);
     
-    // Open email client with pre-filled invitation (manual mode)
-    const subject = encodeURIComponent('Invitation to join NFG Facilities Management');
-    const body = encodeURIComponent(
-      `Hello,\n\n` +
-      `You've been invited to join the NFG Facilities Management system as a ${role}.\n\n` +
-      `Click the link below to accept the invitation and set up your account:\n\n` +
-      `${invitationLink}\n\n` +
-      `This invitation expires in 7 days.\n\n` +
-      `If you have any questions, please contact your administrator.\n\n` +
-      `Best regards,\n` +
-      `Northern Facilities Group`
-    );
+    // Get current user's email for inviter
+    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const inviterEmail = authUser?.email || currentUser?.email || null;
     
-    const mailtoLink = `mailto:${email}?subject=${subject}&body=${body}`;
-    
-    // Show success and offer to open email client
-    const openEmail = await showConfirm(
-      'Invitation Created',
-      `Invitation ready to send to: ${email}\n\nClick OK to open your email client with a pre-filled message, or Cancel to copy the invitation link instead.`
-    );
-    
-    if (openEmail) {
-      // Open default email client
-      window.open(mailtoLink, '_blank');
-      
-      // Also copy link as backup
+    // Send email via Edge Function using Resend
+    try {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-invitation-email', {
+        method: 'POST',
+        body: {
+          email,
+          role,
+          invitationLink,
+          inviterEmail
+        }
+      });
+
+      if (emailError) {
+        console.error('[User Management] Error sending invitation email:', emailError);
+        // Fallback: copy link to clipboard if email fails
+        await navigator.clipboard.writeText(invitationLink);
+        toast.warning(`Invitation created but email failed to send. Link copied to clipboard.`, 'Warning');
+      } else {
+        console.log('[User Management] Invitation email sent successfully:', emailResult);
+        toast.success(`Invitation email sent successfully to ${email}`, 'Success');
+      }
+    } catch (emailErr) {
+      console.error('[User Management] Error calling email function:', emailErr);
+      // Fallback: copy link to clipboard if email fails
       await navigator.clipboard.writeText(invitationLink);
-      toast.success('Email client opened! Please review and send the invitation.\n\n(Link also copied to clipboard as backup)');
-    } else {
-      // Just copy link to clipboard
-      await navigator.clipboard.writeText(invitationLink);
-      notify('Link Copied', `Please email this link to ${email}:\n\n${invitationLink}`, 'info');
+      toast.warning(`Invitation created but email failed to send. Link copied to clipboard.`, 'Warning');
     }
     
     return data;
