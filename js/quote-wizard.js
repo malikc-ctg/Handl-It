@@ -1,0 +1,536 @@
+// Quote Builder Wizard Integration
+// Handles step navigation, form handling, and data submission
+
+import * as quotesModule from './quotes.js';
+import { toast } from './notifications.js';
+
+let currentWizardStep = 1;
+let currentQuoteId = null;
+let wizardData = {
+  account_id: null,
+  primary_contact_id: null,
+  deal_id: null,
+  quote_type: 'walkthrough_required',
+  revision_data: {},
+  line_items: []
+};
+
+// Initialize wizard
+export function initQuoteWizard() {
+  const modal = document.getElementById('quote-builder-modal');
+  const closeBtn = document.getElementById('close-quote-builder-modal');
+  const cancelBtn = document.getElementById('wizard-cancel-btn');
+  const backBtn = document.getElementById('wizard-back-btn');
+  const nextBtn = document.getElementById('wizard-next-btn');
+  const sendBtn = document.getElementById('wizard-send-btn');
+  const saveDraftBtn = document.getElementById('wizard-save-draft-btn');
+  const quoteTypeSelect = document.getElementById('quote-type-select');
+  const includeRangeCheckbox = document.getElementById('include-range-estimate');
+
+  // Close modal handlers
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeWizard);
+  }
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', closeWizard);
+  }
+
+  // Navigation handlers
+  if (backBtn) {
+    backBtn.addEventListener('click', () => navigateStep(-1));
+  }
+  if (nextBtn) {
+    nextBtn.addEventListener('click', () => navigateStep(1));
+  }
+  if (sendBtn) {
+    sendBtn.addEventListener('click', handleSendQuote);
+  }
+  if (saveDraftBtn) {
+    saveDraftBtn.addEventListener('click', handleSaveDraft);
+  }
+
+  // Quote type change handler
+  if (quoteTypeSelect) {
+    quoteTypeSelect.addEventListener('change', (e) => {
+      wizardData.quote_type = e.target.value;
+      updateStep2UI();
+    });
+  }
+
+  // Range estimate checkbox
+  if (includeRangeCheckbox) {
+    includeRangeCheckbox.addEventListener('change', (e) => {
+      const fields = document.getElementById('range-estimate-fields');
+      if (fields) {
+        fields.classList.toggle('hidden', !e.target.checked);
+      }
+    });
+  }
+
+  // Line items handlers
+  setupLineItemsHandlers();
+
+  // Close on backdrop click
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeWizard();
+      }
+    });
+  }
+}
+
+// Open wizard
+export function openQuoteWizard() {
+  resetWizard();
+  currentWizardStep = 1;
+  updateWizardUI();
+  populateDropdowns();
+  
+  const modal = document.getElementById('quote-builder-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+  }
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+// Close wizard
+function closeWizard() {
+  const modal = document.getElementById('quote-builder-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  resetWizard();
+}
+
+// Reset wizard data
+function resetWizard() {
+  currentWizardStep = 1;
+  currentQuoteId = null;
+  wizardData = {
+    account_id: null,
+    primary_contact_id: null,
+    deal_id: null,
+    quote_type: 'walkthrough_required',
+    revision_data: {},
+    line_items: []
+  };
+}
+
+// Navigate between steps
+function navigateStep(direction) {
+  const newStep = currentWizardStep + direction;
+  
+  if (newStep < 1 || newStep > 3) return;
+
+  // Validate current step before moving forward
+  if (direction > 0 && !validateCurrentStep()) {
+    return;
+  }
+
+  // Save current step data
+  saveCurrentStepData();
+
+  currentWizardStep = newStep;
+  updateWizardUI();
+}
+
+// Validate current step
+function validateCurrentStep() {
+  if (currentWizardStep === 1) {
+    const accountSelect = document.getElementById('quote-account-select');
+    const quoteTypeSelect = document.getElementById('quote-type-select');
+    
+    if (!accountSelect?.value) {
+      toast.error('Please select an account', 'Validation Error');
+      return false;
+    }
+    if (!quoteTypeSelect?.value) {
+      toast.error('Please select a quote type', 'Validation Error');
+      return false;
+    }
+    return true;
+  } else if (currentWizardStep === 2) {
+    const quoteType = wizardData.quote_type;
+    
+    if (quoteType === 'walkthrough_required') {
+      const serviceSchedule = document.getElementById('quote-service-schedule')?.value;
+      const scopeSummary = document.getElementById('quote-scope-summary')?.value;
+      
+      if (!serviceSchedule || !scopeSummary) {
+        toast.error('Service schedule and scope summary are required', 'Validation Error');
+        return false;
+      }
+    } else {
+      // Standard/Ballpark - need at least one line item
+      if (wizardData.line_items.length === 0) {
+        toast.error('Please add at least one line item', 'Validation Error');
+        return false;
+      }
+    }
+    return true;
+  } else if (currentWizardStep === 3) {
+    const expiryDays = document.getElementById('quote-expiry-days')?.value;
+    if (!expiryDays || parseInt(expiryDays) < 1) {
+      toast.error('Please enter a valid expiry (days)', 'Validation Error');
+      return false;
+    }
+    return true;
+  }
+  return true;
+}
+
+// Save current step data
+function saveCurrentStepData() {
+  if (currentWizardStep === 1) {
+    wizardData.account_id = document.getElementById('quote-account-select')?.value || null;
+    wizardData.primary_contact_id = document.getElementById('quote-contact-select')?.value || null;
+    wizardData.deal_id = document.getElementById('quote-deal-select')?.value || null;
+    wizardData.quote_type = document.getElementById('quote-type-select')?.value || 'walkthrough_required';
+  } else if (currentWizardStep === 2) {
+    const quoteType = wizardData.quote_type;
+    
+    if (quoteType === 'walkthrough_required') {
+      wizardData.revision_data = {
+        service_schedule_summary: document.getElementById('quote-service-schedule')?.value || '',
+        scope_summary: document.getElementById('quote-scope-summary')?.value || '',
+        assumptions: document.getElementById('quote-assumptions')?.value || '',
+        exclusions: document.getElementById('quote-exclusions')?.value || ''
+      };
+      
+      // Range estimate
+      const includeRange = document.getElementById('include-range-estimate')?.checked;
+      if (includeRange) {
+        const rangeLow = parseFloat(document.getElementById('quote-range-low')?.value || 0);
+        const rangeHigh = parseFloat(document.getElementById('quote-range-high')?.value || 0);
+        if (rangeLow > 0 && rangeHigh > rangeLow) {
+          wizardData.line_items = [{
+            name: 'Estimated Range',
+            unit: 'range',
+            range_low: rangeLow,
+            range_high: rangeHigh,
+            quantity: 1
+          }];
+        }
+      }
+    } else {
+      // Standard/Ballpark - line items are already in wizardData.line_items
+    }
+  } else if (currentWizardStep === 3) {
+    wizardData.revision_data.billing_frequency = document.getElementById('quote-billing-frequency')?.value || 'monthly';
+    wizardData.revision_data.contract_term_months = parseInt(document.getElementById('quote-contract-term')?.value || 12);
+    const startDate = document.getElementById('quote-start-date')?.value;
+    if (startDate) {
+      wizardData.revision_data.start_date_proposed = startDate;
+    }
+  }
+}
+
+// Update wizard UI based on current step
+function updateWizardUI() {
+  // Update step indicators
+  for (let i = 1; i <= 3; i++) {
+    const indicator = document.getElementById(`wizard-step-${i}-indicator`);
+    if (indicator) {
+      if (i === currentWizardStep) {
+        indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
+        indicator.classList.add('bg-nfgblue', 'text-white');
+      } else if (i < currentWizardStep) {
+        indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
+        indicator.classList.add('bg-green-500', 'text-white');
+      } else {
+        indicator.classList.remove('bg-nfgblue', 'bg-green-500', 'text-white');
+        indicator.classList.add('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
+      }
+    }
+  }
+
+  // Show/hide steps
+  for (let i = 1; i <= 3; i++) {
+    const step = document.getElementById(`wizard-step-${i}`);
+    if (step) {
+      step.classList.toggle('hidden', i !== currentWizardStep);
+    }
+  }
+
+  // Update navigation buttons
+  const backBtn = document.getElementById('wizard-back-btn');
+  const nextBtn = document.getElementById('wizard-next-btn');
+  const sendBtn = document.getElementById('wizard-send-btn');
+
+  if (backBtn) {
+    backBtn.classList.toggle('hidden', currentWizardStep === 1);
+  }
+  if (nextBtn) {
+    nextBtn.classList.toggle('hidden', currentWizardStep === 3);
+  }
+  if (sendBtn) {
+    sendBtn.classList.toggle('hidden', currentWizardStep !== 3);
+  }
+
+  // Update step 2 UI based on quote type
+  if (currentWizardStep === 2) {
+    updateStep2UI();
+  }
+}
+
+// Update step 2 UI based on quote type
+function updateStep2UI() {
+  const quoteType = wizardData.quote_type;
+  const walkthroughSection = document.getElementById('walkthrough-scope-section');
+  const bindingSection = document.getElementById('binding-line-items-section');
+
+  if (quoteType === 'walkthrough_required') {
+    if (walkthroughSection) walkthroughSection.classList.remove('hidden');
+    if (bindingSection) bindingSection.classList.add('hidden');
+  } else {
+    if (walkthroughSection) walkthroughSection.classList.add('hidden');
+    if (bindingSection) bindingSection.classList.remove('hidden');
+  }
+}
+
+// Populate dropdowns
+async function populateDropdowns() {
+  // Populate accounts (sites)
+  const accountSelect = document.getElementById('quote-account-select');
+  if (accountSelect && window.quotesModule) {
+    const sites = window.quotesModule.sites || [];
+    accountSelect.innerHTML = '<option value="">Select an account...</option>' +
+      sites.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
+  }
+
+  // Populate contacts
+  const contactSelect = document.getElementById('quote-contact-select');
+  if (contactSelect && window.quotesModule) {
+    const contacts = window.quotesModule.contacts || [];
+    contactSelect.innerHTML = '<option value="">Select a contact...</option>' +
+      contacts.map(contact => `<option value="${contact.id}">${contact.full_name || contact.email}</option>`).join('');
+  }
+
+  // Populate deals
+  const dealSelect = document.getElementById('quote-deal-select');
+  if (dealSelect && window.quotesModule) {
+    const deals = window.quotesModule.deals || [];
+    dealSelect.innerHTML = '<option value="">Link to a deal...</option>' +
+      deals.map(deal => `<option value="${deal.id}">${deal.title || `Deal #${deal.id}`}</option>`).join('');
+  }
+}
+
+// Setup line items handlers
+function setupLineItemsHandlers() {
+  const addBtn = document.getElementById('add-line-item-btn');
+  if (addBtn) {
+    addBtn.addEventListener('click', addLineItem);
+  }
+}
+
+// Add line item
+function addLineItem() {
+  wizardData.line_items.push({
+    name: '',
+    description: '',
+    quantity: 1,
+    unit: 'flat',
+    unit_price: 0,
+    category: ''
+  });
+  renderLineItems();
+}
+
+// Remove line item
+function removeLineItem(index) {
+  wizardData.line_items.splice(index, 1);
+  renderLineItems();
+}
+
+// Render line items
+function renderLineItems() {
+  const container = document.getElementById('quote-line-items-list');
+  if (!container) return;
+
+  if (wizardData.line_items.length === 0) {
+    container.innerHTML = '<p class="text-gray-500 text-center py-4">No line items. Click "Add Line Item" to add one.</p>';
+    return;
+  }
+
+  container.innerHTML = wizardData.line_items.map((item, index) => `
+    <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+        <div>
+          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Name</label>
+          <input type="text" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
+            data-index="${index}" data-field="name" value="${(item.name || '').replace(/"/g, '&quot;')}" placeholder="Item name">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Category</label>
+          <input type="text" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
+            data-index="${index}" data-field="category" value="${(item.category || '').replace(/"/g, '&quot;')}" placeholder="Category">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Description</label>
+        <textarea class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
+          data-index="${index}" data-field="description" rows="2" placeholder="Description">${item.description || ''}</textarea>
+      </div>
+      <div class="grid grid-cols-4 gap-3">
+        <div>
+          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
+          <input type="number" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
+            data-index="${index}" data-field="quantity" value="${item.quantity || 1}" min="0" step="0.01">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Unit</label>
+          <select class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
+            data-index="${index}" data-field="unit">
+            <option value="flat" ${item.unit === 'flat' ? 'selected' : ''}>Flat</option>
+            <option value="sqft" ${item.unit === 'sqft' ? 'selected' : ''}>Sq Ft</option>
+            <option value="unit" ${item.unit === 'unit' ? 'selected' : ''}>Unit</option>
+            <option value="visit" ${item.unit === 'visit' ? 'selected' : ''}>Visit</option>
+            <option value="hour" ${item.unit === 'hour' ? 'selected' : ''}>Hour</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Unit Price</label>
+          <input type="number" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
+            data-index="${index}" data-field="unit_price" value="${item.unit_price || 0}" min="0" step="0.01">
+        </div>
+        <div class="flex items-end">
+          <button type="button" class="remove-line-item w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm" data-index="${index}">
+            Remove
+          </button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Attach event listeners
+  container.querySelectorAll('.line-item-field').forEach(field => {
+    field.addEventListener('input', (e) => {
+      const index = parseInt(e.target.dataset.index);
+      const fieldName = e.target.dataset.field;
+      const value = fieldName === 'quantity' || fieldName === 'unit_price' 
+        ? parseFloat(e.target.value) || 0 
+        : e.target.value;
+      wizardData.line_items[index][fieldName] = value;
+      updateLineItemsTotals();
+    });
+  });
+
+  container.querySelectorAll('.remove-line-item').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const index = parseInt(e.target.dataset.index);
+      removeLineItem(index);
+    });
+  });
+
+  updateLineItemsTotals();
+}
+
+// Update line items totals
+function updateLineItemsTotals() {
+  let subtotal = 0;
+  wizardData.line_items.forEach(item => {
+    const qty = parseFloat(item.quantity || 1);
+    const price = parseFloat(item.unit_price || 0);
+    subtotal += qty * price;
+  });
+
+  const tax = subtotal * 0.13; // 13% HST
+  const total = subtotal + tax;
+
+  const subtotalEl = document.getElementById('quote-subtotal');
+  const taxEl = document.getElementById('quote-tax');
+  const totalEl = document.getElementById('quote-total');
+
+  if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  if (taxEl) taxEl.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+}
+
+// Handle save draft
+async function handleSaveDraft() {
+  saveCurrentStepData();
+
+  try {
+    // Create quote if not exists
+    if (!currentQuoteId) {
+      const quote = await quotesModule.createQuote({
+        account_id: wizardData.account_id,
+        primary_contact_id: wizardData.primary_contact_id,
+        deal_id: wizardData.deal_id,
+        quote_type: wizardData.quote_type
+      });
+      currentQuoteId = quote.id;
+    }
+
+    // Save revision as draft
+    const revisionData = {
+      ...wizardData.revision_data,
+      revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
+      is_binding: wizardData.quote_type !== 'walkthrough_required' && wizardData.quote_type !== 'ballpark'
+    };
+
+    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, wizardData.line_items);
+
+    toast.success('Quote saved as draft', 'Success');
+    closeWizard();
+    
+    // Reload quotes list if on quotes tab
+    if (typeof loadQuotes === 'function') {
+      await loadQuotes();
+    }
+  } catch (error) {
+    console.error('[Quote Wizard] Error saving draft:', error);
+    toast.error('Failed to save draft', 'Error');
+  }
+}
+
+// Handle send quote
+async function handleSendQuote() {
+  if (!validateCurrentStep()) {
+    return;
+  }
+
+  saveCurrentStepData();
+
+  try {
+    // Create quote if not exists
+    if (!currentQuoteId) {
+      const quote = await quotesModule.createQuote({
+        account_id: wizardData.account_id,
+        primary_contact_id: wizardData.primary_contact_id,
+        deal_id: wizardData.deal_id,
+        quote_type: wizardData.quote_type
+      });
+      currentQuoteId = quote.id;
+    }
+
+    // Save revision
+    const revisionData = {
+      ...wizardData.revision_data,
+      revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
+      is_binding: wizardData.quote_type !== 'walkthrough_required' && wizardData.quote_type !== 'ballpark'
+    };
+
+    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, wizardData.line_items);
+
+    // Send revision
+    const emailsInput = document.getElementById('quote-send-emails')?.value || '';
+    const emails = emailsInput.split(',').map(e => e.trim()).filter(e => e);
+    const expiryDays = parseInt(document.getElementById('quote-expiry-days')?.value || 7);
+
+    await quotesModule.sendRevision(currentQuoteId, 1, emails, expiryDays);
+
+    toast.success('Quote sent successfully', 'Success');
+    closeWizard();
+    
+    // Reload quotes list
+    if (typeof loadQuotes === 'function') {
+      await loadQuotes();
+    }
+  } catch (error) {
+    console.error('[Quote Wizard] Error sending quote:', error);
+    toast.error('Failed to send quote', 'Error');
+  }
+}

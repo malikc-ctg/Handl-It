@@ -1,0 +1,43 @@
+// Clear data modal handlers - to be inserted into settings.html
+
+// Clear data modal handlers
+const clearDataModal = document.getElementById('clear-data-modal');
+const closeClearDataModal = document.getElementById('close-clear-data-modal');
+const cancelClearData = document.getElementById('cancel-clear-data');
+
+function openClearDataModal() {
+  clearDataModal.classList.remove('hidden');
+  clearDataModal.classList.add('flex');
+  lucide.createIcons();
+}
+
+function closeClearDataModalFn() {
+  clearDataModal.classList.add('hidden');
+  clearDataModal.classList.remove('flex');
+}
+
+closeClearDataModal?.addEventListener('click', closeClearDataModalFn);
+cancelClearData?.addEventListener('click', closeClearDataModalFn);
+clearDataModal?.addEventListener('click', (e) => {
+  if (e.target === clearDataModal) {
+    closeClearDataModalFn();
+  }
+});
+
+// Clear data button - password prompt then show modal
+document.getElementById('clear-data-btn')?.addEventListener('click', async () => {
+  // First, prompt for password
+  const password = prompt('Enter password to clear system data:');
+  
+  if (!password) {
+    return; // User cancelled
+  }
+  
+  if (password !== 'scorin') {
+    toast.error('Incorrect password. Data clearing cancelled.', 'Access Denied');
+    return;
+  }
+  
+  // Password correct, show selection modal
+  openClearDataModal();
+});

@@ -1,0 +1,152 @@
+{
+  "templates": [
+    {
+      "name": "Welcome Email - Facilities",
+      "description": "Initial welcome email for new facilities management leads",
+      "vertical": "facilities",
+      "objection_type": null,
+      "channel": "email",
+      "subject": "Welcome to Northern Facilities Group - {{site_name}}",
+      "body": "Hello {{name}},\n\nThank you for your interest in facilities management services for {{site_name}}.\n\nWe specialize in comprehensive facilities management solutions, including:\n\n• Cleaning and maintenance services\n• Emergency response\n• Site inspections and reporting\n• Inventory management\n\nBased on your site details, we've prepared a customized proposal for your review.\n\nWould you be available for a brief call this week to discuss how we can help streamline your facilities operations?\n\nBest regards,\nNorthern Facilities Group Team",
+      "variables": ["name", "site_name", "deal_value"]
+    },
+    {
+      "name": "Follow-up - Price Objection",
+      "description": "Follow-up email addressing pricing concerns",
+      "vertical": "facilities",
+      "objection_type": "price",
+      "channel": "email",
+      "subject": "Re: Facilities Management Quote - Value for {{site_name}}",
+      "body": "Hi {{name}},\n\nI understand that pricing is an important consideration for {{site_name}}.\n\nI'd like to highlight the value our facilities management services provide:\n\n• Reduced operational costs through preventive maintenance\n• Improved compliance and reduced risk\n• 24/7 emergency response\n• Real-time reporting and transparency\n\nWe're happy to work within your budget. Would you be open to discussing a phased approach or custom package that fits your needs?\n\nI'm available for a quick call to explore options that work for both parties.\n\nBest regards,\nNorthern Facilities Group",
+      "variables": ["name", "site_name", "deal_value"]
+    },
+    {
+      "name": "Follow-up - Timing Objection",
+      "description": "Follow-up email addressing timing concerns",
+      "vertical": "facilities",
+      "objection_type": "timing",
+      "channel": "email",
+      "subject": "Re: Getting Started - Flexible Timeline Options",
+      "body": "Hi {{name}},\n\nI understand that timing is important for {{site_name}}.\n\nThe good news is that we can work with your schedule. Our onboarding process is flexible and can be tailored to your timeline:\n\n• Quick start: We can begin within 2 weeks\n• Phased approach: Start with priority areas, expand gradually\n• Custom timeline: We'll adjust to fit your needs\n\nWhat timeline were you thinking? I'd be happy to discuss options that work for you.\n\nBest regards,\nNorthern Facilities Group",
+      "variables": ["name", "site_name"]
+    },
+    {
+      "name": "Follow-up - Quality Objection",
+      "description": "Follow-up email addressing quality concerns",
+      "vertical": "facilities",
+      "objection_type": "quality",
+      "channel": "email",
+      "subject": "Re: Quality Assurance at Northern Facilities Group",
+      "body": "Hi {{name}},\n\nQuality is our top priority, and I wanted to share how we ensure exceptional service:\n\n• Certified and trained staff\n• Quality inspections and audits\n• Real-time reporting with photo documentation\n• Client satisfaction guarantee\n• References from similar facilities available\n\nWe'd be happy to arrange a site visit or connect you with references. Would that be helpful?\n\nBest regards,\nNorthern Facilities Group",
+      "variables": ["name", "site_name"]
+    },
+    {
+      "name": "Follow-up - Competitor Objection",
+      "description": "Follow-up email addressing competitor comparisons",
+      "vertical": "facilities",
+      "objection_type": "competitor",
+      "channel": "email",
+      "subject": "Re: What Sets NFG Apart",
+      "body": "Hi {{name}},\n\nI appreciate you considering multiple options for {{site_name}}.\n\nWhat sets Northern Facilities Group apart:\n\n• Technology-driven approach with real-time visibility\n• Dedicated account management\n• Proactive maintenance vs. reactive fixes\n• Transparent pricing and reporting\n• Proven track record with similar facilities\n\nI'd be happy to discuss how our approach specifically benefits facilities like yours. Would you be available for a brief call this week?\n\nBest regards,\nNorthern Facilities Group",
+      "variables": ["name", "site_name", "deal_value"]
+    },
+    {
+      "name": "Final Follow-up Email",
+      "description": "Final follow-up before closing sequence",
+      "vertical": "facilities",
+      "objection_type": null,
+      "channel": "email",
+      "subject": "Last Chance: Facilities Management for {{site_name}}",
+      "body": "Hi {{name}},\n\nThis will be my last follow-up regarding facilities management services for {{site_name}}.\n\nI wanted to make sure you had everything you need to make a decision. If you have any questions or concerns, I'm here to help.\n\nIf now isn't the right time, no problem. Feel free to reach out when you're ready to discuss.\n\nBest regards,\nNorthern Facilities Group",
+      "variables": ["name", "site_name"]
+    },
+    {
+      "name": "Welcome SMS",
+      "description": "Initial SMS welcome for new leads",
+      "vertical": "facilities",
+      "objection_type": null,
+      "channel": "sms",
+      "subject": null,
+      "body": "Hi {{name}}, thanks for your interest in NFG facilities management for {{site_name}}. We'll send a detailed proposal shortly. Questions? Reply to this message!",
+      "variables": ["name", "site_name"]
+    },
+    {
+      "name": "Follow-up SMS - Quick Check",
+      "description": "Quick SMS follow-up",
+      "vertical": "facilities",
+      "objection_type": null,
+      "channel": "sms",
+      "subject": null,
+      "body": "Hi {{name}}, just checking in about our proposal for {{site_name}}. Any questions? Reply anytime!",
+      "variables": ["name", "site_name"]
+    }
+  ],
+  "sequences": [
+    {
+      "name": "Standard Follow-up Sequence - Facilities",
+      "description": "5-step follow-up sequence for facilities management leads",
+      "vertical": "facilities",
+      "is_active": true,
+      "stop_rules": {
+        "on_reply": true,
+        "on_stage_change": []
+      },
+      "steps": [
+        {
+          "step_order": 1,
+          "delay_days": 0,
+          "delay_hours": 0,
+          "template_name": "Welcome Email - Facilities"
+        },
+        {
+          "step_order": 2,
+          "delay_days": 3,
+          "delay_hours": 0,
+          "template_name": "Follow-up SMS - Quick Check"
+        },
+        {
+          "step_order": 3,
+          "delay_days": 7,
+          "delay_hours": 0,
+          "template_name": "Follow-up - Quality Objection"
+        },
+        {
+          "step_order": 4,
+          "delay_days": 14,
+          "delay_hours": 0,
+          "template_name": "Follow-up - Value Proposition"
+        },
+        {
+          "step_order": 5,
+          "delay_days": 30,
+          "delay_hours": 0,
+          "template_name": "Final Follow-up Email"
+        }
+      ]
+    },
+    {
+      "name": "Price Objection Sequence",
+      "description": "Sequence for leads with price concerns",
+      "vertical": "facilities",
+      "is_active": true,
+      "stop_rules": {
+        "on_reply": true,
+        "on_stage_change": []
+      },
+      "steps": [
+        {
+          "step_order": 1,
+          "delay_days": 0,
+          "delay_hours": 0,
+          "template_name": "Follow-up - Price Objection"
+        },
+        {
+          "step_order": 2,
+          "delay_days": 5,
+          "delay_hours": 0,
+          "template_name": "Follow-up SMS - Quick Check"
+        }
+      ]
+    }
+  ]
+}

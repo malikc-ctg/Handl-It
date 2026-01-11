@@ -1,26 +1,11 @@
-# Node modules
 node_modules/
-
-# Environment variables
+.DS_Store
+*.log
+coverage/
+playwright-report/
+test-results/
 .env
 .env.local
-.env.production
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# Editor files
-.vscode/
-.idea/
-
-# Logs
-*.log
-npm-debug.log*
-
-# Build output
-dist/
-build/
-
-# Supabase local
-.supabase/
+*.swp
+*.swo
+*~

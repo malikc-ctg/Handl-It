@@ -4,6 +4,7 @@
  */
 
 import { supabase } from './supabase.js'
+import { logger, reportError } from './logger.js'
 
 /**
  * Calculate the next occurrence date based on recurrence pattern
@@ -38,11 +39,17 @@ function calculateNextOccurrence(currentDate, pattern) {
  */
 export async function createNextRecurringInstance(completedJob) {
   try {
-    console.log('🔄 Creating next recurring instance for job:', completedJob.id)
+    logger.info('Creating next recurring instance', {
+      job_id: completedJob.id,
+      job_type: 'create_recurring_instance'
+    })
     
     // Only create next instance if this is a recurring job
     if (completedJob.frequency !== 'recurring') {
-      console.log('⚠️ Job is not recurring, skipping auto-creation')
+      logger.warn('Job is not recurring, skipping auto-creation', {
+        job_id: completedJob.id,
+        frequency: completedJob.frequency
+      })
       return null
     }
     
@@ -73,7 +80,11 @@ export async function createNextRecurringInstance(completedJob) {
       created_by: completedJob.created_by  // CRITICAL: Preserve the owner!
     }
     
-    console.log('📝 Creating new job instance:', newJob)
+    logger.info('Creating new job instance', {
+      job_id: completedJob.id,
+      next_scheduled_date: newJob.scheduled_date,
+      recurrence_pattern: pattern
+    })
     
     const { data, error } = await supabase
       .from('jobs')
@@ -82,11 +93,18 @@ export async function createNextRecurringInstance(completedJob) {
       .single()
     
     if (error) {
-      console.error('❌ Error creating next recurring instance:', error)
+      reportError(error, {
+        job_id: completedJob.id,
+        job_type: 'create_recurring_instance_error'
+      })
       throw error
     }
     
-    console.log('✅ Next recurring instance created:', data.id)
+    logger.info('Next recurring instance created successfully', {
+      job_id: completedJob.id,
+      next_job_id: data.id,
+      scheduled_date: data.scheduled_date
+    })
     
     // Copy tasks from the completed job to the new job
     await copyTasksToNewJob(completedJob.id, data.id)
@@ -101,7 +119,10 @@ export async function createNextRecurringInstance(completedJob) {
     
     return data
   } catch (error) {
-    console.error('Error in createNextRecurringInstance:', error)
+    reportError(error, {
+      job_id: completedJob.id,
+      job_type: 'create_recurring_instance_error'
+    })
     return null
   }
 }
@@ -151,9 +172,15 @@ async function copyTasksToNewJob(sourceJobId, targetJobId) {
     
     console.log(`✅ Copied ${tasks.length} tasks to new job`)
   } catch (error) {
-    console.error('Error copying tasks:', error)
+    reportError(error, {
+      source_job_id: sourceJobId,
+      target_job_id: targetJobId,
+      job_type: 'copy_tasks_error'
+    })
   }
 }
+
+import { logger, reportError } from './logger.js'
 
 /**
  * Check if a job should create next instance and do it
@@ -162,7 +189,11 @@ async function copyTasksToNewJob(sourceJobId, targetJobId) {
  */
 export async function handleJobCompletion(job) {
   if (job.frequency === 'recurring' && job.status === 'completed') {
-    console.log('🔄 Job completed, checking for recurring creation')
+    logger.info('Job completed, checking for recurring creation', {
+      job_id: job.id,
+      job_type: 'recurring_job_completion',
+      frequency: job.frequency
+    })
     
     // Check if this job is linked to a booking
     const { data: booking, error: bookingError } = await supabase
@@ -173,10 +204,19 @@ export async function handleJobCompletion(job) {
     
     if (!bookingError && booking && booking.frequency === 'recurring') {
       // If linked to a recurring booking, create the next booking (which will auto-create its job)
-      console.log('📅 Job is linked to recurring booking, creating next booking instance')
+      logger.info('Job linked to recurring booking, creating next booking instance', {
+        job_id: job.id,
+        booking_id: booking.id,
+        job_type: 'recurring_booking_next_instance'
+      })
       const nextBooking = await createNextBookingInstance(booking)
       
       if (nextBooking) {
+        logger.info('Next booking instance created successfully', {
+          job_id: job.id,
+          next_booking_id: nextBooking.id,
+          scheduled_date: nextBooking.scheduled_date
+        })
         return {
           success: true,
           message: `✅ Job completed! Next booking scheduled for ${new Date(nextBooking.scheduled_date).toLocaleDateString()}`,
@@ -185,9 +225,18 @@ export async function handleJobCompletion(job) {
       }
     } else {
       // Standalone recurring job (not linked to booking), create next job directly
+      logger.info('Creating next recurring job instance', {
+        job_id: job.id,
+        job_type: 'standalone_recurring_job'
+      })
       const nextJob = await createNextRecurringInstance(job)
       
       if (nextJob) {
+        logger.info('Next recurring job instance created successfully', {
+          job_id: job.id,
+          next_job_id: nextJob.id,
+          scheduled_date: nextJob.scheduled_date
+        })
         return {
           success: true,
           message: `✅ Job completed! Next occurrence scheduled for ${new Date(nextJob.scheduled_date).toLocaleDateString()}`,
@@ -196,6 +245,11 @@ export async function handleJobCompletion(job) {
       }
     }
   }
+  
+  logger.info('Job completed successfully', {
+    job_id: job.id,
+    job_type: 'job_completion'
+  })
   
   return {
     success: true,
@@ -331,7 +385,10 @@ async function createNextBookingInstance(completedBooking) {
     
     return newBooking
   } catch (error) {
-    console.error('Error in createNextBookingInstance:', error)
+    reportError(error, {
+      booking_id: completedBooking.id,
+      job_type: 'create_next_booking_instance_error'
+    })
     return null
   }
 }

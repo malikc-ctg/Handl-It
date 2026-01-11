@@ -22,7 +22,12 @@ export const SYNCABLE_TABLES = {
   SITES: 'sites',
   BOOKINGS: 'bookings',
   INVENTORY_TRANSACTIONS: 'inventory_transactions',
-  TIME_ENTRIES: 'time_entries'
+  TIME_ENTRIES: 'time_entries',
+  ROUTES: 'routes',
+  DOOR_TARGETS: 'door_targets',
+  DOOR_VISITS: 'door_visits',
+  LEADS: 'leads',
+  APPOINTMENTS: 'appointments'
 };
 
 /**

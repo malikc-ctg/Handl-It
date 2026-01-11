@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Quote - NFG</title>
+  <link rel="icon" type="image/png" href="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU">
+  
+  <!-- Inter font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            nfgblue: '#0D47A1',
+            nfgdark: '#0A3A84',
+            nfglight: '#E3ECFA',
+            nfgray: '#E5E7EB',
+            nftext: '#1E293B',
+            nfbg: '#F8FAFC'
+          },
+          fontFamily: { inter: ['Inter','sans-serif'] }
+        }
+      }
+    }
+  </script>
+
+  <!-- Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+  </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900">
+  <div class="min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center">
+            <h1 class="text-xl font-semibold text-nfgblue dark:text-blue-400">NFG Quote</h1>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Loading State -->
+      <div id="loading-state" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-nfgblue mb-4"></div>
+        <p class="text-gray-600 dark:text-gray-400">Loading quote...</p>
+      </div>
+
+      <!-- Error State -->
+      <div id="error-state" class="hidden bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6 text-center">
+        <i data-lucide="alert-circle" class="w-16 h-16 mx-auto text-red-500 mb-4"></i>
+        <h2 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-2">Quote Not Found</h2>
+        <p class="text-gray-600 dark:text-gray-400">This quote link is invalid or has expired.</p>
+      </div>
+
+      <!-- Expired State -->
+      <div id="expired-state" class="hidden bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-6 text-center">
+        <i data-lucide="clock" class="w-16 h-16 mx-auto text-yellow-500 mb-4"></i>
+        <h2 class="text-xl font-semibold text-yellow-600 dark:text-yellow-400 mb-2">Quote Expired</h2>
+        <p class="text-gray-600 dark:text-gray-400">This quote has expired. Please contact us for a new quote.</p>
+      </div>
+
+      <!-- Walkthrough Proposal View -->
+      <div id="walkthrough-proposal-view" class="hidden">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-lg overflow-hidden mb-6">
+          <!-- Header Banner -->
+          <div class="bg-blue-50 dark:bg-blue-900/20 border-b border-blue-200 dark:border-blue-800 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-blue-900 dark:text-blue-100">Walkthrough Proposal</h2>
+                <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Non-Binding Estimate</p>
+              </div>
+              <span class="px-3 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-lg text-sm font-medium">Proposal Only</span>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-6">
+            <!-- Account Info -->
+            <div id="proposal-account-info"></div>
+
+            <!-- Service Schedule -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Service Schedule</h3>
+              <div id="proposal-service-schedule" class="text-gray-700 dark:text-gray-300 whitespace-pre-line"></div>
+            </div>
+
+            <!-- Scope Summary -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Scope of Work</h3>
+              <div id="proposal-scope-summary" class="text-gray-700 dark:text-gray-300 whitespace-pre-line"></div>
+            </div>
+
+            <!-- Optional Range Estimate -->
+            <div id="proposal-range-estimate" class="hidden border border-blue-200 dark:border-blue-800 rounded-lg p-4 bg-blue-50 dark:bg-blue-900/20">
+              <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-100 mb-2">Estimated Range (Non-Binding)</h3>
+              <div id="proposal-range-display" class="text-xl font-semibold text-blue-700 dark:text-blue-300"></div>
+              <p class="text-sm text-blue-600 dark:text-blue-400 mt-2">Final pricing will be determined after walkthrough</p>
+            </div>
+
+            <!-- Assumptions & Exclusions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div id="proposal-assumptions-section" class="hidden">
+                <h3 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-2">Assumptions</h3>
+                <div id="proposal-assumptions" class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line"></div>
+              </div>
+              <div id="proposal-exclusions-section" class="hidden">
+                <h3 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-2">Exclusions</h3>
+                <div id="proposal-exclusions" class="text-sm text-gray-600 dark:text-gray-400 whitespace-pre-line"></div>
+              </div>
+            </div>
+
+            <!-- CTA Button -->
+            <div class="border-t border-nfgray dark:border-gray-700 pt-6 mt-6">
+              <button id="book-walkthrough-btn" class="w-full px-6 py-3 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-semibold text-lg transition">
+                Book Walkthrough
+              </button>
+              <button id="download-proposal-pdf-btn" class="w-full mt-3 px-6 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition">
+                Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Final Quote View -->
+      <div id="final-quote-view" class="hidden">
+        <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-lg overflow-hidden mb-6">
+          <!-- Header Banner -->
+          <div class="bg-green-50 dark:bg-green-900/20 border-b border-green-200 dark:border-green-800 px-6 py-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <h2 class="text-2xl font-bold text-green-900 dark:text-green-100">Final Quote</h2>
+                <p class="text-sm text-green-700 dark:text-green-300 mt-1">Binding Agreement</p>
+              </div>
+              <div class="text-right">
+                <div id="quote-expiry-timer" class="text-sm font-medium text-green-800 dark:text-green-200"></div>
+                <div class="text-xs text-green-600 dark:text-green-400 mt-1">Expires</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="p-6 space-y-6">
+            <!-- Account Info -->
+            <div id="final-account-info"></div>
+
+            <!-- Line Items Table -->
+            <div>
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quote Details</h3>
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead class="bg-nfglight dark:bg-gray-700">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">Description</th>
+                      <th class="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Quantity</th>
+                      <th class="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Unit Price</th>
+                      <th class="px-4 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody id="final-line-items" class="divide-y divide-nfgray dark:divide-gray-700">
+                    <!-- Line items will be rendered here -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Totals -->
+            <div class="border-t border-nfgray dark:border-gray-700 pt-4">
+              <div class="flex justify-end">
+                <div class="w-64 space-y-2">
+                  <div class="flex justify-between text-gray-700 dark:text-gray-300">
+                    <span>Subtotal:</span>
+                    <span id="final-subtotal">$0.00</span>
+                  </div>
+                  <div class="flex justify-between text-gray-700 dark:text-gray-300">
+                    <span>Tax (HST):</span>
+                    <span id="final-tax">$0.00</span>
+                  </div>
+                  <div class="flex justify-between text-lg font-bold text-gray-900 dark:text-gray-100 pt-2 border-t border-nfgray dark:border-gray-700">
+                    <span>Total:</span>
+                    <span id="final-total">$0.00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terms & Conditions -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <h3 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-2">Terms</h3>
+                <div id="final-terms" class="text-sm text-gray-600 dark:text-gray-400 space-y-1">
+                  <!-- Terms will be rendered here -->
+                </div>
+              </div>
+              <div>
+                <h3 class="text-md font-semibold text-gray-900 dark:text-gray-100 mb-2">Assumptions & Exclusions</h3>
+                <div id="final-assumptions-exclusions" class="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                  <!-- Assumptions and exclusions will be rendered here -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Accept/Decline Actions -->
+            <div id="final-quote-actions" class="border-t border-nfgray dark:border-gray-700 pt-6 mt-6">
+              <!-- Already Accepted/Declined State -->
+              <div id="quote-status-badge" class="hidden mb-4 text-center">
+                <!-- Status badge will be shown here -->
+              </div>
+
+              <!-- Accept/Decline Form (if not yet responded) -->
+              <div id="quote-response-form" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button id="accept-quote-btn" class="px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold text-lg transition">
+                    Accept Quote
+                  </button>
+                  <button id="decline-quote-btn" class="px-6 py-3 border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg font-semibold text-lg transition">
+                    Decline Quote
+                  </button>
+                </div>
+                <button id="download-final-pdf-btn" class="w-full px-6 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium transition">
+                  Download PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Accept Quote Modal -->
+      <div id="accept-quote-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-semibold text-green-600 dark:text-green-400 mb-4">Accept Quote</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your Name <span class="text-red-500">*</span></label>
+              <input type="text" id="accept-name" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Your Email <span class="text-red-500">*</span></label>
+              <input type="email" id="accept-email" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+            </div>
+            <div class="flex items-start">
+              <input type="checkbox" id="accept-acknowledge" class="mt-1 mr-2" required>
+              <label for="accept-acknowledge" class="text-sm text-gray-700 dark:text-gray-300">I acknowledge that this is a binding agreement</label>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="button" id="cancel-accept-btn" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+                Cancel
+              </button>
+              <button type="button" id="confirm-accept-btn" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
+                Confirm Acceptance
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Decline Quote Modal -->
+      <div id="decline-quote-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
+          <h3 class="text-xl font-semibold text-red-600 dark:text-red-400 mb-4">Decline Quote</h3>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reason <span class="text-red-500">*</span></label>
+              <select id="decline-reason" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+                <option value="">Select a reason...</option>
+                <option value="price_too_high">Price is too high</option>
+                <option value="not_needed">Service not needed</option>
+                <option value="found_other_provider">Found another provider</option>
+                <option value="timing">Timing doesn't work</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Additional Notes</label>
+              <textarea id="decline-notes" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Optional..."></textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="button" id="cancel-decline-btn" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+                Cancel
+              </button>
+              <button type="button" id="confirm-decline-btn" class="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition">
+                Confirm Decline
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script type="module" src="./js/quote-portal.js"></script>
+  <script>
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>

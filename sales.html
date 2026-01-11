@@ -397,8 +397,65 @@
               <i data-lucide="plus" class="w-4 h-4"></i> New Quote
             </button>
           </div>
-          <div id="quotes-list" class="space-y-4">
-            <!-- Quotes will be rendered here -->
+
+          <!-- Filters -->
+          <div class="flex flex-wrap gap-4 mb-6 p-4 bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl">
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+              <select id="quotes-filter-status" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="viewed">Viewed</option>
+                <option value="accepted">Accepted</option>
+                <option value="declined">Declined</option>
+                <option value="expired">Expired</option>
+                <option value="withdrawn">Withdrawn</option>
+              </select>
+            </div>
+            <div class="flex-1 min-w-[200px]">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Quote Type</label>
+              <select id="quotes-filter-type" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                <option value="">All Types</option>
+                <option value="standard">Standard</option>
+                <option value="walkthrough_required">Walkthrough Required</option>
+                <option value="ballpark">Ballpark</option>
+              </select>
+            </div>
+            <div class="flex items-end">
+              <button id="quotes-filter-reset" class="px-4 py-2 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
+                Reset Filters
+              </button>
+            </div>
+          </div>
+
+          <!-- Quotes Table -->
+          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead class="bg-nfglight dark:bg-gray-700">
+                  <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Company</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Quote Type</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Latest Revision</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Total / Range</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Sent Date</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Expiry</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Owner</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="quotes-table-body" class="bg-white dark:bg-gray-800 divide-y divide-nfgray dark:divide-gray-700">
+                  <!-- Quotes will be rendered here -->
+                </tbody>
+              </table>
+            </div>
+            <div id="quotes-empty-state" class="hidden p-12 text-center">
+              <i data-lucide="file-text" class="w-16 h-16 mx-auto text-gray-400 mb-4"></i>
+              <p class="text-gray-500 dark:text-gray-400">No quotes yet</p>
+              <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Click "New Quote" to create your first quote</p>
+            </div>
           </div>
         </div>
 
@@ -624,79 +681,248 @@
     </div>
   </div>
 
-  <!-- Quote Builder Modal -->
+  <!-- Quote Builder Modal (3-Step Wizard) -->
   <div id="quote-builder-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-      <div class="p-6 border-b border-nfgray dark:border-gray-700">
-        <div class="flex justify-between items-center">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Header -->
+      <div class="p-6 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
+        <div class="flex justify-between items-center mb-4">
           <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create Quote</h3>
           <button id="close-quote-builder-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
+        <!-- Step Indicator -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center flex-1">
+            <div class="flex items-center">
+              <div id="wizard-step-1-indicator" class="w-8 h-8 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold text-sm">1</div>
+              <span class="ml-2 text-sm font-medium text-nfgblue dark:text-blue-400">Context</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
+            <div class="flex items-center">
+              <div id="wizard-step-2-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">2</div>
+              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Pricing</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
+            <div class="flex items-center">
+              <div id="wizard-step-3-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">3</div>
+              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Terms</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <form id="quote-builder-form" class="p-6 space-y-6">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Template</label>
-          <select id="quote-template-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-            <option value="">Start from scratch</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quote Title</label>
-          <input type="text" id="quote-title-input" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g., Monthly Cleaning Service" required>
-        </div>
-        
-        <!-- Good/Better/Best Tiers -->
-        <div class="space-y-4">
-          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4">
-            <h4 class="font-semibold text-green-600 dark:text-green-400 mb-3">Good</h4>
-            <div id="good-tier-items" class="space-y-3">
-              <!-- Line items will be added here -->
-            </div>
-            <button type="button" data-tier="good" class="add-line-item-btn mt-3 px-3 py-1.5 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
-              + Add Item
-            </button>
+
+      <!-- Step Content (scrollable) -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- Step 1: Context -->
+        <div id="wizard-step-1" class="wizard-step space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account (Site) <span class="text-red-500">*</span></label>
+            <select id="quote-account-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+              <option value="">Select an account...</option>
+            </select>
           </div>
-          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4">
-            <h4 class="font-semibold text-blue-600 dark:text-blue-400 mb-3">Better</h4>
-            <div id="better-tier-items" class="space-y-3">
-              <!-- Line items will be added here -->
-            </div>
-            <button type="button" data-tier="better" class="add-line-item-btn mt-3 px-3 py-1.5 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
-              + Add Item
-            </button>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Contact</label>
+            <select id="quote-contact-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+              <option value="">Select a contact...</option>
+            </select>
           </div>
-          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4">
-            <h4 class="font-semibold text-purple-600 dark:text-purple-400 mb-3">Best</h4>
-            <div id="best-tier-items" class="space-y-3">
-              <!-- Line items will be added here -->
-            </div>
-            <button type="button" data-tier="best" class="add-line-item-btn mt-3 px-3 py-1.5 text-sm border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
-              + Add Item
-            </button>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deal (Optional)</label>
+            <select id="quote-deal-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+              <option value="">Link to a deal...</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quote Type <span class="text-red-500">*</span></label>
+            <select id="quote-type-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+              <option value="standard">Standard Quote</option>
+              <option value="walkthrough_required" selected>Walkthrough Required (Default for Commercial)</option>
+              <option value="ballpark">Ballpark Estimate</option>
+            </select>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Walkthrough Required: Client must complete a site walkthrough before final quote</p>
           </div>
         </div>
 
-        <div class="flex justify-end items-center gap-4 pt-4 border-t border-nfgray dark:border-gray-700">
-          <div class="text-right">
-            <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
-            <p id="quote-total" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0.00</p>
+        <!-- Step 2: Pricing + Scope (dynamic based on quote type) -->
+        <div id="wizard-step-2" class="wizard-step hidden space-y-6">
+          <!-- For Walkthrough Required: Scope Summary Only -->
+          <div id="walkthrough-scope-section" class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service Schedule Summary <span class="text-red-500">*</span></label>
+              <textarea id="quote-service-schedule" rows="4" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g., Weekly cleaning on Mondays and Thursdays, 2 hours per visit"></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scope Summary <span class="text-red-500">*</span></label>
+              <textarea id="quote-scope-summary" rows="4" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Describe what services will be included..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assumptions</label>
+              <textarea id="quote-assumptions" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Any assumptions about the work..."></textarea>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Exclusions</label>
+              <textarea id="quote-exclusions" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="What is NOT included..."></textarea>
+            </div>
+            <!-- Optional Range Estimate -->
+            <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4 bg-nfglight dark:bg-gray-700/50">
+              <label class="flex items-center mb-2">
+                <input type="checkbox" id="include-range-estimate" class="mr-2">
+                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Include Non-Binding Range Estimate</span>
+              </label>
+              <div id="range-estimate-fields" class="hidden mt-3 grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Low Estimate ($)</label>
+                  <input type="number" id="quote-range-low" step="0.01" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                </div>
+                <div>
+                  <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">High Estimate ($)</label>
+                  <input type="number" id="quote-range-high" step="0.01" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- For Standard/Ballpark: Line Items Builder -->
+          <div id="binding-line-items-section" class="hidden space-y-4">
+            <div class="flex justify-between items-center">
+              <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Line Items</h4>
+              <button type="button" id="add-line-item-btn" class="px-3 py-1.5 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg transition">
+                + Add Line Item
+              </button>
+            </div>
+            <div id="quote-line-items-list" class="space-y-3">
+              <!-- Line items will be dynamically added here -->
+            </div>
+            <div class="border-t border-nfgray dark:border-gray-700 pt-4 mt-4">
+              <div class="flex justify-end">
+                <div class="text-right">
+                  <div class="text-sm text-gray-600 dark:text-gray-400">Subtotal</div>
+                  <div id="quote-subtotal" class="text-xl font-semibold text-gray-900 dark:text-gray-100">$0.00</div>
+                  <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Tax (13% HST)</div>
+                  <div id="quote-tax" class="text-lg text-gray-900 dark:text-gray-100">$0.00</div>
+                  <div class="text-lg font-semibold text-nfgblue dark:text-blue-400 mt-2">Total</div>
+                  <div id="quote-total" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0.00</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="flex gap-3 pt-4">
-          <button type="button" id="cancel-quote-builder" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
-            Cancel
+        <!-- Step 3: Terms + Send -->
+        <div id="wizard-step-3" class="wizard-step hidden space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Billing Frequency</label>
+              <select id="quote-billing-frequency" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                <option value="monthly" selected>Monthly</option>
+                <option value="weekly">Weekly</option>
+                <option value="biweekly">Bi-Weekly</option>
+                <option value="one_time">One-Time</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contract Term (Months)</label>
+              <input type="number" id="quote-contract-term" min="1" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="12" value="12">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Proposed Start Date</label>
+            <input type="date" id="quote-start-date" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiry (Days) <span class="text-red-500">*</span></label>
+            <input type="number" id="quote-expiry-days" min="1" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="7" value="7" required>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Quote will expire after this many days</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Send To (Email Addresses)</label>
+            <input type="text" id="quote-send-emails" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="email@example.com, another@example.com">
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Separate multiple emails with commas</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Internal Notes (Not shown to client)</label>
+            <textarea id="quote-internal-notes" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Internal notes only..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer with Navigation Buttons -->
+      <div class="p-6 border-t border-nfgray dark:border-gray-700 flex-shrink-0 flex justify-between items-center">
+        <button type="button" id="wizard-cancel-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+          Cancel
+        </button>
+        <div class="flex gap-3">
+          <button type="button" id="wizard-back-btn" class="hidden px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+            ← Back
           </button>
-          <button type="button" id="save-draft-quote" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+          <button type="button" id="wizard-save-draft-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
             Save Draft
           </button>
-          <button type="submit" class="flex-1 px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+          <button type="button" id="wizard-next-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+            Next →
+          </button>
+          <button type="button" id="wizard-send-btn" class="hidden px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
             Send Quote
           </button>
         </div>
-      </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quote Detail Modal -->
+  <div id="quote-detail-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+      <!-- Header -->
+      <div class="p-6 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
+        <div class="flex justify-between items-center">
+          <div>
+            <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400" id="quote-detail-title">Quote Details</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" id="quote-detail-subtitle">Loading...</p>
+          </div>
+          <button id="close-quote-detail-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Content (scrollable) -->
+      <div class="flex-1 overflow-y-auto p-6">
+        <!-- Walkthrough Status Block (if walkthrough_required) -->
+        <div id="quote-walkthrough-block" class="hidden mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+          <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">Walkthrough Status</h4>
+          <div id="walkthrough-status-content"></div>
+          <div id="walkthrough-actions" class="mt-4 flex gap-2"></div>
+        </div>
+
+        <!-- Revisions List -->
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Revisions</h4>
+          <div id="quote-revisions-list" class="space-y-4">
+            <!-- Revisions will be rendered here -->
+          </div>
+        </div>
+
+        <!-- Events Timeline -->
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Timeline</h4>
+          <div id="quote-events-timeline" class="space-y-3">
+            <!-- Events will be rendered here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div class="p-6 border-t border-nfgray dark:border-gray-700 flex-shrink-0 flex justify-between items-center">
+        <button type="button" id="quote-detail-close-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+          Close
+        </button>
+        <div id="quote-detail-actions" class="flex gap-3">
+          <!-- Action buttons will be dynamically added here -->
+        </div>
+      </div>
     </div>
   </div>
 
@@ -735,6 +961,18 @@
       
       sales = await import('./js/sales.js');
       console.log('[Sales Dashboard] ✅ sales module loaded');
+      
+      // Load quotes module
+      window.quotesModule = await import('./js/quotes.js');
+      console.log('[Sales Dashboard] ✅ quotes module loaded');
+      
+      // Load quote wizard module
+      window.quoteWizard = await import('./js/quote-wizard.js');
+      console.log('[Sales Dashboard] ✅ quote wizard module loaded');
+      
+      // Load quote detail module
+      window.quoteDetail = await import('./js/quote-detail.js');
+      console.log('[Sales Dashboard] ✅ quote detail module loaded');
       
       console.log('[Sales Dashboard] ✅ All modules loaded successfully');
     } catch (error) {
@@ -1457,51 +1695,90 @@
     };
     
     async function loadQuotes() {
-      const quotesList = document.getElementById('quotes-list');
-      if (!quotesList) return;
+      const tableBody = document.getElementById('quotes-table-body');
+      const emptyState = document.getElementById('quotes-empty-state');
+      if (!tableBody) return;
       
       try {
-        const { data: quotes, error } = await supabase
-          .from('quotes')
-          .select('*, deals:deal_id(id, title)')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (error) throw error;
+        // Use quotes module if available, otherwise fallback
+        let quotes = [];
+        if (window.quotesModule && typeof window.quotesModule.loadQuotes === 'function') {
+          const statusFilter = document.getElementById('quotes-filter-status')?.value || '';
+          const typeFilter = document.getElementById('quotes-filter-type')?.value || '';
+          quotes = await window.quotesModule.loadQuotes({
+            status: statusFilter || undefined,
+            quote_type: typeFilter || undefined
+          });
+        } else {
+          // Fallback to direct query
+          const { data, error } = await supabase
+            .from('quotes')
+            .select('*')
+            .order('updated_at', { ascending: false })
+            .limit(100);
+          if (error) throw error;
+          quotes = data || [];
+        }
         
         if (!quotes || quotes.length === 0) {
-          quotesList.innerHTML = `
-            <div class="text-center py-12">
-              <i data-lucide="file-text" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-              <p class="text-gray-500">No quotes yet</p>
-            </div>
-          `;
+          if (tableBody) tableBody.innerHTML = '';
+          if (emptyState) {
+            emptyState.classList.remove('hidden');
+          }
           if (window.lucide) lucide.createIcons();
           return;
         }
         
-        quotesList.innerHTML = quotes.map(quote => `
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 hover:shadow-lg transition">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${quote.title || 'Untitled Quote'}</h3>
-                <p class="text-sm text-gray-500 mt-1">${quote.deals?.title || 'No deal'}</p>
-                <div class="flex items-center gap-4 mt-2 text-sm text-gray-600">
-                  <span>Value: $${Number(quote.quote_value || 0).toLocaleString()}</span>
-                  <span>Status: ${quote.status || 'draft'}</span>
-                </div>
-              </div>
-              <span class="px-3 py-1 rounded-lg text-xs font-medium bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400">
-                ${quote.status || 'draft'}
-              </span>
-            </div>
-          </div>
-        `).join('');
+        if (emptyState) emptyState.classList.add('hidden');
+        
+        // Render table rows
+        tableBody.innerHTML = quotes.map(quote => {
+          const siteName = quote.sites?.name || 'No Account';
+          const statusColors = {
+            draft: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+            sent: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300',
+            viewed: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+            accepted: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+            declined: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+            expired: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300',
+            withdrawn: 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+          };
+          const statusColor = statusColors[quote.status] || statusColors.draft;
+          
+          // Get latest revision info (would need to fetch separately in production)
+          const revisionType = quote.quote_type === 'walkthrough_required' ? 'Proposal' : 'Final';
+          const totalDisplay = 'TBD'; // Would fetch from latest revision
+          
+          const sentDate = quote.updated_at ? new Date(quote.updated_at).toLocaleDateString() : '-';
+          const expiryDate = '-'; // Would fetch from latest revision
+          
+          return `
+            <tr class="hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer quote-row" data-quote-id="${quote.id}">
+              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${siteName}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough' : quote.quote_type === 'standard' ? 'Standard' : 'Ballpark'}
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span class="px-2 py-1 text-xs font-medium rounded-lg ${statusColor}">${quote.status || 'draft'}</span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${revisionType}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">${totalDisplay}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${sentDate}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">${expiryDate}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">-</td>
+              <td class="px-6 py-4 whitespace-nowrap text-sm">
+                <button class="text-nfgblue hover:text-nfgdark font-medium view-quote-btn" data-quote-id="${quote.id}">View</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        
+        // Click handlers are set up via event delegation in the initialization section
         
         if (window.lucide) lucide.createIcons();
       } catch (error) {
         console.error('Error loading quotes:', error);
-        quotesList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load quotes</div>`;
+        if (tableBody) tableBody.innerHTML = `<tr><td colspan="9" class="px-6 py-4 text-center text-red-500">Failed to load quotes</td></tr>`;
       }
     }
     
@@ -1822,6 +2099,25 @@
         if (sales && typeof sales.init === 'function') {
       await sales.init();
           console.log('[Sales Dashboard] ✅ Sales module initialized');
+          
+          // Initialize quotes module after sales module (to get currentUser)
+          if (window.quotesModule && typeof window.quotesModule.initQuotes === 'function') {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await window.quotesModule.initQuotes(user);
+                console.log('[Sales Dashboard] ✅ Quotes module initialized');
+              }
+            } catch (err) {
+              console.warn('[Sales Dashboard] ⚠️ Could not initialize quotes module:', err);
+            }
+          }
+
+          // Initialize quote wizard
+          if (window.quoteWizard && typeof window.quoteWizard.initQuoteWizard === 'function') {
+            window.quoteWizard.initQuoteWizard();
+            console.log('[Sales Dashboard] ✅ Quote wizard initialized');
+          }
         } else {
           console.warn('[Sales Dashboard] ⚠️ Sales module or init function not available');
         }
@@ -1865,6 +2161,68 @@
     // Make sales module available globally
     window.sales = sales;
     window.loadTabData = loadTabData;
+    
+    // Setup quote filter listeners (after DOM is ready)
+    setTimeout(() => {
+      const quotesFilterStatus = document.getElementById('quotes-filter-status');
+      const quotesFilterType = document.getElementById('quotes-filter-type');
+      const quotesFilterReset = document.getElementById('quotes-filter-reset');
+      
+      if (quotesFilterStatus) {
+        quotesFilterStatus.addEventListener('change', () => loadQuotes());
+      }
+      if (quotesFilterType) {
+        quotesFilterType.addEventListener('change', () => loadQuotes());
+      }
+      if (quotesFilterReset) {
+        quotesFilterReset.addEventListener('click', () => {
+          if (quotesFilterStatus) quotesFilterStatus.value = '';
+          if (quotesFilterType) quotesFilterType.value = '';
+          loadQuotes();
+        });
+      }
+      
+      // Setup new quote button
+      const newQuoteBtnTab = document.getElementById('new-quote-btn-tab');
+      if (newQuoteBtnTab) {
+        newQuoteBtnTab.addEventListener('click', async () => {
+          if (window.quoteWizard && typeof window.quoteWizard.openQuoteWizard === 'function') {
+            window.quoteWizard.openQuoteWizard();
+          } else {
+            if (toast) toast.error('Quote wizard not loaded', 'Error');
+          }
+        });
+      }
+
+      // Setup quote detail modal close button
+      const closeQuoteDetailBtn = document.getElementById('close-quote-detail-modal');
+      const quoteDetailCloseBtn = document.getElementById('quote-detail-close-btn');
+      if (closeQuoteDetailBtn) {
+        closeQuoteDetailBtn.addEventListener('click', () => {
+          document.getElementById('quote-detail-modal')?.classList.add('hidden');
+        });
+      }
+      if (quoteDetailCloseBtn) {
+        quoteDetailCloseBtn.addEventListener('click', () => {
+          document.getElementById('quote-detail-modal')?.classList.add('hidden');
+        });
+      }
+
+      // Setup quote row click handlers (delegated)
+      const quotesTableBody = document.getElementById('quotes-table-body');
+      if (quotesTableBody) {
+        quotesTableBody.addEventListener('click', (e) => {
+          const row = e.target.closest('.quote-row');
+          const viewBtn = e.target.closest('.view-quote-btn');
+          if (row || viewBtn) {
+            const quoteId = row?.dataset.quoteId || viewBtn?.dataset.quoteId;
+            if (quoteId && window.quoteDetail && typeof window.quoteDetail.openQuoteDetail === 'function') {
+              window.quoteDetail.openQuoteDetail(quoteId);
+            }
+          }
+        });
+      }
+    }, 1000);
   </script>
   <script type="module" src="./js/auth.js"></script>
 </body>
