@@ -269,7 +269,7 @@ window.linkCallToSite = async (callId, siteId) => {
     const callItem = document.querySelector(`[data-call-id="${callId}"]`)
     if (callItem) {
       // Reload the timeline
-      const siteId = callItem.closest('[data-site-id]')?.dataset?.siteId
+      const siteId = (callItem.closest('[data-site-id]') as HTMLElement)?.dataset?.siteId
       if (siteId) {
         await renderCallsTimeline(siteId)
       }
@@ -294,7 +294,7 @@ window.createNextActionTask = async (callId, actionText) => {
     // Refresh the call item
     const callItem = document.querySelector(`[data-call-id="${callId}"]`)
     if (callItem) {
-      const siteId = callItem.closest('[data-site-id]')?.dataset?.siteId
+      const siteId = (callItem.closest('[data-site-id]') as HTMLElement)?.dataset?.siteId
       if (siteId) {
         await renderCallsTimeline(siteId)
       }

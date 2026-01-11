@@ -181,7 +181,8 @@ export async function linkCallToSite(callData) {
 /**
  * Generate Quo click-to-call deep link
  * @param {string} phoneNumber - Phone number to call (E.164 format preferred)
- * @param {object} options - Additional options
+ * @param {string} phoneNumber - Phone number to call (E.164 format preferred)
+ * @param {object} _options - Additional options (unused)
  * @returns {string} - Deep link URL or tel: link
  */
 export function generateClickToCallLink(phoneNumber, _options = {}) {
