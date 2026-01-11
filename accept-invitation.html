@@ -111,10 +111,11 @@
               type="password" 
               name="password" 
               required
-              minlength="6"
-              placeholder="Create a password (min. 6 characters)"
+              minlength="8"
+              placeholder="Create a password (min. 8 chars: uppercase, lowercase, number, special)"
               class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
             />
+            <p class="text-xs text-gray-500 mt-1">Must include: uppercase, lowercase, number, and special character</p>
           </div>
 
           <div>
@@ -123,7 +124,7 @@
               type="password" 
               name="confirm_password" 
               required
-              minlength="6"
+              minlength="8"
               placeholder="Confirm your password"
               class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
             />
@@ -273,12 +274,43 @@
         return;
       }
       
+      // Enhanced password validation to match Supabase requirements
+      if (password.length < 8) {
+        errorDiv.textContent = 'Password must be at least 8 characters.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      if (!/[a-z]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one lowercase letter.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      if (!/[A-Z]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one uppercase letter.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      if (!/[0-9]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one number.';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
+      if (!/[!@#$%^&*()_+\-=\[\]{};"':|,.<>?/`~]/.test(password)) {
+        errorDiv.textContent = 'Password must contain at least one special character (!@#$%^&* etc).';
+        errorDiv.classList.remove('hidden');
+        return;
+      }
+      
       errorDiv.classList.add('hidden');
       submitBtn.disabled = true;
       submitBtn.textContent = 'Creating account...';
       
       try {
-        // Sign up the user
+        // Sign up the user (profile will be created automatically by database trigger)
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email: invitationData.email,
           password: password,
@@ -292,6 +324,41 @@
 
         if (signUpError) throw signUpError;
 
+        if (!authData.user) {
+          throw new Error('Failed to create user account');
+        }
+
+        // Wait a moment for the database trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 500));
+
+        // Update user profile (phone and ensure full_name is correct)
+        // Use upsert to handle case where trigger hasn't run yet
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .upsert({
+            id: authData.user.id,
+            email: invitationData.email,
+            full_name: fullName,
+            role: invitationData.role,
+            phone: phone || null,
+            status: 'active'
+          }, {
+            onConflict: 'id'
+          });
+
+        if (profileError) {
+          console.warn('Profile update error (may be ok if trigger created it):', profileError);
+          // Try update as fallback
+          await supabase
+            .from('user_profiles')
+            .update({
+              full_name: fullName,
+              phone: phone || null,
+              status: 'active'
+            })
+            .eq('id', authData.user.id);
+        }
+
         // Update invitation status
         await supabase
           .from('user_invitations')
@@ -301,20 +368,28 @@
           })
           .eq('id', invitationData.id);
 
-        // Update user profile
-        await supabase
-          .from('user_profiles')
-          .update({
-            full_name: fullName,
-            phone: phone || null,
-            status: 'active'
-          })
-          .eq('id', authData.user.id);
-
         showSuccessState();
       } catch (error) {
         console.error('Error accepting invitation:', error);
-        errorDiv.textContent = error.message || 'Failed to create account. Please try again.';
+        
+        // Better error messages
+        let errorMessage = 'Failed to create account. Please try again.';
+        
+        if (error.message) {
+          if (error.message.includes('weak password') || error.message.includes('Password should contain')) {
+            errorMessage = 'Password must include: uppercase, lowercase, number, and special character.';
+          } else if (error.message.includes('already registered') || error.message.includes('already exists')) {
+            errorMessage = 'This email is already registered. Please contact your administrator.';
+          } else if (error.message.includes('invalid email')) {
+            errorMessage = 'Please enter a valid email address.';
+          } else if (error.message.includes('Database error')) {
+            errorMessage = 'Server error. Please try again in a moment.';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
+        errorDiv.textContent = errorMessage;
         errorDiv.classList.remove('hidden');
         submitBtn.disabled = false;
         submitBtn.textContent = 'Accept Invitation & Create Account';
