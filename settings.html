@@ -754,6 +754,14 @@
                 </label>
                 
                 <label class="flex items-start gap-3 p-3 border border-nfgray dark:border-gray-700 rounded-lg hover:bg-nfglight/50 dark:hover:bg-gray-700/50 cursor-pointer">
+                  <input type="checkbox" id="clear-reports" class="mt-1 w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue">
+                  <div class="flex-1">
+                    <div class="font-medium text-nfgblue dark:text-blue-400">Reports & Billing</div>
+                    <div class="text-sm text-gray-500 dark:text-gray-400">All invoices, payments, expenses, and billing data</div>
+                  </div>
+                </label>
+                
+                <label class="flex items-start gap-3 p-3 border border-nfgray dark:border-gray-700 rounded-lg hover:bg-nfglight/50 dark:hover:bg-gray-700/50 cursor-pointer">
                   <input type="checkbox" id="clear-notifications" class="mt-1 w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue">
                   <div class="flex-1">
                     <div class="font-medium text-nfgblue dark:text-blue-400">Notifications</div>
@@ -1826,6 +1834,24 @@
             clearedCount++;
           } catch (err) {
             errors.push(`Routes/Sales: ${err.message}`);
+          }
+        }
+        
+        if (clearReports) {
+          try {
+            // Clear reports-related tables (invoices, payments, expenses, invoice_line_items)
+            const reportTables = ['invoices', 'payments', 'expenses', 'invoice_line_items'];
+            for (const table of reportTables) {
+              try {
+                await supabase.from(table).delete().neq('id', '');
+              } catch (e) {
+                // Table might not exist, ignore
+                console.warn(`Table ${table} might not exist or error:`, e);
+              }
+            }
+            clearedCount++;
+          } catch (err) {
+            errors.push(`Reports/Billing: ${err.message}`);
           }
         }
         
