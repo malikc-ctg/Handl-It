@@ -45,14 +45,12 @@ CREATE TRIGGER on_auth_user_created
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user();
 
--- 4. Ensure RLS policy allows the trigger to insert
--- The trigger runs as SECURITY DEFINER, so it should bypass RLS
--- But let's make sure there's a policy that allows service role inserts
-
-DROP POLICY IF EXISTS "Trigger can insert profiles" ON user_profiles;
-CREATE POLICY "Trigger can insert profiles" ON user_profiles
-FOR INSERT
-WITH CHECK (true); -- SECURITY DEFINER functions bypass RLS, but this ensures compatibility
+-- ==========================================
+-- Note: SECURITY DEFINER functions bypass RLS
+-- ==========================================
+-- The trigger function runs as SECURITY DEFINER, which means
+-- it bypasses Row Level Security (RLS) policies.
+-- No additional RLS policy is needed for this trigger.
 
 -- ==========================================
 -- Verification
