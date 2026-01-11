@@ -139,13 +139,13 @@ function navigateStep(direction) {
 // Validate current step
 function validateCurrentStep() {
   if (currentWizardStep === 1) {
-    const accountSelect = document.getElementById('quote-account-select');
     const quoteTypeSelect = document.getElementById('quote-type-select');
     
-    if (!accountSelect?.value) {
-      toast.error('Please select an account', 'Validation Error');
-      return false;
-    }
+    // Account is optional - quotes can be for new accounts
+    // if (!accountSelect?.value) {
+    //   toast.error('Please select an account', 'Validation Error');
+    //   return false;
+    // }
     if (!quoteTypeSelect?.value) {
       toast.error('Please select a quote type', 'Validation Error');
       return false;
@@ -296,7 +296,7 @@ async function populateDropdowns() {
   const accountSelect = document.getElementById('quote-account-select');
   if (accountSelect && window.quotesModule) {
     const sites = window.quotesModule.sites || [];
-    accountSelect.innerHTML = '<option value="">Select an account...</option>' +
+    accountSelect.innerHTML = '<option value="">New Account - No site selected</option>' +
       sites.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
   }
 

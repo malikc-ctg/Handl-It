@@ -30,7 +30,7 @@ async function loadSites() {
   try {
     const { data, error } = await supabase
       .from('sites')
-      .select('id, name, address, contact_name, contact_email, contact_phone')
+      .select('id, name, address, contact_email, contact_phone')
       .order('name');
     if (error) throw error;
     sites = data || [];
@@ -43,7 +43,7 @@ async function loadDeals() {
   try {
     const { data, error } = await supabase
       .from('deals')
-      .select('id, site_id, estimated_value, stage, assigned_to')
+      .select('id, site_id, deal_value, stage, assigned_to')
       .order('created_at', { ascending: false });
     if (error) throw error;
     deals = data || [];
@@ -76,7 +76,7 @@ export async function loadQuotes(filters = {}) {
       .select(`
         *,
         sites:account_id(id, name, address),
-        deals:deal_id(id, stage, estimated_value)
+        deals:deal_id(id, stage, deal_value)
       `)
       .order('updated_at', { ascending: false });
 
@@ -112,8 +112,8 @@ export async function loadQuoteDetail(quoteId) {
       .from('quotes')
       .select(`
         *,
-        sites:account_id(id, name, address, contact_name, contact_email, contact_phone),
-        deals:deal_id(id, stage, estimated_value)
+        sites:account_id(id, name, address, contact_email, contact_phone),
+        deals:deal_id(id, stage, deal_value)
       `)
       .eq('id', quoteId)
       .single();
@@ -828,7 +828,7 @@ export async function getRevisionByToken(publicToken) {
           primary_contact_id,
           quote_type,
           status,
-          sites:account_id(id, name, address, contact_name, contact_email, contact_phone)
+          sites:account_id(id, name, address, contact_email, contact_phone)
         )
       `)
       .eq('public_token', publicToken)

@@ -718,9 +718,9 @@
         <!-- Step 1: Context -->
         <div id="wizard-step-1" class="wizard-step space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account (Site) <span class="text-red-500">*</span></label>
-            <select id="quote-account-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-              <option value="">Select an account...</option>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account (Site) <span class="text-gray-500 text-xs">(Optional - for new accounts)</span></label>
+            <select id="quote-account-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+              <option value="">New Account - No site selected</option>
             </select>
           </div>
           <div>
@@ -1205,7 +1205,7 @@
         let query = supabase
           .from('deals')
           .select('*')
-          .in('status', ['new', 'contacted', 'qualified', 'proposal', 'negotiation'])
+          .in('stage', ['prospecting', 'qualification', 'proposal', 'negotiation'])
           .order('updated_at', { ascending: false });
 
         // Filter by assigned user if rep
@@ -1277,11 +1277,11 @@
     // Calculate and render KPIs
     function calculateAndRenderKPIs(deals, quotes, calls, leads) {
       // Open Pipeline
-      const openDeals = deals.filter(d => ['new', 'contacted', 'qualified', 'proposal', 'negotiation'].includes(d.status));
+      const openDeals = deals.filter(d => ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(d.stage));
       const totalOpen = openDeals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
       const weightedOpen = openDeals.reduce((sum, d) => {
-        const stageWeights = { new: 0.1, contacted: 0.3, qualified: 0.5, proposal: 0.7, negotiation: 0.9 };
-        return sum + (Number(d.deal_value) || 0) * (stageWeights[d.status] || 0.5);
+        const stageWeights = { prospecting: 0.1, qualification: 0.3, proposal: 0.7, negotiation: 0.9 };
+        return sum + (Number(d.deal_value) || 0) * (stageWeights[d.stage] || 0.5);
       }, 0);
 
       document.getElementById('kpi-total-open').textContent = `$${totalOpen.toLocaleString()}`;
@@ -1291,7 +1291,7 @@
       const today = new Date().toISOString().split('T')[0];
       const todayCalls = calls.length;
       const todayQuotes = quotes.filter(q => q.created_at?.startsWith(today)).length;
-      const todayClosed = deals.filter(d => d.status === 'won' && d.updated_at?.startsWith(today)).length;
+      const todayClosed = deals.filter(d => d.stage === 'closed_won' && d.updated_at?.startsWith(today)).length;
       const todayWalkthroughs = deals.filter(d => {
         // Check if deal has walkthrough scheduled for today
         // This is a placeholder - adjust based on your schema
@@ -1488,13 +1488,13 @@
           <tr class="deal-row ${isIdle ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-nfglight dark:hover:bg-gray-700'} cursor-pointer transition" data-deal-id="${deal.id}">
             <td class="px-4 py-3 text-sm font-medium text-nfgblue dark:text-blue-400">${deal.company_name || deal.title || 'Unknown'}</td>
             <td class="px-4 py-3">
-              <select class="text-sm border border-nfgray dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-nftext dark:text-gray-200" onchange="updateDealStage('${deal.id}', this.value)" value="${deal.status || 'new'}">
-                <option value="new" ${deal.status === 'new' ? 'selected' : ''}>New</option>
-                <option value="contacted" ${deal.status === 'contacted' ? 'selected' : ''}>Contacted</option>
-                <option value="qualified" ${deal.status === 'qualified' ? 'selected' : ''}>DM Reached</option>
-                <option value="proposal" ${deal.status === 'proposal' ? 'selected' : ''}>Walkthrough Booked</option>
-                <option value="quote_sent" ${deal.status === 'quote_sent' ? 'selected' : ''}>Quote Sent</option>
-                <option value="negotiation" ${deal.status === 'negotiation' ? 'selected' : ''}>Negotiation</option>
+              <select class="text-sm border border-nfgray dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-nftext dark:text-gray-200" onchange="updateDealStage('${deal.id}', this.value)" value="${deal.stage || 'prospecting'}">
+                <option value="prospecting" ${deal.stage === 'prospecting' ? 'selected' : ''}>Prospecting</option>
+                <option value="qualification" ${deal.stage === 'qualification' ? 'selected' : ''}>Qualification</option>
+                <option value="proposal" ${deal.stage === 'proposal' ? 'selected' : ''}>Proposal</option>
+                <option value="negotiation" ${deal.stage === 'negotiation' ? 'selected' : ''}>Negotiation</option>
+                <option value="closed_won" ${deal.stage === 'closed_won' ? 'selected' : ''}>Closed Won</option>
+                <option value="closed_lost" ${deal.stage === 'closed_lost' ? 'selected' : ''}>Closed Lost</option>
               </select>
             </td>
             <td class="px-4 py-3 text-sm font-semibold">$${Number(deal.deal_value || 0).toLocaleString()}</td>
@@ -1519,19 +1519,19 @@
     // Render pipeline stage snapshot
     function renderPipelineSnapshot(deals) {
       const stages = [
-        { key: 'new', label: 'New' },
-        { key: 'contacted', label: 'Contacted' },
-        { key: 'qualified', label: 'DM Reached' },
-        { key: 'proposal', label: 'Walkthrough Booked' },
-        { key: 'quote_sent', label: 'Quote Sent' },
-        { key: 'negotiation', label: 'Negotiation' }
+        { key: 'prospecting', label: 'Prospecting' },
+        { key: 'qualification', label: 'Qualification' },
+        { key: 'proposal', label: 'Proposal' },
+        { key: 'negotiation', label: 'Negotiation' },
+        { key: 'closed_won', label: 'Closed Won' },
+        { key: 'closed_lost', label: 'Closed Lost' }
       ];
 
       const snapshot = document.getElementById('pipeline-snapshot');
       if (!snapshot) return;
 
       snapshot.innerHTML = stages.map(stage => {
-        const stageDeals = deals.filter(d => d.status === stage.key);
+        const stageDeals = deals.filter(d => d.stage === stage.key);
         const totalValue = stageDeals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
         const avgDays = stageDeals.length > 0 
           ? Math.round(stageDeals.reduce((sum, d) => {
