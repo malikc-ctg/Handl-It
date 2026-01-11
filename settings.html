@@ -1546,16 +1546,102 @@
 
     // Clear data
     document.getElementById('clear-data-btn')?.addEventListener('click', async () => {
+      // First, prompt for password (using browser prompt for password input)
+      const password = prompt('Enter password to clear all system data:');
+      
+      if (!password) {
+        return; // User cancelled
+      }
+      
+      if (!password) {
+        return; // User cancelled
+      }
+      
+      if (password !== 'scorin') {
+        toast.error('Incorrect password. Data clearing cancelled.', 'Access Denied');
+        return;
+      }
+      
+      // Double confirmation after password
       const confirmed = await showConfirm(
-        'Clear All Data',
-        'Are you sure you want to clear all local data? This cannot be undone.'
+        '⚠️ WARNING: This will permanently delete all your data from the system. This action cannot be undone.\n\nAre you absolutely sure you want to continue?',
+        'Final Confirmation',
+        'error'
       );
       
-      if (confirmed) {
-        localStorage.removeItem('nfg_display_name')
-        localStorage.removeItem('nfg_notif_prefs')
-        toast.success('Local data cleared!');
-        setTimeout(() => location.reload(), 1500);
+      if (!confirmed) {
+        return;
+      }
+      
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          toast.error('You must be logged in to clear data', 'Error');
+          return;
+        }
+        
+        // Show loading state
+        const clearBtn = document.getElementById('clear-data-btn');
+        const originalHTML = clearBtn.innerHTML;
+        clearBtn.disabled = true;
+        clearBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-2"></i> Clearing...';
+        if (window.lucide) lucide.createIcons();
+        
+        // Clear user-specific data from database tables
+        const tablesToClear = [
+          { table: 'notification_preferences', userIdColumn: 'user_id' },
+          { table: 'user_settings', userIdColumn: 'user_id' },
+        ];
+        
+        let clearedCount = 0;
+        for (const { table, userIdColumn } of tablesToClear) {
+          try {
+            const { error } = await supabase
+              .from(table)
+              .delete()
+              .eq(userIdColumn, user.id);
+            
+            if (error && error.code !== '42P01') { // Ignore table doesn't exist errors (PostgreSQL)
+              console.warn(`Error clearing ${table}:`, error);
+            } else {
+              clearedCount++;
+            }
+          } catch (err) {
+            console.warn(`Error clearing ${table}:`, err);
+          }
+        }
+        
+        // Clear localStorage
+        localStorage.clear();
+        
+        // Clear sessionStorage (except sales mode if set)
+        const salesMode = sessionStorage.getItem('isSalesMode');
+        sessionStorage.clear();
+        if (salesMode) {
+          sessionStorage.setItem('isSalesMode', salesMode);
+        }
+        
+        toast.success(`Data cleared successfully. ${clearedCount} table(s) cleared.`, 'Success');
+        
+        // Restore button temporarily
+        clearBtn.disabled = false;
+        clearBtn.innerHTML = originalHTML;
+        if (window.lucide) lucide.createIcons();
+        
+        // Reload page after a short delay
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+        
+      } catch (error) {
+        console.error('Error clearing data:', error);
+        toast.error('Failed to clear data: ' + (error.message || 'Unknown error'), 'Error');
+        
+        // Restore button
+        const clearBtn = document.getElementById('clear-data-btn');
+        clearBtn.disabled = false;
+        clearBtn.innerHTML = originalHTML;
+        if (window.lucide) lucide.createIcons();
       }
     })
 
