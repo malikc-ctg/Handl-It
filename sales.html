@@ -697,16 +697,21 @@
           <div class="flex items-center flex-1">
             <div class="flex items-center">
               <div id="wizard-step-1-indicator" class="w-8 h-8 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold text-sm">1</div>
-              <span class="ml-2 text-sm font-medium text-nfgblue dark:text-blue-400">Context</span>
+              <span class="ml-2 text-sm font-medium text-nfgblue dark:text-blue-400">Account Type</span>
             </div>
             <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
             <div class="flex items-center">
               <div id="wizard-step-2-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">2</div>
-              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Pricing</span>
+              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Context</span>
             </div>
             <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
             <div class="flex items-center">
               <div id="wizard-step-3-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">3</div>
+              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Pricing</span>
+            </div>
+            <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
+            <div class="flex items-center">
+              <div id="wizard-step-4-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">4</div>
               <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Terms</span>
             </div>
           </div>
@@ -715,13 +720,39 @@
 
       <!-- Step Content (scrollable) -->
       <div class="flex-1 overflow-y-auto p-6">
-        <!-- Step 1: Context -->
+        <!-- Step 1: Account Type Selection -->
         <div id="wizard-step-1" class="wizard-step space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account (Site) <span class="text-gray-500 text-xs">(Optional - for new accounts)</span></label>
-            <select id="quote-account-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-              <option value="">New Account - No site selected</option>
+          <div class="text-center py-8">
+            <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Select Account Type</h4>
+            <p class="text-gray-600 dark:text-gray-400 mb-8">Choose whether this quote is for a new account or an existing account</p>
+            <div class="grid grid-cols-2 gap-6 max-w-2xl mx-auto">
+              <button type="button" id="account-type-new" class="account-type-btn p-8 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue dark:hover:border-blue-400 rounded-xl bg-white dark:bg-gray-800 transition cursor-pointer text-center">
+                <div class="text-4xl mb-4">✨</div>
+                <h5 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">New Account</h5>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Create a quote for a new customer</p>
+              </button>
+              <button type="button" id="account-type-existing" class="account-type-btn p-8 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue dark:hover:border-blue-400 rounded-xl bg-white dark:bg-gray-800 transition cursor-pointer text-center">
+                <div class="text-4xl mb-4">🏢</div>
+                <h5 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Existing Account</h5>
+                <p class="text-sm text-gray-600 dark:text-gray-400">Create a quote for an existing customer</p>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Context -->
+        <div id="wizard-step-2" class="wizard-step hidden space-y-4">
+          <!-- Account Selection (conditional based on account type) -->
+          <div id="existing-account-fields">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account (Site) <span class="text-red-500">*</span></label>
+            <select id="quote-account-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+              <option value="">Select an account...</option>
             </select>
+          </div>
+          <div id="new-account-fields" class="hidden">
+            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+              <p class="text-sm text-blue-900 dark:text-blue-100">This quote is for a new account. Account details will be collected after the quote is accepted.</p>
+            </div>
           </div>
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Contact</label>
@@ -746,8 +777,8 @@
           </div>
         </div>
 
-        <!-- Step 2: Pricing + Scope (dynamic based on quote type) -->
-        <div id="wizard-step-2" class="wizard-step hidden space-y-6">
+        <!-- Step 3: Pricing + Scope (dynamic based on quote type) -->
+        <div id="wizard-step-3" class="wizard-step hidden space-y-6">
           <!-- CLEANING METRICS SECTION (All Quote Types) -->
           <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4 bg-nfglight dark:bg-gray-700/50">
             <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Cleaning Metrics</h4>
@@ -863,8 +894,8 @@
           </div>
         </div>
 
-        <!-- Step 3: Terms + Send -->
-        <div id="wizard-step-3" class="wizard-step hidden space-y-4">
+        <!-- Step 4: Terms + Send -->
+        <div id="wizard-step-4" class="wizard-step hidden space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Billing Frequency</label>

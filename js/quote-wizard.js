@@ -6,6 +6,7 @@ import { toast } from './notifications.js';
 
 let currentWizardStep = 1;
 let currentQuoteId = null;
+let accountType = null; // 'new' or 'existing'
 let wizardData = {
   account_id: null,
   primary_contact_id: null,
@@ -79,6 +80,16 @@ export function initQuoteWizard() {
   // Line items handlers
   setupLineItemsHandlers();
 
+  // Account type selection handlers
+  const newAccountBtn = document.getElementById('account-type-new');
+  const existingAccountBtn = document.getElementById('account-type-existing');
+  if (newAccountBtn) {
+    newAccountBtn.addEventListener('click', () => selectAccountType('new'));
+  }
+  if (existingAccountBtn) {
+    existingAccountBtn.addEventListener('click', () => selectAccountType('existing'));
+  }
+
   // Close on backdrop click
   if (modal) {
     modal.addEventListener('click', (e) => {
@@ -114,10 +125,39 @@ function closeWizard() {
   resetWizard();
 }
 
+// Select account type
+function selectAccountType(type) {
+  accountType = type;
+  
+  // Update button styles
+  const newBtn = document.getElementById('account-type-new');
+  const existingBtn = document.getElementById('account-type-existing');
+  
+  if (newBtn && existingBtn) {
+    if (type === 'new') {
+      newBtn.classList.add('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
+      newBtn.classList.remove('border-nfgray', 'dark:border-gray-600');
+      existingBtn.classList.remove('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
+      existingBtn.classList.add('border-nfgray', 'dark:border-gray-600');
+    } else {
+      existingBtn.classList.add('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
+      existingBtn.classList.remove('border-nfgray', 'dark:border-gray-600');
+      newBtn.classList.remove('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
+      newBtn.classList.add('border-nfgray', 'dark:border-gray-600');
+    }
+  }
+  
+  // Move to next step after a brief delay for visual feedback
+  setTimeout(() => {
+    navigateStep(1);
+  }, 300);
+}
+
 // Reset wizard data
 function resetWizard() {
   currentWizardStep = 1;
   currentQuoteId = null;
+  accountType = null;
   wizardData = {
     account_id: null,
     primary_contact_id: null,
@@ -159,7 +199,7 @@ function resetWizard() {
 function navigateStep(direction) {
   const newStep = currentWizardStep + direction;
   
-  if (newStep < 1 || newStep > 3) return;
+  if (newStep < 1 || newStep > 4) return;
 
   // Validate current step before moving forward
   if (direction > 0 && !validateCurrentStep()) {
@@ -176,19 +216,30 @@ function navigateStep(direction) {
 // Validate current step
 function validateCurrentStep() {
   if (currentWizardStep === 1) {
-    const quoteTypeSelect = document.getElementById('quote-type-select');
-    
-    // Account is optional - quotes can be for new accounts
-    // if (!accountSelect?.value) {
-    //   toast.error('Please select an account', 'Validation Error');
-    //   return false;
-    // }
-    if (!quoteTypeSelect?.value) {
-      toast.error('Please select a quote type', 'Validation Error');
+    if (!accountType) {
+      toast.error('Please select an account type', 'Validation Error');
       return false;
     }
     return true;
   } else if (currentWizardStep === 2) {
+    const quoteTypeSelect = document.getElementById('quote-type-select');
+    
+    if (!quoteTypeSelect?.value) {
+      toast.error('Please select a quote type', 'Validation Error');
+      return false;
+    }
+    
+    // Validate account selection for existing accounts
+    if (accountType === 'existing') {
+      const accountSelect = document.getElementById('quote-account-select');
+      if (!accountSelect?.value) {
+        toast.error('Please select an account', 'Validation Error');
+        return false;
+      }
+    }
+    
+    return true;
+  } else if (currentWizardStep === 3) {
     const quoteType = wizardData.quote_type;
     
     if (quoteType === 'walkthrough_required') {
@@ -207,7 +258,7 @@ function validateCurrentStep() {
       }
     }
     return true;
-  } else if (currentWizardStep === 3) {
+  } else if (currentWizardStep === 4) {
     const expiryDays = document.getElementById('quote-expiry-days')?.value;
     if (!expiryDays || parseInt(expiryDays) < 1) {
       toast.error('Please enter a valid expiry (days)', 'Validation Error');
@@ -221,11 +272,17 @@ function validateCurrentStep() {
 // Save current step data
 function saveCurrentStepData() {
   if (currentWizardStep === 1) {
-    wizardData.account_id = document.getElementById('quote-account-select')?.value || null;
+    // Account type is already saved when selected
+  } else if (currentWizardStep === 2) {
+    if (accountType === 'existing') {
+      wizardData.account_id = document.getElementById('quote-account-select')?.value || null;
+    } else {
+      wizardData.account_id = null; // New account
+    }
     wizardData.primary_contact_id = document.getElementById('quote-contact-select')?.value || null;
     wizardData.deal_id = document.getElementById('quote-deal-select')?.value || null;
     wizardData.quote_type = document.getElementById('quote-type-select')?.value || 'walkthrough_required';
-  } else if (currentWizardStep === 2) {
+  } else if (currentWizardStep === 3) {
     const quoteType = wizardData.quote_type;
     
     // Save cleaning metrics (for all quote types)
@@ -267,7 +324,7 @@ function saveCurrentStepData() {
     } else {
       // Standard/Ballpark - line items are already in wizardData.line_items
     }
-  } else if (currentWizardStep === 3) {
+  } else if (currentWizardStep === 4) {
     wizardData.revision_data.billing_frequency = document.getElementById('quote-billing-frequency')?.value || 'monthly';
     wizardData.revision_data.contract_term_months = parseInt(document.getElementById('quote-contract-term')?.value || 12);
     const startDate = document.getElementById('quote-start-date')?.value;
@@ -280,24 +337,37 @@ function saveCurrentStepData() {
 // Update wizard UI based on current step
 function updateWizardUI() {
   // Update step indicators
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= 4; i++) {
     const indicator = document.getElementById(`wizard-step-${i}-indicator`);
+    const label = indicator?.nextElementSibling;
     if (indicator) {
       if (i === currentWizardStep) {
         indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
         indicator.classList.add('bg-nfgblue', 'text-white');
+        if (label) {
+          label.classList.remove('text-gray-500', 'dark:text-gray-400');
+          label.classList.add('text-nfgblue', 'dark:text-blue-400');
+        }
       } else if (i < currentWizardStep) {
         indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
         indicator.classList.add('bg-green-500', 'text-white');
+        if (label) {
+          label.classList.remove('text-gray-500', 'dark:text-gray-400');
+          label.classList.add('text-green-600', 'dark:text-green-400');
+        }
       } else {
         indicator.classList.remove('bg-nfgblue', 'bg-green-500', 'text-white');
         indicator.classList.add('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
+        if (label) {
+          label.classList.remove('text-nfgblue', 'dark:text-blue-400', 'text-green-600', 'dark:text-green-400');
+          label.classList.add('text-gray-500', 'dark:text-gray-400');
+        }
       }
     }
   }
 
   // Show/hide steps
-  for (let i = 1; i <= 3; i++) {
+  for (let i = 1; i <= 4; i++) {
     const step = document.getElementById(`wizard-step-${i}`);
     if (step) {
       step.classList.toggle('hidden', i !== currentWizardStep);
@@ -313,15 +383,39 @@ function updateWizardUI() {
     backBtn.classList.toggle('hidden', currentWizardStep === 1);
   }
   if (nextBtn) {
-    nextBtn.classList.toggle('hidden', currentWizardStep === 3);
+    nextBtn.classList.toggle('hidden', currentWizardStep === 4);
   }
   if (sendBtn) {
-    sendBtn.classList.toggle('hidden', currentWizardStep !== 3);
+    sendBtn.classList.toggle('hidden', currentWizardStep !== 4);
   }
 
-  // Update step 2 UI based on quote type
+  // Update step 2 UI based on account type
   if (currentWizardStep === 2) {
+    updateStep2AccountFields();
     updateStep2UI();
+  }
+  
+  // Update step 3 UI based on quote type
+  if (currentWizardStep === 3) {
+    updateStep2UI();
+  }
+}
+
+// Update step 2 account fields based on account type
+function updateStep2AccountFields() {
+  const existingFields = document.getElementById('existing-account-fields');
+  const newFields = document.getElementById('new-account-fields');
+  
+  if (accountType === 'existing') {
+    if (existingFields) existingFields.classList.remove('hidden');
+    if (newFields) newFields.classList.add('hidden');
+    const accountSelect = document.getElementById('quote-account-select');
+    if (accountSelect) accountSelect.required = true;
+  } else {
+    if (existingFields) existingFields.classList.add('hidden');
+    if (newFields) newFields.classList.remove('hidden');
+    const accountSelect = document.getElementById('quote-account-select');
+    if (accountSelect) accountSelect.required = false;
   }
 }
 
@@ -342,11 +436,11 @@ function updateStep2UI() {
 
 // Populate dropdowns
 async function populateDropdowns() {
-  // Populate accounts (sites)
+  // Populate accounts (sites) - only for existing accounts
   const accountSelect = document.getElementById('quote-account-select');
   if (accountSelect && window.quotesModule) {
     const sites = window.quotesModule.sites || [];
-    accountSelect.innerHTML = '<option value="">New Account - No site selected</option>' +
+    accountSelect.innerHTML = '<option value="">Select an account...</option>' +
       sites.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
   }
 
