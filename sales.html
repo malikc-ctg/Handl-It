@@ -748,6 +748,58 @@
 
         <!-- Step 2: Pricing + Scope (dynamic based on quote type) -->
         <div id="wizard-step-2" class="wizard-step hidden space-y-6">
+          <!-- CLEANING METRICS SECTION (All Quote Types) -->
+          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4 bg-nfglight dark:bg-gray-700/50">
+            <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Cleaning Metrics</h4>
+            
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Square Footage</label>
+                <input type="number" id="quote-square-footage" min="0" step="100" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="5000">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Restrooms</label>
+                <input type="number" id="quote-restrooms" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="3">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kitchens</label>
+                <input type="number" id="quote-kitchens" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="1">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Floors</label>
+                <input type="number" id="quote-floors" min="1" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="2" value="1">
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cleaning Frequency</label>
+                <select id="quote-cleaning-frequency" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                  <option value="daily">Daily</option>
+                  <option value="weekly" selected>Weekly</option>
+                  <option value="biweekly">Bi-Weekly (Every 2 weeks)</option>
+                  <option value="monthly">Monthly</option>
+                  <option value="one_time">One-Time</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Per Square Foot Rate ($/sqft/month)</label>
+                <input type="number" id="quote-per-sqft-rate" min="0" step="0.01" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="0.15">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for manual pricing</p>
+              </div>
+            </div>
+
+            <div class="mt-4">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cleaning Services</label>
+              <div class="border border-nfgray dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 max-h-48 overflow-y-auto">
+                <div id="quote-services-list" class="space-y-2">
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Loading services...</p>
+                </div>
+              </div>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select services that will be included in this quote</p>
+            </div>
+          </div>
+
           <!-- For Walkthrough Required: Scope Summary Only -->
           <div id="walkthrough-scope-section" class="space-y-4">
             <div>

@@ -13,6 +13,8 @@ let quotes = [];
 let sites = [];
 let deals = [];
 let contacts = [];
+let services = [];
+let serviceCategories = [];
 
 // ==========================================
 // INITIALIZATION
@@ -22,8 +24,38 @@ export async function initQuotes(user) {
   await Promise.all([
     loadSites(),
     loadDeals(),
-    loadContacts()
+    loadContacts(),
+    loadServices(),
+    loadServiceCategories()
   ]);
+}
+
+// Load services for cleaning quotes
+async function loadServices() {
+  try {
+    const { data, error } = await supabase
+      .from('services')
+      .select('*, service_categories(name, id)')
+      .order('name');
+    if (error) throw error;
+    services = data || [];
+  } catch (error) {
+    console.error('[Quotes] Error loading services:', error);
+  }
+}
+
+// Load service categories
+async function loadServiceCategories() {
+  try {
+    const { data, error } = await supabase
+      .from('service_categories')
+      .select('*')
+      .order('display_order');
+    if (error) throw error;
+    serviceCategories = data || [];
+  } catch (error) {
+    console.error('[Quotes] Error loading service categories:', error);
+  }
 }
 
 async function loadSites() {
@@ -193,7 +225,8 @@ export async function createQuote(formData) {
         owner_user_id: currentUser.id,
         quote_type: formData.quote_type || 'walkthrough_required',
         status: 'draft',
-        active_revision_number: 1
+        active_revision_number: 1,
+        cleaning_metrics: formData.cleaning_metrics || null
       })
       .select()
       .single();
@@ -889,5 +922,5 @@ export async function logPortalEvent(publicToken, eventType, metadata = {}) {
 // ==========================================
 // EXPORTS
 // ==========================================
-export { sites, deals, contacts, currentQuote };
+export { sites, deals, contacts, services, serviceCategories, currentQuote };
 export { loadSites, loadDeals, loadContacts };

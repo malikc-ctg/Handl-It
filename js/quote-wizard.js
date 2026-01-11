@@ -12,7 +12,16 @@ let wizardData = {
   deal_id: null,
   quote_type: 'walkthrough_required',
   revision_data: {},
-  line_items: []
+  line_items: [],
+  cleaning_metrics: {
+    square_footage: 0,
+    restrooms: 0,
+    kitchens: 0,
+    floors: 1,
+    frequency: 'weekly',
+    per_sqft_rate: 0,
+    services: []
+  }
 };
 
 // Initialize wizard
@@ -86,6 +95,7 @@ export function openQuoteWizard() {
   currentWizardStep = 1;
   updateWizardUI();
   populateDropdowns();
+  populateCleaningServices();
   
   const modal = document.getElementById('quote-builder-modal');
   if (modal) {
@@ -114,8 +124,35 @@ function resetWizard() {
     deal_id: null,
     quote_type: 'walkthrough_required',
     revision_data: {},
-    line_items: []
+    line_items: [],
+    cleaning_metrics: {
+      square_footage: 0,
+      restrooms: 0,
+      kitchens: 0,
+      floors: 1,
+      frequency: 'weekly',
+      per_sqft_rate: 0,
+      services: []
+    }
   };
+  
+  // Reset cleaning metrics form fields
+  const squareFootage = document.getElementById('quote-square-footage');
+  const restrooms = document.getElementById('quote-restrooms');
+  const kitchens = document.getElementById('quote-kitchens');
+  const floors = document.getElementById('quote-floors');
+  const frequency = document.getElementById('quote-cleaning-frequency');
+  const perSqftRate = document.getElementById('quote-per-sqft-rate');
+  
+  if (squareFootage) squareFootage.value = '';
+  if (restrooms) restrooms.value = '';
+  if (kitchens) kitchens.value = '';
+  if (floors) floors.value = '1';
+  if (frequency) frequency.value = 'weekly';
+  if (perSqftRate) perSqftRate.value = '';
+  
+  // Uncheck all service checkboxes
+  document.querySelectorAll('.quote-service-checkbox').forEach(cb => cb.checked = false);
 }
 
 // Navigate between steps
@@ -191,12 +228,25 @@ function saveCurrentStepData() {
   } else if (currentWizardStep === 2) {
     const quoteType = wizardData.quote_type;
     
+    // Save cleaning metrics (for all quote types)
+    const cleaningMetrics = {
+      square_footage: parseInt(document.getElementById('quote-square-footage')?.value || 0),
+      restrooms: parseInt(document.getElementById('quote-restrooms')?.value || 0),
+      kitchens: parseInt(document.getElementById('quote-kitchens')?.value || 0),
+      floors: parseInt(document.getElementById('quote-floors')?.value || 1),
+      frequency: document.getElementById('quote-cleaning-frequency')?.value || 'weekly',
+      per_sqft_rate: parseFloat(document.getElementById('quote-per-sqft-rate')?.value || 0),
+      services: Array.from(document.querySelectorAll('.quote-service-checkbox:checked')).map(cb => cb.value)
+    };
+    wizardData.cleaning_metrics = cleaningMetrics;
+    
     if (quoteType === 'walkthrough_required') {
       wizardData.revision_data = {
         service_schedule_summary: document.getElementById('quote-service-schedule')?.value || '',
         scope_summary: document.getElementById('quote-scope-summary')?.value || '',
         assumptions: document.getElementById('quote-assumptions')?.value || '',
-        exclusions: document.getElementById('quote-exclusions')?.value || ''
+        exclusions: document.getElementById('quote-exclusions')?.value || '',
+        cleaning_metrics: cleaningMetrics
       };
       
       // Range estimate
@@ -315,6 +365,52 @@ async function populateDropdowns() {
     dealSelect.innerHTML = '<option value="">Link to a deal...</option>' +
       deals.map(deal => `<option value="${deal.id}">${deal.title || `Deal #${deal.id}`}</option>`).join('');
   }
+}
+
+// Populate cleaning services checklist
+function populateCleaningServices() {
+  const servicesList = document.getElementById('quote-services-list');
+  if (!servicesList || !window.quotesModule) return;
+
+  const services = window.quotesModule.services || [];
+  const categories = window.quotesModule.serviceCategories || [];
+
+  if (services.length === 0) {
+    servicesList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No services available</p>';
+    return;
+  }
+
+  // Group services by category
+  const servicesByCategory = {};
+  categories.forEach(cat => {
+    servicesByCategory[cat.id] = {
+      category: cat,
+      services: services.filter(s => s.category_id === cat.id)
+    };
+  });
+
+  // Render services grouped by category
+  let html = '';
+  categories.forEach(cat => {
+    const catServices = servicesByCategory[cat.id]?.services || [];
+    if (catServices.length === 0) return;
+
+    html += `
+      <div class="mb-3">
+        <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase tracking-wide">${cat.name}</div>
+        <div class="space-y-1 pl-2">
+          ${catServices.map(service => `
+            <label class="flex items-center text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded">
+              <input type="checkbox" class="quote-service-checkbox mr-2 rounded" value="${service.id}" data-service-name="${service.name}">
+              <span class="text-gray-700 dark:text-gray-300">${service.name}</span>
+            </label>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  });
+
+  servicesList.innerHTML = html || '<p class="text-sm text-gray-500 dark:text-gray-400">No services available</p>';
 }
 
 // Setup line items handlers
