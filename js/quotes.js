@@ -75,7 +75,7 @@ async function loadDeals() {
   try {
     const { data, error } = await supabase
       .from('deals')
-      .select('id, site_id, deal_value, stage, assigned_to')
+      .select('id, site_id, stage, assigned_to')
       .order('created_at', { ascending: false });
     if (error) throw error;
     deals = data || [];
@@ -103,12 +103,16 @@ async function loadContacts() {
 // ==========================================
 export async function loadQuotes(filters = {}) {
   try {
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:104',message:'loadQuotes called',data:{filters},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    
     let query = supabase
       .from('quotes')
       .select(`
         *,
         sites:account_id(id, name, address),
-        deals:deal_id(id, stage, deal_value)
+        deals:deal_id(id, stage)
       `)
       .order('updated_at', { ascending: false });
 
@@ -122,7 +126,20 @@ export async function loadQuotes(filters = {}) {
       query = query.eq('owner_user_id', filters.owner_user_id);
     }
 
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:125',message:'About to execute query',data:{hasFilters:!!filters.status||!!filters.quote_type||!!filters.owner_user_id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+
     const { data, error } = await query;
+    
+    // #region agent log
+    if (error) {
+      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:131',message:'Query error',data:{errorCode:error.code,errorMessage:error.message,errorHint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    } else {
+      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:133',message:'Query successful',data:{quoteCount:data?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    }
+    // #endregion
+    
     if (error) throw error;
 
     quotes = data || [];
@@ -145,7 +162,7 @@ export async function loadQuoteDetail(quoteId) {
       .select(`
         *,
         sites:account_id(id, name, address, contact_email, contact_phone),
-        deals:deal_id(id, stage, deal_value)
+        deals:deal_id(id, stage)
       `)
       .eq('id', quoteId)
       .single();
@@ -216,6 +233,10 @@ export async function loadQuoteDetail(quoteId) {
 // ==========================================
 export async function createQuote(formData) {
   try {
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:217',message:'createQuote called',data:{formDataKeys:Object.keys(formData||{}),hasCleaningMetrics:!!formData?.cleaning_metrics},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
+    
     // Build insert object, conditionally include cleaning_metrics
     const insertData = {
       account_id: formData.account_id ? parseInt(formData.account_id) : null,
@@ -224,8 +245,13 @@ export async function createQuote(formData) {
       owner_user_id: currentUser.id,
       quote_type: formData.quote_type || 'walkthrough_required',
       status: 'draft',
-      active_revision_number: 1
+      active_revision_number: 1,
+      total_amount: 0  // Add total_amount to handle old schema requirement
     };
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:232',message:'insertData built',data:{insertKeys:Object.keys(insertData),hasTotalAmount:insertData.hasOwnProperty('total_amount')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     
     // Only include cleaning_metrics if it exists and has data
     // Note: This column must exist in the database (run ADD_CLEANING_QUOTE_FIELDS.sql)
@@ -233,11 +259,23 @@ export async function createQuote(formData) {
       insertData.cleaning_metrics = formData.cleaning_metrics;
     }
     
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:240',message:'About to insert quote',data:{finalInsertKeys:Object.keys(insertData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
+    
     const { data, error } = await supabase
       .from('quotes')
       .insert(insertData)
       .select()
       .single();
+
+    // #region agent log
+    if (error) {
+      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:245',message:'Quote insert error',data:{errorCode:error.code,errorMessage:error.message,errorHint:error.hint},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    } else {
+      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'quotes.js:247',message:'Quote inserted successfully',data:{quoteId:data?.id},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    }
+    // #endregion
 
     if (error) throw error;
 
