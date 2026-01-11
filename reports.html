@@ -6120,6 +6120,14 @@
     
     // Delete invoice
     window.deleteInvoice = async function(invoiceId) {
+      console.log('[Billing] deleteInvoice called with ID:', invoiceId);
+      
+      if (!invoiceId) {
+        console.error('[Billing] No invoice ID provided');
+        toast.error('Invalid invoice ID', 'Error');
+        return;
+      }
+      
       const confirmed = await showConfirm(
         'Are you sure you want to delete this invoice? This action cannot be undone.',
         'Delete Invoice',
@@ -6127,10 +6135,12 @@
       );
       
       if (!confirmed) {
+        console.log('[Billing] Delete cancelled by user');
         return;
       }
       
       try {
+        console.log('[Billing] Deleting invoice:', invoiceId);
         const { error } = await supabase
           .from('invoices')
           .delete()
@@ -6142,6 +6152,7 @@
           return;
         }
         
+        console.log('[Billing] Invoice deleted successfully');
         toast.success('Invoice deleted successfully', 'Success');
         
         // Reload invoices
