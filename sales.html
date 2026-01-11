@@ -599,6 +599,9 @@
 
   <!-- Scripts -->
   <script type="module">
+    // Set sales mode flag in sessionStorage
+    sessionStorage.setItem('isSalesMode', 'true');
+    
     // Initialize environment
     window.ENV = {
       SUPABASE_URL: 'https://zqcbldgheimqrnqmbbed.supabase.co',
