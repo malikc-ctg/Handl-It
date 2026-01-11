@@ -264,7 +264,7 @@ window.linkCallToSite = async (callId, siteId) => {
   const result = await manuallyLinkCall(callId, siteId, user.id)
   if (result.success) {
     alert('Call linked successfully')
-    closeCallReviewModal()
+    window.closeCallReviewModal()
     // Refresh the calls timeline if it exists
     const callItem = document.querySelector(`[data-call-id="${callId}"]`)
     if (callItem) {

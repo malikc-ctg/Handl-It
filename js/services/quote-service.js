@@ -212,7 +212,7 @@ export async function updateQuote(quoteId, updates, createNewVersion = false) {
     }
     
     // Update quote
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('quotes')
       .update({
         ...updates,

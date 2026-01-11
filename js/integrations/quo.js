@@ -185,7 +185,7 @@ export async function linkCallToSite(callData) {
  * @returns {string} - Deep link URL or tel: link
  */
 export function generateClickToCallLink(phoneNumber, options = {}) {
-  const { siteId, siteName } = options
+  // const { siteId, siteName } = options // Unused for now
   
   // Normalize phone number
   const normalized = normalizePhoneNumber(phoneNumber)
@@ -202,8 +202,8 @@ export function generateClickToCallLink(phoneNumber, options = {}) {
   const quoAppLink = `quo://call?phone=${encodeURIComponent(normalized)}`
   const quoWebLink = `https://app.quo.com/call?phone=${encodeURIComponent(normalized)}`
   
-  // Fallback to tel: link
-  const telLink = `tel:${normalized.replace(/\+/g, '')}`
+  // Fallback to tel: link (unused for now)
+  // const telLink = `tel:${normalized.replace(/\+/g, '')}`
   
   // On mobile, try to open Quo app, fallback to tel:
   if (isMobile) {

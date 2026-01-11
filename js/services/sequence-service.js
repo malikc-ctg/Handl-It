@@ -384,7 +384,7 @@ async function executeStepAction(step, deal) {
       // TODO: Create call task/reminder
       return { type: 'call', created: true };
     
-    case 'message':
+    case 'message': {
       // Create message in deal_messages
       const { data: message, error } = await supabase
         .from('deal_messages')

@@ -387,7 +387,7 @@ function getNextActionSuggestions(deal, timeline) {
       }
       break;
     
-    case 'proposal':
+    case 'proposal': {
       // Check if quote exists and is sent
       const sentQuote = timeline.find(t => t.type === 'quote' && t.action === 'sent');
       if (!sentQuote) {
@@ -438,7 +438,7 @@ function getNextActionSuggestions(deal, timeline) {
  * @param {string} userId - User ID performing the action
  * @returns {Promise<Object>} Updated deal
  */
-export async function updateDealStage(dealId, newStage, userId) {
+export async function updateDealStage(dealId, newStage, _userId) {
   try {
     // Get current deal to increment touch_count
     const { data: currentDeal } = await supabase
