@@ -1841,16 +1841,46 @@
         if (clearReports) {
           try {
             // Clear reports-related tables (invoices, payments, expenses, invoice_line_items)
-            const reportTables = ['invoices', 'payments', 'expenses', 'invoice_line_items'];
+            // Note: invoice_line_items should be deleted first due to foreign key constraints
+            const reportTables = ['invoice_line_items', 'payments', 'expenses', 'invoices'];
+            let reportsCleared = 0;
             for (const table of reportTables) {
               try {
-                await supabase.from(table).delete().neq('id', '');
+                // Try to delete all rows - use a filter that matches all rows
+                // For UUID tables, use .neq('id', '00000000-0000-0000-0000-000000000000')
+                // For other types, try different approaches
+                const { error } = await supabase
+                  .from(table)
+                  .delete()
+                  .neq('id', '00000000-0000-0000-0000-000000000000');
+                
+                if (error) {
+                  // If that fails, try a different approach - delete with gte filter for numeric IDs
+                  try {
+                    const { error: error2 } = await supabase
+                      .from(table)
+                      .delete()
+                      .gte('id', 0);
+                    
+                    if (error2) {
+                      console.warn(`Error clearing ${table}:`, error2);
+                    } else {
+                      reportsCleared++;
+                    }
+                  } catch (e2) {
+                    console.warn(`Error clearing ${table} (second attempt):`, e2);
+                  }
+                } else {
+                  reportsCleared++;
+                }
               } catch (e) {
                 // Table might not exist, ignore
                 console.warn(`Table ${table} might not exist or error:`, e);
               }
             }
-            clearedCount++;
+            if (reportsCleared > 0) {
+              clearedCount++;
+            }
           } catch (err) {
             errors.push(`Reports/Billing: ${err.message}`);
           }
