@@ -522,7 +522,44 @@ export async function sendRevision(quoteId, revisionNumber, emails, expiryDays =
     // Log event
     await logQuoteEvent(quoteId, revisionNumber, 'sent', { emails });
 
-    toast.success('Quote sent successfully', 'Success');
+    // Load quote details for email
+    const { data: quote } = await supabase
+      .from('quotes')
+      .select(`
+        *,
+        sites:account_id(id, name),
+        contacts:primary_contact_id(id, full_name)
+      `)
+      .eq('id', quoteId)
+      .single();
+
+    // Send email via Edge Function
+    try {
+      const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-quote-email', {
+        body: {
+          quoteId,
+          revisionNumber,
+          emails,
+          publicToken,
+          quoteType: quote?.quote_type,
+          revisionType: revision.revision_type,
+          siteName: quote?.sites?.name || null,
+          contactName: quote?.contacts?.full_name || null,
+        },
+      });
+
+      if (emailError) {
+        console.error('[Quotes] Error sending email:', emailError);
+        toast.warning('Quote saved but email failed to send. Please check your email service configuration.', 'Warning');
+      } else {
+        toast.success('Quote sent successfully', 'Success');
+      }
+    } catch (emailErr) {
+      console.error('[Quotes] Error calling email function:', emailErr);
+      toast.warning('Quote saved but email failed to send. Please check your email service configuration.', 'Warning');
+    }
+
+    return { quoteId, revisionNumber, publicToken, pdfUrl };
   } catch (error) {
     console.error('[Quotes] Error sending revision:', error);
     if (!error.message.includes('Validation')) {
