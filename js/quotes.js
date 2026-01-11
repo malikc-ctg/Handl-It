@@ -536,6 +536,7 @@ export async function sendRevision(quoteId, revisionNumber, emails, expiryDays =
     // Send email via Edge Function
     try {
       const { data: emailResult, error: emailError } = await supabase.functions.invoke('send-quote-email', {
+        method: 'POST',
         body: {
           quoteId,
           revisionNumber,
