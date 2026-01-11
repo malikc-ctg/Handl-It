@@ -9,6 +9,7 @@ let currentQuoteId = null;
 let accountType = null; // 'new' or 'existing'
 let wizardData = {
   account_id: null,
+  new_account_data: null,
   primary_contact_id: null,
   deal_id: null,
   quote_type: 'walkthrough_required',
@@ -160,6 +161,7 @@ function resetWizard() {
   accountType = null;
   wizardData = {
     account_id: null,
+    new_account_data: null,
     primary_contact_id: null,
     deal_id: null,
     quote_type: 'walkthrough_required',
@@ -175,6 +177,14 @@ function resetWizard() {
       services: []
     }
   };
+  
+  // Reset new account form fields
+  const newAccountFields = ['new-account-name', 'new-account-address', 'new-account-city', 
+                            'new-account-province', 'new-account-postal-code', 'new-account-phone', 'new-account-email'];
+  newAccountFields.forEach(fieldId => {
+    const field = document.getElementById(fieldId);
+    if (field) field.value = '';
+  });
   
   // Reset cleaning metrics form fields
   const squareFootage = document.getElementById('quote-square-footage');
@@ -234,6 +244,19 @@ function validateCurrentStep() {
       const accountSelect = document.getElementById('quote-account-select');
       if (!accountSelect?.value) {
         toast.error('Please select an account', 'Validation Error');
+        return false;
+      }
+    } else if (accountType === 'new') {
+      // Validate new account fields
+      const accountName = document.getElementById('new-account-name')?.value?.trim();
+      const accountAddress = document.getElementById('new-account-address')?.value?.trim();
+      
+      if (!accountName) {
+        toast.error('Please enter an account name', 'Validation Error');
+        return false;
+      }
+      if (!accountAddress) {
+        toast.error('Please enter an address', 'Validation Error');
         return false;
       }
     }
