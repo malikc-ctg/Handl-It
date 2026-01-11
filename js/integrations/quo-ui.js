@@ -269,7 +269,8 @@ window.linkCallToSite = async (callId, siteId) => {
     const callItem = document.querySelector(`[data-call-id="${callId}"]`)
     if (callItem) {
       // Reload the timeline
-      const siteId = (callItem.closest('[data-site-id]') as HTMLElement)?.dataset?.siteId
+      const siteIdEl = callItem.closest('[data-site-id]');
+      const siteId = siteIdEl && 'dataset' in siteIdEl ? siteIdEl.dataset.siteId : null;
       if (siteId) {
         await renderCallsTimeline(siteId)
       }
@@ -294,7 +295,8 @@ window.createNextActionTask = async (callId, actionText) => {
     // Refresh the call item
     const callItem = document.querySelector(`[data-call-id="${callId}"]`)
     if (callItem) {
-      const siteId = (callItem.closest('[data-site-id]') as HTMLElement)?.dataset?.siteId
+      const siteIdEl = callItem.closest('[data-site-id]');
+      const siteId = siteIdEl && 'dataset' in siteIdEl ? siteIdEl.dataset.siteId : null;
       if (siteId) {
         await renderCallsTimeline(siteId)
       }
