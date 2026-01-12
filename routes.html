@@ -70,6 +70,13 @@
   <!-- Map Library -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  
+  <!-- Leaflet Draw for territory drawing -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  
+  <!-- Turf.js for geometry operations -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
 
   <!-- Prevent page scrollbar -->
   <style>
@@ -209,31 +216,239 @@
     <main class="flex-1 flex flex-col overflow-hidden">
       <div class="flex-shrink-0 p-4 md:p-6 pb-0">
         <div>
-          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Door-to-Door Routes</h2>
-          <p class="text-sm text-gray-500 mt-1">Manage and track door-to-door sales routes</p>
+          <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Sales Routes</h2>
+          <p class="text-sm text-gray-500 mt-1">Plan optimized routes and manage territories</p>
         </div>
 
-        <!-- Status Tabs -->
+        <!-- Main Tabs: Route Planner / Territories -->
         <div class="flex items-center gap-1 sm:gap-2 border-b border-nfgray overflow-x-auto mt-6 pb-2">
-          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-status="all">
-            All Routes
+          <button id="tab-route-planner" class="main-tab-btn px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap flex-shrink-0" data-tab="route-planner">
+            <i data-lucide="route" class="w-4 h-4 inline mr-1"></i>
+            Route Planner
           </button>
-          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="draft">
-            Draft
-          </button>
-          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="active">
-            Active
-          </button>
-          <button class="route-filter-tab px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-status="completed">
-            Completed
+          <button id="tab-territories" class="main-tab-btn px-2 sm:px-4 py-2 text-sm sm:text-base font-medium text-gray-500 hover:text-nfgblue dark:text-blue-400 border-b-2 border-transparent whitespace-nowrap flex-shrink-0" data-tab="territories">
+            <i data-lucide="map" class="w-4 h-4 inline mr-1"></i>
+            Territories
           </button>
         </div>
       </div>
 
-      <!-- Scrollable content area -->
-      <div class="scrollable-content flex-1 p-4 md:p-6 pt-4">
-        <!-- Routes Grid -->
-        <div id="routes-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      <!-- Route Planner Tab Content -->
+      <div id="tab-content-route-planner" class="tab-content flex-1 flex flex-col overflow-hidden">
+        <!-- Route Planner Sub-tabs -->
+        <div class="flex-shrink-0 px-4 md:px-6 pt-4 border-b border-nfgray">
+          <div class="flex items-center gap-1 sm:gap-2 overflow-x-auto pb-2">
+            <button class="planner-subtab-btn px-2 sm:px-4 py-2 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue whitespace-nowrap" data-subtab="plans">
+              Saved Plans
+            </button>
+            <button class="planner-subtab-btn px-2 sm:px-4 py-2 text-sm font-medium text-gray-500 hover:text-nfgblue border-b-2 border-transparent whitespace-nowrap" data-subtab="generate">
+              Generate Route
+            </button>
+          </div>
+        </div>
+
+        <!-- Saved Plans View -->
+        <div id="planner-subtab-plans" class="planner-subtab-content flex-1 overflow-y-auto p-4 md:p-6">
+          <!-- Status Filters -->
+          <div class="flex items-center gap-2 mb-4 flex-wrap">
+            <button class="route-filter-tab px-3 py-1.5 text-sm font-medium text-nfgblue border-b-2 border-nfgblue" data-status="all">
+              All
+            </button>
+            <button class="route-filter-tab px-3 py-1.5 text-sm font-medium text-gray-500 border-b-2 border-transparent" data-status="draft">
+              Draft
+            </button>
+            <button class="route-filter-tab px-3 py-1.5 text-sm font-medium text-gray-500 border-b-2 border-transparent" data-status="active">
+              Active
+            </button>
+            <button class="route-filter-tab px-3 py-1.5 text-sm font-medium text-gray-500 border-b-2 border-transparent" data-status="completed">
+              Completed
+            </button>
+          </div>
+          
+          <!-- Routes Grid -->
+          <div id="routes-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Generate Route View -->
+        <div id="planner-subtab-generate" class="planner-subtab-content hidden flex-1 overflow-hidden flex">
+          <div class="flex-1 flex overflow-hidden">
+            <!-- Left Panel: Inputs -->
+            <div class="w-80 border-r border-nfgray overflow-y-auto p-4 space-y-4">
+              <h3 class="font-semibold text-nfgblue dark:text-blue-400">Route Configuration</h3>
+              
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Date <span class="text-red-500">*</span></label>
+                <input type="date" id="plan-date" required class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700" />
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Rep <span class="text-red-500">*</span></label>
+                <select id="plan-rep" required class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700">
+                  <option value="">Select rep</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Territory (Optional)</label>
+                <select id="plan-territory" class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700">
+                  <option value="">All territories</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Route Objective</label>
+                <select id="plan-objective" class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700">
+                  <option value="min_travel_time">Min Travel Time</option>
+                  <option value="max_priority">Max Priority Points</option>
+                  <option value="hybrid">Hybrid</option>
+                </select>
+              </div>
+              
+              <div>
+                <label class="block text-sm font-medium mb-1.5">Stops Source</label>
+                <select id="plan-stops-source" class="w-full border border-nfgray rounded-xl p-2.5 dark:bg-gray-700">
+                  <option value="leads">Leads</option>
+                  <option value="appointments">Appointments</option>
+                  <option value="deals">Deals</option>
+                  <option value="mixed">Mixed</option>
+                </select>
+              </div>
+              
+              <div class="border-t border-nfgray pt-4">
+                <h4 class="font-medium text-sm mb-2">Constraints</h4>
+                
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Shift Start</label>
+                    <input type="time" id="plan-shift-start" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="08:00" />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Shift End</label>
+                    <input type="time" id="plan-shift-end" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="18:00" />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Max Stops</label>
+                    <input type="number" id="plan-max-stops" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="30" min="1" />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Lunch Break</label>
+                    <div class="flex gap-2">
+                      <input type="time" id="plan-lunch-start" class="flex-1 border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="12:00" />
+                      <input type="number" id="plan-lunch-duration" class="w-20 border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="30" min="0" placeholder="min" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Service Duration (min)</label>
+                    <input type="number" id="plan-service-duration" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="15" min="1" />
+                  </div>
+                </div>
+              </div>
+              
+              <div class="border-t border-nfgray pt-4">
+                <h4 class="font-medium text-sm mb-2">Scoring Weights</h4>
+                
+                <div class="space-y-3">
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Priority Weight</label>
+                    <input type="number" id="plan-priority-weight" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="1.0" step="0.1" min="0" />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Recency Weight</label>
+                    <input type="number" id="plan-recency-weight" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="0.5" step="0.1" min="0" />
+                  </div>
+                  
+                  <div>
+                    <label class="block text-xs text-gray-500 mb-1">Value Weight</label>
+                    <input type="number" id="plan-value-weight" class="w-full border border-nfgray rounded-lg p-2 text-sm dark:bg-gray-700" value="0.3" step="0.1" min="0" />
+                  </div>
+                </div>
+              </div>
+              
+              <button id="generate-route-btn" class="w-full px-4 py-2.5 bg-nfgblue text-white rounded-xl hover:bg-nfgdark font-medium">
+                Generate Route
+              </button>
+              
+              <div id="plan-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
+            </div>
+            
+            <!-- Right Panel: Output -->
+            <div class="flex-1 flex flex-col overflow-hidden">
+              <div class="flex-1 overflow-y-auto p-4">
+                <div id="route-plan-output" class="space-y-4">
+                  <div class="text-center py-12 text-gray-500">
+                    <i data-lucide="route" class="w-16 h-16 mx-auto mb-4 opacity-50"></i>
+                    <p>Configure settings and click "Generate Route" to create an optimized route plan</p>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Map View Toggle -->
+              <div class="border-t border-nfgray p-4">
+                <div class="flex items-center justify-between">
+                  <button id="toggle-map-view" class="px-4 py-2 border border-nfgray rounded-lg hover:bg-nfglight text-sm">
+                    <i data-lucide="map" class="w-4 h-4 inline mr-1"></i>
+                    Show Map
+                  </button>
+                  <div id="route-plan-actions" class="hidden flex items-center gap-2">
+                    <button id="save-route-plan-btn" class="px-4 py-2 bg-nfgblue text-white rounded-lg hover:bg-nfgdark text-sm">
+                      Save Plan
+                    </button>
+                    <button id="export-route-plan-btn" class="px-4 py-2 border border-nfgray rounded-lg hover:bg-nfglight text-sm">
+                      Export
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Territories Tab Content -->
+      <div id="tab-content-territories" class="tab-content hidden flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 flex overflow-hidden">
+          <!-- Left Panel: Territory List & Controls -->
+          <div class="w-80 border-r border-nfgray flex flex-col">
+            <div class="p-4 border-b border-nfgray">
+              <div class="flex items-center justify-between mb-4">
+                <h3 class="font-semibold text-nfgblue dark:text-blue-400">Territories</h3>
+                <button id="create-territory-btn" class="px-3 py-1.5 bg-nfgblue text-white rounded-lg hover:bg-nfgdark text-sm">
+                  <i data-lucide="plus" class="w-4 h-4 inline"></i>
+                </button>
+              </div>
+              <div id="territories-list" class="space-y-2 max-h-64 overflow-y-auto">
+                <!-- Territories will be loaded here -->
+              </div>
+            </div>
+            
+            <!-- Selected Territory Details -->
+            <div id="territory-details" class="flex-1 overflow-y-auto p-4 space-y-4">
+              <div class="text-center py-8 text-gray-500 text-sm">
+                Select a territory to view details
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Panel: Map -->
+          <div class="flex-1 relative">
+            <div id="territories-map" style="height: 100%; width: 100%;"></div>
+            <div id="map-controls" class="absolute top-4 right-4 z-[1000] flex flex-col gap-2">
+              <button id="toggle-heatmap-btn" class="px-3 py-2 bg-white dark:bg-gray-800 border border-nfgray rounded-lg shadow text-sm hover:bg-nfglight">
+                <i data-lucide="layers" class="w-4 h-4 inline mr-1"></i>
+                Heatmap
+              </button>
+              <button id="draw-territory-btn" class="px-3 py-2 bg-nfgblue text-white rounded-lg shadow text-sm hover:bg-nfgdark">
+                <i data-lucide="edit" class="w-4 h-4 inline mr-1"></i>
+                Draw
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
@@ -296,12 +511,32 @@
       getRouteProgress 
     } from './js/routes.js';
     import { getCurrentUser, canManageUsers } from './js/user-management.js';
+    import { generateRoutePlan } from './js/route-optimizer.js';
+    import {
+      fetchTerritories,
+      createTerritory,
+      updateTerritory,
+      deleteTerritory,
+      fetchTerritory,
+      assignRepToTerritory,
+      unassignRepFromTerritory,
+      fetchTerritoryAssignments,
+      computeTerritoryCoverage,
+      getCachedCoverage
+    } from './js/territory-management.js';
 
     // Initialize
     let currentUser = null;
     let currentUserProfile = null;
     let allRoutes = [];
     let currentFilter = 'all';
+    let currentTab = 'route-planner';
+    let currentPlannerSubtab = 'plans';
+    let territories = [];
+    let selectedTerritory = null;
+    let territoriesMap = null;
+    let drawControl = null;
+    let currentRoutePlan = null;
 
     // Initialize UI
     initMobileSidebar();
@@ -328,7 +563,12 @@
         await loadRoutes();
         await loadUsers();
         await loadTerritories();
+        await loadRoutePlans();
+        initializeTabs();
         setupEventListeners();
+        if (currentTab === 'territories') {
+          initializeTerritoriesMap();
+        }
       } catch (error) {
         console.error('Error initializing:', error);
         toast.error('Failed to load routes');
@@ -438,9 +678,19 @@
 
         if (error) throw error;
 
+        // Populate route-assigned-rep dropdown
         const select = document.getElementById('route-assigned-rep');
         if (select) {
           select.innerHTML = '<option value="">Select a rep</option>' +
+            users.map(user => 
+              `<option value="${user.id}">${user.full_name || user.email}</option>`
+            ).join('');
+        }
+        
+        // Populate plan-rep dropdown
+        const planRepSelect = document.getElementById('plan-rep');
+        if (planRepSelect) {
+          planRepSelect.innerHTML = '<option value="">Select rep</option>' +
             users.map(user => 
               `<option value="${user.id}">${user.full_name || user.email}</option>`
             ).join('');
@@ -453,12 +703,21 @@
     // Load territories
     async function loadTerritories() {
       try {
-        const { fetchTerritories } = await import('./js/routes.js');
-        const territories = await fetchTerritories();
+        territories = await fetchTerritories();
         
+        // Populate route-territory dropdown
         const select = document.getElementById('route-territory');
         if (select) {
           select.innerHTML = '<option value="">No territory</option>' +
+            territories.map(territory => 
+              `<option value="${territory.id}">${territory.name}</option>`
+            ).join('');
+        }
+        
+        // Populate plan-territory dropdown
+        const planTerritorySelect = document.getElementById('plan-territory');
+        if (planTerritorySelect) {
+          planTerritorySelect.innerHTML = '<option value="">All territories</option>' +
             territories.map(territory => 
               `<option value="${territory.id}">${territory.name}</option>`
             ).join('');
@@ -467,12 +726,1009 @@
         console.error('Error loading territories:', error);
       }
     }
+    
+    // Toggle heatmap overlay
+    let heatmapLayer = null;
+    async function toggleHeatmap() {
+      if (!territoriesMap) return;
+      
+      if (heatmapLayer) {
+        territoriesMap.removeLayer(heatmapLayer);
+        heatmapLayer = null;
+        document.getElementById('toggle-heatmap-btn').classList.remove('bg-nfgblue', 'text-white');
+        document.getElementById('toggle-heatmap-btn').classList.add('bg-white', 'text-gray-700');
+        return;
+      }
+      
+      // Build heatmap grid
+      const bounds = territoriesMap.getBounds();
+      const gridSize = 0.01; // ~1km grid cells
+      const grid = [];
+      
+      // Fetch leads in bounds
+      const { data: leads } = await supabase
+        .from('leads')
+        .select('latitude, longitude')
+        .gte('latitude', bounds.getSouth())
+        .lte('latitude', bounds.getNorth())
+        .gte('longitude', bounds.getWest())
+        .lte('longitude', bounds.getEast())
+        .eq('routing_eligible', true)
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null);
+      
+      if (!leads || leads.length === 0) {
+        toast.info('No leads found in this area');
+        return;
+      }
+      
+      // Create grid cells
+      const cellCounts = new Map();
+      for (const lead of leads) {
+        const cellLat = Math.floor(lead.latitude / gridSize) * gridSize;
+        const cellLng = Math.floor(lead.longitude / gridSize) * gridSize;
+        const key = `${cellLat},${cellLng}`;
+        cellCounts.set(key, (cellCounts.get(key) || 0) + 1);
+      }
+      
+      // Create heatmap layer
+      const heatmapFeatures = [];
+      let maxCount = 0;
+      for (const [key, count] of cellCounts) {
+        maxCount = Math.max(maxCount, count);
+        const [lat, lng] = key.split(',').map(Number);
+        heatmapFeatures.push({
+          type: 'Feature',
+          geometry: {
+            type: 'Point',
+            coordinates: [lng, lat]
+          },
+          properties: { count }
+        });
+      }
+      
+      // Create circles for each grid cell
+      heatmapLayer = L.layerGroup();
+      for (const [key, count] of cellCounts) {
+        const [lat, lng] = key.split(',').map(Number);
+        const intensity = count / maxCount;
+        const radius = Math.max(50, Math.min(500, count * 20));
+        const opacity = Math.min(0.6, intensity * 0.8);
+        
+        L.circle([lat, lng], {
+          radius,
+          fillColor: intensity > 0.7 ? '#ff0000' : intensity > 0.4 ? '#ff8800' : '#ffaa00',
+          color: '#ff8800',
+          weight: 1,
+          fillOpacity: opacity
+        }).addTo(heatmapLayer);
+      }
+      
+      heatmapLayer.addTo(territoriesMap);
+      document.getElementById('toggle-heatmap-btn').classList.add('bg-nfgblue', 'text-white');
+      document.getElementById('toggle-heatmap-btn').classList.remove('bg-white', 'text-gray-700');
+    }
+    
+    // Toggle route plan map view
+    let routePlanMap = null;
+    function toggleRoutePlanMap() {
+      const output = document.getElementById('route-plan-output');
+      if (!output || !currentRoutePlan) return;
+      
+      if (routePlanMap) {
+        // Hide map, show list
+        output.innerHTML = '';
+        renderRoutePlan(currentRoutePlan);
+        routePlanMap = null;
+        document.getElementById('toggle-map-view').innerHTML = '<i data-lucide="map" class="w-4 h-4 inline mr-1"></i> Show Map';
+        lucide.createIcons();
+        return;
+      }
+      
+      // Show map
+      const mapContainer = document.createElement('div');
+      mapContainer.id = 'route-plan-map-container';
+      mapContainer.style.height = '500px';
+      mapContainer.style.width = '100%';
+      output.innerHTML = '';
+      output.appendChild(mapContainer);
+      
+      routePlanMap = L.map('route-plan-map-container').setView([43.6532, -79.3832], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+      }).addTo(routePlanMap);
+      
+      // Add route stops
+      const routePoints = [];
+      currentRoutePlan.route.forEach((stop, idx) => {
+        const marker = L.marker([stop.stop.lat, stop.stop.lng])
+          .bindPopup(`Stop ${idx + 1}: ${stop.stop.address || 'Unknown'}`)
+          .addTo(routePlanMap);
+        
+        routePoints.push([stop.stop.lat, stop.stop.lng]);
+      });
+      
+      // Draw route polyline
+      if (routePoints.length > 1) {
+        L.polyline(routePoints, {
+          color: '#0D47A1',
+          weight: 3,
+          opacity: 0.7
+        }).addTo(routePlanMap);
+      }
+      
+      // Fit bounds
+      if (routePoints.length > 0) {
+        routePlanMap.fitBounds(routePoints);
+      }
+      
+      document.getElementById('toggle-map-view').innerHTML = '<i data-lucide="list" class="w-4 h-4 inline mr-1"></i> Show List';
+      lucide.createIcons();
+    }
+    
+    // Edit territory (global function for onclick)
+    window.editTerritory = async function(territoryId) {
+      const territory = territories.find(t => t.id === territoryId);
+      if (!territory) return;
+      
+      const name = prompt('Enter new territory name:', territory.name);
+      if (!name) return;
+      
+      try {
+        await updateTerritory(territoryId, { name });
+        toast.success('Territory updated');
+        await loadAndRenderTerritories();
+      } catch (error) {
+        toast.error('Failed to update territory');
+        console.error(error);
+      }
+    };
+    
+    // Delete territory confirm (global function for onclick)
+    window.deleteTerritoryConfirm = async function(territoryId) {
+      if (!confirm('Are you sure you want to delete this territory? This action cannot be undone.')) {
+        return;
+      }
+      
+      try {
+        await deleteTerritory(territoryId);
+        toast.success('Territory deleted');
+        selectedTerritory = null;
+        await loadAndRenderTerritories();
+        document.getElementById('territory-details').innerHTML = '<div class="text-center py-8 text-gray-500 text-sm">Select a territory to view details</div>';
+      } catch (error) {
+        toast.error('Failed to delete territory');
+        console.error(error);
+      }
+    };
+    
+    // Open assign rep modal (global function for onclick)
+    window.openAssignRepModal = async function(territoryId) {
+      // Simple prompt-based assignment for now
+      const { data: users } = await supabase
+        .from('user_profiles')
+        .select('id, full_name, email')
+        .eq('status', 'active')
+        .in('role', ['admin', 'client', 'staff']);
+      
+      if (!users || users.length === 0) {
+        toast.error('No reps available');
+        return;
+      }
+      
+      const repList = users.map((u, i) => `${i + 1}. ${u.full_name || u.email}`).join('\n');
+      const choice = prompt(`Select rep to assign:\n\n${repList}\n\nEnter number:`);
+      const repIndex = parseInt(choice) - 1;
+      
+      if (repIndex >= 0 && repIndex < users.length) {
+        try {
+          await assignRepToTerritory(territoryId, users[repIndex].id, {
+            isPrimary: false,
+            maxStopsPerDay: 30,
+            maxDriveMinutesPerDay: 480,
+            shiftStartMinutes: 480,
+            shiftEndMinutes: 1080
+          });
+          toast.success('Rep assigned to territory');
+          await selectTerritory(territoryId);
+        } catch (error) {
+          toast.error('Failed to assign rep');
+          console.error(error);
+        }
+      }
+    };
 
+    // Initialize tabs
+    function initializeTabs() {
+      // Main tabs
+      document.querySelectorAll('.main-tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tab = btn.dataset.tab;
+          switchTab(tab);
+        });
+      });
+      
+      // Planner subtabs
+      document.querySelectorAll('.planner-subtab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const subtab = btn.dataset.subtab;
+          switchPlannerSubtab(subtab);
+        });
+      });
+    }
+    
+    // Switch main tab
+    function switchTab(tab) {
+      currentTab = tab;
+      
+      // Update tab buttons
+      document.querySelectorAll('.main-tab-btn').forEach(btn => {
+        if (btn.dataset.tab === tab) {
+          btn.classList.add('text-nfgblue', 'border-nfgblue', 'dark:text-blue-400');
+          btn.classList.remove('text-gray-500', 'border-transparent');
+        } else {
+          btn.classList.remove('text-nfgblue', 'border-nfgblue', 'dark:text-blue-400');
+          btn.classList.add('text-gray-500', 'border-transparent');
+        }
+      });
+      
+      // Show/hide tab content
+      document.querySelectorAll('.tab-content').forEach(content => {
+        if (content.id === `tab-content-${tab}`) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+      
+      // Initialize map if territories tab
+      if (tab === 'territories' && !territoriesMap) {
+        initializeTerritoriesMap();
+      }
+    }
+    
+    // Switch planner subtab
+    function switchPlannerSubtab(subtab) {
+      currentPlannerSubtab = subtab;
+      
+      // Update subtab buttons
+      document.querySelectorAll('.planner-subtab-btn').forEach(btn => {
+        if (btn.dataset.subtab === subtab) {
+          btn.classList.add('text-nfgblue', 'border-nfgblue', 'dark:text-blue-400');
+          btn.classList.remove('text-gray-500', 'border-transparent');
+        } else {
+          btn.classList.remove('text-nfgblue', 'border-nfgblue', 'dark:text-blue-400');
+          btn.classList.add('text-gray-500', 'border-transparent');
+        }
+      });
+      
+      // Show/hide subtab content
+      document.querySelectorAll('.planner-subtab-content').forEach(content => {
+        if (content.id === `planner-subtab-${subtab}`) {
+          content.classList.remove('hidden');
+        } else {
+          content.classList.add('hidden');
+        }
+      });
+    }
+    
+    // Load route plans (saved optimized routes)
+    async function loadRoutePlans() {
+      try {
+        const { data, error } = await supabase
+          .from('route_plans')
+          .select(`
+            *,
+            rep:user_profiles!route_plans_rep_user_id_fkey (id, full_name, email),
+            territory:territories (id, name)
+          `)
+          .order('date', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        // Store for later use
+        window.routePlans = data || [];
+      } catch (error) {
+        console.error('Error loading route plans:', error);
+      }
+    }
+    
+    // Initialize territories map
+    function initializeTerritoriesMap() {
+      if (territoriesMap) return;
+      
+      // Initialize Leaflet map
+      territoriesMap = L.map('territories-map').setView([43.6532, -79.3832], 10); // Default to Toronto
+      
+      // Add tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+      }).addTo(territoriesMap);
+      
+      // Initialize draw control
+      drawControl = new L.Control.Draw({
+        draw: {
+          polygon: {
+            allowIntersection: false,
+            showArea: true
+          },
+          polyline: false,
+          rectangle: false,
+          circle: false,
+          marker: false,
+          circlemarker: false
+        },
+        edit: {
+          featureGroup: L.featureGroup(),
+          remove: true
+        }
+      });
+      
+      territoriesMap.addControl(drawControl);
+      
+      // Handle draw events
+      territoriesMap.on(L.Draw.Event.CREATED, handleTerritoryDrawn);
+      territoriesMap.on(L.Draw.Event.EDITED, handleTerritoryEdited);
+      territoriesMap.on(L.Draw.Event.DELETED, handleTerritoryDeleted);
+      
+      // Load and render territories
+      loadAndRenderTerritories();
+    }
+    
+    // Load and render territories on map
+    async function loadAndRenderTerritories() {
+      try {
+        territories = await fetchTerritories();
+        renderTerritoriesList();
+        renderTerritoriesOnMap();
+      } catch (error) {
+        console.error('Error loading territories:', error);
+        toast.error('Failed to load territories');
+      }
+    }
+    
+    // Render territories list
+    function renderTerritoriesList() {
+      const list = document.getElementById('territories-list');
+      if (!list) return;
+      
+      if (territories.length === 0) {
+        list.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">No territories yet</p>';
+        return;
+      }
+      
+      list.innerHTML = territories.map(territory => `
+        <div class="territory-item p-2 rounded-lg border border-nfgray cursor-pointer hover:bg-nfglight ${selectedTerritory?.id === territory.id ? 'bg-nfglight border-nfgblue' : ''}" 
+             data-territory-id="${territory.id}">
+          <div class="flex items-center gap-2">
+            <div class="w-3 h-3 rounded-full" style="background-color: ${territory.color || '#0D47A1'}"></div>
+            <span class="text-sm font-medium">${territory.name}</span>
+          </div>
+        </div>
+      `).join('');
+      
+      // Add click handlers
+      list.querySelectorAll('.territory-item').forEach(item => {
+        item.addEventListener('click', async () => {
+          const territoryId = item.dataset.territoryId;
+          await selectTerritory(territoryId);
+        });
+      });
+    }
+    
+    // Select territory
+    async function selectTerritory(territoryId) {
+      try {
+        selectedTerritory = await fetchTerritory(territoryId);
+        renderTerritoryDetails(selectedTerritory);
+        highlightTerritoryOnMap(selectedTerritory);
+        
+        // Update list selection
+        document.querySelectorAll('.territory-item').forEach(item => {
+          if (item.dataset.territoryId === territoryId) {
+            item.classList.add('bg-nfglight', 'border-nfgblue');
+          } else {
+            item.classList.remove('bg-nfglight', 'border-nfgblue');
+          }
+        });
+      } catch (error) {
+        console.error('Error selecting territory:', error);
+        toast.error('Failed to load territory details');
+      }
+    }
+    
+    // Render territory details
+    async function renderTerritoryDetails(territory) {
+      const details = document.getElementById('territory-details');
+      if (!details) return;
+      
+      // Get coverage metrics
+      let coverage = await getCachedCoverage(territory.id);
+      if (!coverage) {
+        coverage = await computeTerritoryCoverage(territory.id);
+      }
+      
+      // Get assignments
+      const assignments = await fetchTerritoryAssignments(territory.id);
+      
+      details.innerHTML = `
+        <div class="space-y-4">
+          <div>
+            <h4 class="font-semibold text-nfgblue dark:text-blue-400 mb-2">${territory.name}</h4>
+            <p class="text-sm text-gray-500">${territory.description || 'No description'}</p>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-nfglight dark:bg-gray-700 rounded-lg p-2">
+              <p class="text-xs text-gray-500">Total Leads</p>
+              <p class="text-lg font-bold text-nfgblue">${coverage?.totalLeads || 0}</p>
+            </div>
+            <div class="bg-nfglight dark:bg-gray-700 rounded-lg p-2">
+              <p class="text-xs text-gray-500">Coverage Score</p>
+              <p class="text-lg font-bold text-green-600">${coverage?.coverageScore || 0}</p>
+            </div>
+            <div class="bg-nfglight dark:bg-gray-700 rounded-lg p-2">
+              <p class="text-xs text-gray-500">Touched 7d</p>
+              <p class="text-lg font-bold">${coverage?.leadsTouched7d || 0}</p>
+            </div>
+            <div class="bg-nfglight dark:bg-gray-700 rounded-lg p-2">
+              <p class="text-xs text-gray-500">Untouched 14d</p>
+              <p class="text-lg font-bold text-orange-600">${coverage?.leadsUntouched14d || 0}</p>
+            </div>
+          </div>
+          
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <h5 class="font-medium text-sm">Assigned Reps</h5>
+              <button class="text-xs text-nfgblue hover:underline" onclick="openAssignRepModal('${territory.id}')">
+                + Assign
+              </button>
+            </div>
+            <div class="space-y-1">
+              ${assignments.length === 0 ? '<p class="text-xs text-gray-500">No reps assigned</p>' : 
+                assignments.map(a => `
+                  <div class="flex items-center justify-between p-2 bg-nfglight rounded text-sm">
+                    <span>${a.rep?.full_name || a.rep?.email || 'Unknown'}</span>
+                    ${a.is_primary ? '<span class="text-xs text-nfgblue">Primary</span>' : ''}
+                  </div>
+                `).join('')
+              }
+            </div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button onclick="editTerritory('${territory.id}')" class="flex-1 px-3 py-2 border border-nfgray rounded-lg hover:bg-nfglight text-sm">
+              Edit
+            </button>
+            <button onclick="deleteTerritoryConfirm('${territory.id}')" class="flex-1 px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm">
+              Delete
+            </button>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Render territories on map
+    function renderTerritoriesOnMap() {
+      if (!territoriesMap) return;
+      
+      // Clear existing layers
+      territoriesMap.eachLayer(layer => {
+        if (layer instanceof L.Polygon || layer instanceof L.Marker) {
+          territoriesMap.removeLayer(layer);
+        }
+      });
+      
+      // Add territory polygons
+      territories.forEach(territory => {
+        const geojson = territory.geojson || territory.polygon_coordinates;
+        if (geojson && geojson.coordinates) {
+          const polygon = L.polygon(geojson.coordinates[0].map(coord => [coord[1], coord[0]]), {
+            color: territory.color || '#0D47A1',
+            fillColor: territory.color || '#0D47A1',
+            fillOpacity: 0.2,
+            weight: 2
+          }).bindPopup(territory.name);
+          
+          polygon.territoryId = territory.id;
+          polygon.addTo(territoriesMap);
+          
+          polygon.on('click', () => selectTerritory(territory.id));
+        }
+      });
+    }
+    
+    // Highlight territory on map
+    function highlightTerritoryOnMap(territory) {
+      if (!territoriesMap) return;
+      
+      territoriesMap.eachLayer(layer => {
+        if (layer.territoryId) {
+          if (layer.territoryId === territory.id) {
+            layer.setStyle({ weight: 4, fillOpacity: 0.3 });
+            territoriesMap.fitBounds(layer.getBounds());
+          } else {
+            layer.setStyle({ weight: 2, fillOpacity: 0.2 });
+          }
+        }
+      });
+    }
+    
+    // Handle territory drawn
+    function handleTerritoryDrawn(e) {
+      const layer = e.layer;
+      const geoJson = layer.toGeoJSON();
+      
+      // Open create territory modal with drawn polygon
+      openCreateTerritoryModal(geoJson);
+      
+      // Remove the drawn layer (will be added back when saved)
+      territoriesMap.removeLayer(layer);
+    }
+    
+    // Handle territory edited
+    function handleTerritoryEdited(e) {
+      // Territory editing will be handled through the edit modal
+    }
+    
+    // Handle territory deleted
+    function handleTerritoryDeleted(e) {
+      // Territory deletion will be handled through the delete confirmation
+    }
+    
+    // Open create territory modal
+    function openCreateTerritoryModal(geojson = null) {
+      // This will be implemented with a modal
+      const name = prompt('Enter territory name:');
+      if (!name) return;
+      
+      createTerritory({
+        name,
+        geojson: geojson || null,
+        color: '#0D47A1',
+        active: true
+      }).then(() => {
+        toast.success('Territory created');
+        loadAndRenderTerritories();
+      }).catch(error => {
+        toast.error('Failed to create territory');
+        console.error(error);
+      });
+    }
+    
+    // Generate route plan
+    async function generateRoutePlanHandler() {
+      const errorDiv = document.getElementById('plan-error');
+      errorDiv.classList.add('hidden');
+      
+      try {
+        // Get inputs
+        const date = document.getElementById('plan-date').value;
+        const repId = document.getElementById('plan-rep').value;
+        const territoryId = document.getElementById('plan-territory').value;
+        const objective = document.getElementById('plan-objective').value;
+        const stopsSource = document.getElementById('plan-stops-source').value;
+        
+        const shiftStart = document.getElementById('plan-shift-start').value;
+        const shiftEnd = document.getElementById('plan-shift-end').value;
+        const maxStops = parseInt(document.getElementById('plan-max-stops').value);
+        const lunchStart = document.getElementById('plan-lunch-start').value;
+        const lunchDuration = parseInt(document.getElementById('plan-lunch-duration').value);
+        const serviceDuration = parseInt(document.getElementById('plan-service-duration').value);
+        
+        const priorityWeight = parseFloat(document.getElementById('plan-priority-weight').value);
+        const recencyWeight = parseFloat(document.getElementById('plan-recency-weight').value);
+        const valueWeight = parseFloat(document.getElementById('plan-value-weight').value);
+        
+        // Validate
+        if (!date || !repId) {
+          throw new Error('Date and Rep are required');
+        }
+        
+        // Convert time to minutes
+        const [startHour, startMin] = shiftStart.split(':').map(Number);
+        const shiftStartMinutes = startHour * 60 + startMin;
+        
+        const [endHour, endMin] = shiftEnd.split(':').map(Number);
+        const shiftEndMinutes = endHour * 60 + endMin;
+        
+        const [lunchHour, lunchMin] = lunchStart.split(':').map(Number);
+        const lunchStartMinutes = lunchHour * 60 + lunchMin;
+        
+        // Fetch candidate stops (leads/appointments)
+        const stops = await fetchCandidateStops(stopsSource, territoryId, repId);
+        
+        if (stops.length === 0) {
+          throw new Error('No eligible stops found for this route');
+        }
+        
+        // Get rep's home base or territory centroid
+        const startPoint = await getStartPoint(repId, territoryId);
+        
+        // Generate route plan
+        const result = generateRoutePlan({
+          stops,
+          startPoint,
+          constraints: {
+            shiftStartMinutes,
+            shiftEndMinutes,
+            lunchBreakStart: lunchStartMinutes,
+            lunchBreakDuration: lunchDuration,
+            maxStops,
+            serviceDurationMinutes: serviceDuration
+          },
+          weights: {
+            priorityWeight,
+            recencyWeight,
+            valueWeight
+          }
+        });
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate route');
+        }
+        
+        currentRoutePlan = result;
+        renderRoutePlan(result);
+        
+        // Show save/export buttons
+        document.getElementById('route-plan-actions').classList.remove('hidden');
+        
+        toast.success(`Route generated with ${result.route.length} stops`);
+      } catch (error) {
+        console.error('Error generating route:', error);
+        errorDiv.textContent = error.message || 'Failed to generate route';
+        errorDiv.classList.remove('hidden');
+        toast.error(error.message || 'Failed to generate route');
+      }
+    }
+    
+    // Fetch candidate stops
+    async function fetchCandidateStops(stopsSource, territoryId, repId) {
+      const stops = [];
+      
+      if (stopsSource === 'leads' || stopsSource === 'mixed') {
+        let query = supabase
+          .from('leads')
+          .select('id, latitude, longitude, status, last_touched_at, do_not_contact, routing_eligible, address')
+          .eq('routing_eligible', true)
+          .eq('do_not_contact', false)
+          .not('latitude', 'is', null)
+          .not('longitude', 'is', null);
+        
+        const { data: leads } = await query;
+        
+        if (leads) {
+          for (const lead of leads) {
+            // Filter by territory if specified
+            if (territoryId) {
+              const territory = territories.find(t => t.id === territoryId);
+              if (territory) {
+                const geojson = territory.geojson || territory.polygon_coordinates;
+                if (geojson) {
+                  if (!isPointInTerritory(lead.latitude, lead.longitude, geojson)) {
+                    continue;
+                  }
+                }
+              }
+            }
+            
+            const daysSinceTouch = lead.last_touched_at 
+              ? Math.floor((Date.now() - new Date(lead.last_touched_at).getTime()) / (1000 * 60 * 60 * 24))
+              : 999;
+            
+            stops.push({
+              id: lead.id,
+              type: 'lead',
+              lat: parseFloat(lead.latitude),
+              lng: parseFloat(lead.longitude),
+              priority: 3, // Default priority
+              serviceDurationMinutes: 15,
+              daysSinceLastTouch: daysSinceTouch,
+              address: lead.address,
+              routingEligible: lead.routing_eligible,
+              doNotContact: lead.do_not_contact
+            });
+          }
+        }
+      }
+      
+      if (stopsSource === 'appointments' || stopsSource === 'mixed') {
+        const { data: appointments } = await supabase
+          .from('appointments')
+          .select(`
+            id, scheduled_date, scheduled_time, duration_minutes,
+            lead:leads (latitude, longitude, address)
+          `)
+          .eq('status', 'scheduled')
+          .gte('scheduled_date', new Date().toISOString().split('T')[0]);
+        
+        if (appointments) {
+          for (const apt of appointments) {
+            if (apt.lead?.latitude && apt.lead?.longitude) {
+              const [hour, minute] = apt.scheduled_time ? apt.scheduled_time.split(':').map(Number) : [12, 0];
+              const timeWindowStart = hour * 60 + minute;
+              const timeWindowEnd = timeWindowStart + (apt.duration_minutes || 30);
+              
+              stops.push({
+                id: apt.id,
+                type: 'appointment',
+                lat: parseFloat(apt.lead.latitude),
+                lng: parseFloat(apt.lead.longitude),
+                priority: 5, // Appointments are high priority
+                serviceDurationMinutes: apt.duration_minutes || 30,
+                timeWindowStartMinutes: timeWindowStart,
+                timeWindowEndMinutes: timeWindowEnd,
+                mustVisit: true,
+                address: apt.lead.address
+              });
+            }
+          }
+        }
+      }
+      
+      return stops;
+    }
+    
+    // Get start point (rep home or territory centroid)
+    async function getStartPoint(repId, territoryId) {
+      // For now, use territory centroid or default location
+      if (territoryId) {
+        const territory = territories.find(t => t.id === territoryId);
+        if (territory?.geojson) {
+          const coords = territory.geojson.coordinates[0];
+          const centerLat = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
+          const centerLng = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
+          return { lat: centerLat, lng: centerLng };
+        }
+      }
+      
+      // Default to Toronto
+      return { lat: 43.6532, lng: -79.3832 };
+    }
+    
+    // Render route plan output
+    function renderRoutePlan(plan) {
+      const output = document.getElementById('route-plan-output');
+      if (!output) return;
+      
+      if (!plan.success || !plan.route || plan.route.length === 0) {
+        output.innerHTML = '<div class="text-center py-8 text-red-600">Failed to generate route plan</div>';
+        return;
+      }
+      
+      output.innerHTML = `
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 mb-4">
+          <h4 class="font-semibold text-nfgblue dark:text-blue-400 mb-2">Route Summary</h4>
+          <div class="grid grid-cols-2 gap-2 text-sm">
+            <div>
+              <span class="text-gray-500">Total Stops:</span>
+              <span class="font-medium ml-2">${plan.route.length}</span>
+            </div>
+            <div>
+              <span class="text-gray-500">Drive Time:</span>
+              <span class="font-medium ml-2">${Math.round(plan.stats.totalTravelMinutes)} min</span>
+            </div>
+            <div>
+              <span class="text-gray-500">Service Time:</span>
+              <span class="font-medium ml-2">${Math.round(plan.stats.totalServiceMinutes)} min</span>
+            </div>
+            <div>
+              <span class="text-gray-500">Total Time:</span>
+              <span class="font-medium ml-2">${Math.round(plan.stats.totalTime)} min</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="space-y-2">
+          <h4 class="font-semibold text-nfgblue dark:text-blue-400">Route Stops</h4>
+          ${plan.route.map((stop, idx) => {
+            const stopData = stop.stop;
+            const hours = Math.floor(stop.etaMinutesFromShiftStart / 60);
+            const minutes = stop.etaMinutesFromShiftStart % 60;
+            const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            
+            return `
+              <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-lg p-3">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <span class="w-6 h-6 rounded-full bg-nfgblue text-white text-xs flex items-center justify-center">${idx + 1}</span>
+                      <span class="font-medium">${stopData.address || 'Unknown Address'}</span>
+                    </div>
+                    <div class="text-xs text-gray-500 ml-8">
+                      ETA: ${timeStr} | Travel: ${stop.travelMinutesFromPrev || 0} min | Service: ${stopData.serviceDurationMinutes || 15} min
+                    </div>
+                  </div>
+                  ${stopData.mustVisit ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Appointment</span>' : ''}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+      
+      lucide.createIcons();
+    }
+    
+    // Save route plan
+    async function saveRoutePlan() {
+      if (!currentRoutePlan) {
+        toast.error('No route plan to save');
+        return;
+      }
+      
+      try {
+        const date = document.getElementById('plan-date').value;
+        const repId = document.getElementById('plan-rep').value;
+        const territoryId = document.getElementById('plan-territory').value || null;
+        const objective = document.getElementById('plan-objective').value;
+        const stopsSource = document.getElementById('plan-stops-source').value;
+        
+        const shiftStart = document.getElementById('plan-shift-start').value;
+        const shiftEnd = document.getElementById('plan-shift-end').value;
+        const maxStops = parseInt(document.getElementById('plan-max-stops').value);
+        const lunchStart = document.getElementById('plan-lunch-start').value;
+        const lunchDuration = parseInt(document.getElementById('plan-lunch-duration').value);
+        const serviceDuration = parseInt(document.getElementById('plan-service-duration').value);
+        
+        const priorityWeight = parseFloat(document.getElementById('plan-priority-weight').value);
+        const recencyWeight = parseFloat(document.getElementById('plan-recency-weight').value);
+        const valueWeight = parseFloat(document.getElementById('plan-value-weight').value);
+        
+        const [startHour, startMin] = shiftStart.split(':').map(Number);
+        const shiftStartMinutes = startHour * 60 + startMin;
+        const [endHour, endMin] = shiftEnd.split(':').map(Number);
+        const shiftEndMinutes = endHour * 60 + endMin;
+        const [lunchHour, lunchMin] = lunchStart.split(':').map(Number);
+        const lunchStartMinutes = lunchHour * 60 + lunchMin;
+        
+        // Create route plan
+        const { data: routePlan, error: planError } = await supabase
+          .from('route_plans')
+          .insert({
+            date,
+            rep_user_id: repId,
+            territory_id: territoryId,
+            status: 'draft',
+            route_objective: objective,
+            stops_source: stopsSource,
+            constraints: {
+              shiftStartMinutes,
+              shiftEndMinutes,
+              lunchBreakStart: lunchStartMinutes,
+              lunchBreakDuration: lunchDuration,
+              maxStops,
+              serviceDurationMinutes: serviceDuration
+            },
+            weights: {
+              priorityWeight,
+              recencyWeight,
+              valueWeight
+            },
+            engine_version: '1.0',
+            stats: currentRoutePlan.stats,
+            diagnostics: currentRoutePlan.diagnostics,
+            created_by: currentUser.id
+          })
+          .select()
+          .single();
+        
+        if (planError) throw planError;
+        
+        // Create route plan stops
+        const stops = currentRoutePlan.route.map((stop, idx) => ({
+          route_plan_id: routePlan.id,
+          stop_type: stop.stop.type,
+          stop_ref_id: stop.stop.id,
+          lat: stop.stop.lat,
+          lng: stop.stop.lng,
+          order_index: idx,
+          eta_minutes_from_shift_start: stop.etaMinutesFromShiftStart,
+          planned_start_minutes: stop.plannedStartMinutes,
+          planned_end_minutes: stop.plannedEndMinutes,
+          travel_minutes_from_prev: stop.travelMinutesFromPrev || 0,
+          service_duration_minutes: stop.stop.serviceDurationMinutes || 15,
+          priority: stop.stop.priority || 3,
+          time_window_start_minutes: stop.stop.timeWindowStartMinutes,
+          time_window_end_minutes: stop.stop.timeWindowEndMinutes,
+          must_visit: stop.stop.mustVisit || false
+        }));
+        
+        const { error: stopsError } = await supabase
+          .from('route_plan_stops')
+          .insert(stops);
+        
+        if (stopsError) throw stopsError;
+        
+        toast.success('Route plan saved successfully');
+        await loadRoutePlans();
+        switchPlannerSubtab('plans');
+      } catch (error) {
+        console.error('Error saving route plan:', error);
+        toast.error('Failed to save route plan');
+      }
+    }
+    
+    // Export route plan
+    function exportRoutePlan() {
+      if (!currentRoutePlan) {
+        toast.error('No route plan to export');
+        return;
+      }
+      
+      // Export as CSV
+      const csv = [
+        ['Stop', 'Address', 'ETA', 'Travel Time', 'Service Duration', 'Priority'].join(','),
+        ...currentRoutePlan.route.map((stop, idx) => [
+          idx + 1,
+          `"${stop.stop.address || 'Unknown'}"`,
+          formatMinutesToTime(stop.etaMinutesFromShiftStart),
+          stop.travelMinutesFromPrev || 0,
+          stop.stop.serviceDurationMinutes || 15,
+          stop.stop.priority || 3
+        ].join(','))
+      ].join('\n');
+      
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `route-plan-${new Date().toISOString().split('T')[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      toast.success('Route plan exported');
+    }
+    
+    function formatMinutesToTime(minutes) {
+      const hours = Math.floor(minutes / 60);
+      const mins = minutes % 60;
+      return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+    }
+    
     // Setup event listeners
     function setupEventListeners() {
       // Create route button
       document.getElementById('create-route-btn')?.addEventListener('click', () => {
         document.getElementById('create-route-modal').classList.remove('hidden');
+      });
+      
+      // Generate route button
+      document.getElementById('generate-route-btn')?.addEventListener('click', generateRoutePlanHandler);
+      
+      // Save route plan button
+      document.getElementById('save-route-plan-btn')?.addEventListener('click', saveRoutePlan);
+      
+      // Export route plan button
+      document.getElementById('export-route-plan-btn')?.addEventListener('click', exportRoutePlan);
+      
+      // Create territory button
+      document.getElementById('create-territory-btn')?.addEventListener('click', () => {
+        openCreateTerritoryModal();
+      });
+      
+      // Draw territory button
+      document.getElementById('draw-territory-btn')?.addEventListener('click', () => {
+        if (drawControl && territoriesMap) {
+          const drawPolygon = new L.Draw.Polygon(territoriesMap, {
+            allowIntersection: false,
+            showArea: true
+          });
+          drawPolygon.enable();
+        }
+      });
+      
+      // Toggle heatmap
+      document.getElementById('toggle-heatmap-btn')?.addEventListener('click', () => {
+        toggleHeatmap();
+      });
+      
+      // Toggle map view for route plan
+      document.getElementById('toggle-map-view')?.addEventListener('click', () => {
+        toggleRoutePlanMap();
       });
 
       // Filter tabs
