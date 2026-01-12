@@ -474,7 +474,8 @@ function updateStep2AccountFields() {
 
 // Update step 2 UI based on quote type
 function updateStep2UI() {
-  const quoteType = wizardData.quote_type;
+  const quoteTypeSelect = document.getElementById('quote-type-select');
+  const quoteType = quoteTypeSelect?.value || wizardData.quote_type || 'standard';
   const walkthroughSection = document.getElementById('walkthrough-scope-section');
   const bindingSection = document.getElementById('binding-line-items-section');
 
@@ -484,6 +485,8 @@ function updateStep2UI() {
   } else {
     if (walkthroughSection) walkthroughSection.classList.add('hidden');
     if (bindingSection) bindingSection.classList.remove('hidden');
+    // Trigger calculation when binding section becomes visible
+    setTimeout(() => calculatePriceFromMetrics(), 200);
   }
 }
 
@@ -563,8 +566,12 @@ function populateCleaningServices() {
   setupAutoCalculatePricing();
 }
 
+// Track if auto-calculate is set up to prevent duplicate listeners
+let autoCalculateSetup = false;
+
 // Setup auto-calculate pricing from cleaning metrics
 function setupAutoCalculatePricing() {
+  // Remove old listeners first to prevent duplicates
   const squareFootage = document.getElementById('quote-square-footage');
   const restrooms = document.getElementById('quote-restrooms');
   const kitchens = document.getElementById('quote-kitchens');
@@ -572,6 +579,19 @@ function setupAutoCalculatePricing() {
   const frequency = document.getElementById('quote-cleaning-frequency');
   const perSqftRate = document.getElementById('quote-per-sqft-rate');
   const serviceCheckboxes = document.querySelectorAll('.quote-service-checkbox');
+
+  // Remove existing listeners if already set up
+  if (autoCalculateSetup) {
+    [squareFootage, restrooms, kitchens, floors, frequency, perSqftRate].forEach(input => {
+      if (input) {
+        input.removeEventListener('input', calculatePriceFromMetrics);
+        input.removeEventListener('change', calculatePriceFromMetrics);
+      }
+    });
+    serviceCheckboxes.forEach(checkbox => {
+      checkbox.removeEventListener('change', calculatePriceFromMetrics);
+    });
+  }
 
   // Add event listeners to all metric inputs
   [squareFootage, restrooms, kitchens, floors, frequency, perSqftRate].forEach(input => {
@@ -585,14 +605,21 @@ function setupAutoCalculatePricing() {
   serviceCheckboxes.forEach(checkbox => {
     checkbox.addEventListener('change', calculatePriceFromMetrics);
   });
+
+  autoCalculateSetup = true;
 }
 
 // Calculate price from cleaning metrics and auto-generate line items
 function calculatePriceFromMetrics() {
-  const quoteType = wizardData.quote_type;
+  // Get quote type from DOM or wizardData
+  const quoteTypeSelect = document.getElementById('quote-type-select');
+  const quoteType = quoteTypeSelect?.value || wizardData.quote_type || 'standard';
+  
+  console.log('[Auto-Calculate] Quote type:', quoteType);
   
   // Only auto-calculate for standard/ballpark quotes (not walkthrough_required)
   if (quoteType === 'walkthrough_required') {
+    console.log('[Auto-Calculate] Skipping - walkthrough quote type');
     return; // Don't auto-calculate for walkthrough quotes
   }
 
@@ -603,6 +630,8 @@ function calculatePriceFromMetrics() {
   const frequency = document.getElementById('quote-cleaning-frequency')?.value || 'weekly';
   const perSqftRate = parseFloat(document.getElementById('quote-per-sqft-rate')?.value || 0);
   
+  console.log('[Auto-Calculate] Metrics:', { squareFootage, restrooms, kitchens, floors, frequency, perSqftRate });
+  
   // Get selected services
   const selectedServices = Array.from(document.querySelectorAll('.quote-service-checkbox:checked'))
     .map(cb => ({
@@ -610,8 +639,11 @@ function calculatePriceFromMetrics() {
       name: cb.dataset.serviceName || 'Service'
     }));
 
+  console.log('[Auto-Calculate] Selected services:', selectedServices);
+
   // Don't calculate if required fields are missing
   if (squareFootage === 0 || perSqftRate === 0) {
+    console.log('[Auto-Calculate] Missing required fields - skipping calculation');
     return;
   }
 
@@ -726,13 +758,19 @@ function calculatePriceFromMetrics() {
   // Update wizardData with calculated line items
   wizardData.line_items = lineItems;
   
-  // Re-render line items
-  renderLineItems();
-  
-  // Update totals
-  updateLineItemsTotals();
-  
   console.log('[Auto-Calculate] Generated line items:', lineItems);
+  console.log('[Auto-Calculate] Total line items:', lineItems.length);
+  
+  // Re-render line items (only if we're on step 3 and binding section is visible)
+  const bindingSection = document.getElementById('binding-line-items-section');
+  if (bindingSection && !bindingSection.classList.contains('hidden')) {
+    renderLineItems();
+    // Update totals
+    updateLineItemsTotals();
+    console.log('[Auto-Calculate] Line items rendered and totals updated');
+  } else {
+    console.log('[Auto-Calculate] Binding section not visible - line items saved to wizardData only');
+  }
 }
 
 // Setup line items handlers
