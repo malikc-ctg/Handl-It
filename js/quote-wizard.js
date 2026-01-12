@@ -99,6 +99,29 @@ export function initQuoteWizard() {
       }
     });
   }
+
+  // Quote send confirmation modal handlers
+  const confirmationModal = document.getElementById('quote-send-confirmation-modal');
+  const closeConfirmationBtn = document.getElementById('close-quote-send-confirmation-modal');
+  const cancelConfirmationBtn = document.getElementById('cancel-quote-send-btn');
+  const confirmSendBtn = document.getElementById('confirm-quote-send-btn');
+
+  if (closeConfirmationBtn) {
+    closeConfirmationBtn.addEventListener('click', closeQuoteSendConfirmation);
+  }
+  if (cancelConfirmationBtn) {
+    cancelConfirmationBtn.addEventListener('click', closeQuoteSendConfirmation);
+  }
+  if (confirmSendBtn) {
+    confirmSendBtn.addEventListener('click', confirmAndSendQuote);
+  }
+  if (confirmationModal) {
+    confirmationModal.addEventListener('click', (e) => {
+      if (e.target === confirmationModal) {
+        closeQuoteSendConfirmation();
+      }
+    });
+  }
 }
 
 // Open wizard
@@ -699,13 +722,59 @@ async function handleSaveDraft() {
   }
 }
 
-// Handle send quote
+// Show quote send confirmation modal
+function showQuoteSendConfirmation() {
+  // Calculate totals
+  let subtotal = 0;
+  wizardData.line_items.forEach(item => {
+    const qty = parseFloat(item.quantity || 1);
+    const price = parseFloat(item.unit_price || 0);
+    subtotal += qty * price;
+  });
+
+  const tax = subtotal * 0.13; // 13% HST
+  const total = subtotal + tax;
+
+  // Update confirmation modal with totals
+  const subtotalEl = document.getElementById('confirmation-subtotal');
+  const taxEl = document.getElementById('confirmation-tax');
+  const totalEl = document.getElementById('confirmation-total');
+
+  if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (taxEl) taxEl.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  // Show modal
+  const modal = document.getElementById('quote-send-confirmation-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+}
+
+// Close quote send confirmation modal
+function closeQuoteSendConfirmation() {
+  const modal = document.getElementById('quote-send-confirmation-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+}
+
+// Handle send quote - shows confirmation first
 async function handleSendQuote() {
   if (!validateCurrentStep()) {
     return;
   }
 
   saveCurrentStepData();
+  
+  // Show confirmation modal with final price
+  showQuoteSendConfirmation();
+}
+
+// Actually send the quote (called after confirmation)
+async function confirmAndSendQuote() {
+  closeQuoteSendConfirmation();
 
   try {
     // Create quote if not exists

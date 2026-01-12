@@ -1276,6 +1276,62 @@
     </div>
   </div>
 
+  <!-- Quote Send Confirmation Modal -->
+  <div id="quote-send-confirmation-modal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex items-center justify-between">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Confirm Quote Send</h3>
+          <button id="close-quote-send-confirmation-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="p-6 space-y-4">
+        <div class="bg-nfglight/30 dark:bg-blue-900/20 border border-nfgblue/20 dark:border-blue-800 rounded-xl p-4">
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Final Quote Price:</p>
+          <div class="flex items-baseline justify-between">
+            <span class="text-lg font-medium text-gray-700 dark:text-gray-300">Subtotal:</span>
+            <span id="confirmation-subtotal" class="text-lg font-semibold text-gray-900 dark:text-gray-100">$0.00</span>
+          </div>
+          <div class="flex items-baseline justify-between mt-2">
+            <span class="text-lg font-medium text-gray-700 dark:text-gray-300">Tax (13% HST):</span>
+            <span id="confirmation-tax" class="text-lg font-semibold text-gray-900 dark:text-gray-100">$0.00</span>
+          </div>
+          <div class="flex items-baseline justify-between mt-3 pt-3 border-t border-nfgblue/20 dark:border-blue-800">
+            <span class="text-xl font-semibold text-nfgblue dark:text-blue-400">Total:</span>
+            <span id="confirmation-total" class="text-3xl font-bold text-nfgblue dark:text-blue-400">$0.00</span>
+          </div>
+        </div>
+        
+        <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4">
+          <div class="flex items-start gap-2">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5"></i>
+            <p class="text-sm text-yellow-800 dark:text-yellow-200">
+              Please review the final quote price above. This is the amount that will be sent to the customer.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-6 border-t border-nfgray dark:border-gray-700 flex gap-3 justify-end">
+        <button 
+          id="cancel-quote-send-btn" 
+          class="px-4 py-2 border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 rounded-lg font-medium transition"
+        >
+          Cancel
+        </button>
+        <button 
+          id="confirm-quote-send-btn" 
+          class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition"
+        >
+          Yes, Send Quote
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Quote Detail Modal -->
   <div id="quote-detail-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">

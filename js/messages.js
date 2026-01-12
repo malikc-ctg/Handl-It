@@ -194,7 +194,7 @@ function initFileUpload() {
     
     if (validFiles.length > 0) {
       selectedFiles = [...selectedFiles, ...validFiles];
-      updateFilePreview();
+      updateFilePreview(); // This will call updateSendButtonState()
       triggerHaptic('light');
     }
     
@@ -257,8 +257,25 @@ function updateFilePreview() {
       selectedFiles.splice(index, 1);
       updateFilePreview();
       triggerHaptic('light');
+      // Update send button state after removing file
+      updateSendButtonState();
     });
   });
+  
+  // Update send button state after adding files
+  updateSendButtonState();
+}
+
+// Update send button enabled/disabled state
+function updateSendButtonState() {
+  const sendBtn = document.getElementById('send-message-btn');
+  const messageInput = document.getElementById('message-input');
+  if (sendBtn && messageInput) {
+    const hasText = messageInput.value.trim().length > 0;
+    const hasFiles = selectedFiles.length > 0;
+    sendBtn.disabled = !hasText && !hasFiles;
+    console.log('[Send Button] State updated from file selection:', { hasText, hasFiles, disabled: sendBtn.disabled });
+  }
 }
 
 // ========== EVENT LISTENERS ==========
@@ -342,9 +359,32 @@ function initEventListeners() {
     });
   }
 
+  // Send button click handler (direct handler as fallback)
+  const sendBtn = document.getElementById('send-message-btn');
+  if (sendBtn) {
+    sendBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      // Only send if button is not disabled and there's content
+      if (!sendBtn.disabled) {
+        triggerHaptic('medium');
+        await sendMessage();
+      } else {
+        triggerHaptic('warning');
+      }
+      return false;
+    });
+  }
+
   // Message input auto-resize and enable/disable send button
   const messageInput = document.getElementById('message-input');
   if (messageInput) {
+    // Initial check to enable button if there's already text (e.g., from page reload)
+    const sendBtn = document.getElementById('send-message-btn');
+    if (sendBtn && messageInput.value.trim()) {
+      sendBtn.disabled = false;
+    }
+    
     messageInput.addEventListener('input', (e) => {
       // Auto-resize input (adjust messageBox height)
       const messageBox = e.target.closest('.messageBox');
@@ -357,10 +397,7 @@ function initEventListeners() {
       }
 
       // Enable/disable send button (enable if text OR files are selected)
-      const sendBtn = document.getElementById('send-message-btn');
-      if (sendBtn) {
-        sendBtn.disabled = !e.target.value.trim() && selectedFiles.length === 0;
-      }
+      updateSendButtonState();
     });
 
     // Send on Enter (but allow Shift+Enter for new line)
