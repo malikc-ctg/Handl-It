@@ -81,6 +81,9 @@ export function initQuoteWizard() {
   // Line items handlers
   setupLineItemsHandlers();
 
+  // Auto-calculate pricing from cleaning metrics
+  setupAutoCalculatePricing();
+
   // Account type selection handlers
   const newAccountBtn = document.getElementById('account-type-new');
   const existingAccountBtn = document.getElementById('account-type-existing');
@@ -444,6 +447,10 @@ function updateWizardUI() {
   // Update step 3 UI based on quote type
   if (currentWizardStep === 3) {
     updateStep2UI();
+    // Setup auto-calculate when step 3 is shown
+    setupAutoCalculatePricing();
+    // Calculate if metrics are already filled
+    setTimeout(() => calculatePriceFromMetrics(), 100);
   }
 }
 
@@ -551,6 +558,181 @@ function populateCleaningServices() {
   });
 
   servicesList.innerHTML = html || '<p class="text-sm text-gray-500 dark:text-gray-400">No services available</p>';
+  
+  // Re-setup auto-calculate after services are populated
+  setupAutoCalculatePricing();
+}
+
+// Setup auto-calculate pricing from cleaning metrics
+function setupAutoCalculatePricing() {
+  const squareFootage = document.getElementById('quote-square-footage');
+  const restrooms = document.getElementById('quote-restrooms');
+  const kitchens = document.getElementById('quote-kitchens');
+  const floors = document.getElementById('quote-floors');
+  const frequency = document.getElementById('quote-cleaning-frequency');
+  const perSqftRate = document.getElementById('quote-per-sqft-rate');
+  const serviceCheckboxes = document.querySelectorAll('.quote-service-checkbox');
+
+  // Add event listeners to all metric inputs
+  [squareFootage, restrooms, kitchens, floors, frequency, perSqftRate].forEach(input => {
+    if (input) {
+      input.addEventListener('input', calculatePriceFromMetrics);
+      input.addEventListener('change', calculatePriceFromMetrics);
+    }
+  });
+
+  // Add event listeners to service checkboxes
+  serviceCheckboxes.forEach(checkbox => {
+    checkbox.addEventListener('change', calculatePriceFromMetrics);
+  });
+}
+
+// Calculate price from cleaning metrics and auto-generate line items
+function calculatePriceFromMetrics() {
+  const quoteType = wizardData.quote_type;
+  
+  // Only auto-calculate for standard/ballpark quotes (not walkthrough_required)
+  if (quoteType === 'walkthrough_required') {
+    return; // Don't auto-calculate for walkthrough quotes
+  }
+
+  const squareFootage = parseFloat(document.getElementById('quote-square-footage')?.value || 0);
+  const restrooms = parseInt(document.getElementById('quote-restrooms')?.value || 0);
+  const kitchens = parseInt(document.getElementById('quote-kitchens')?.value || 0);
+  const floors = parseInt(document.getElementById('quote-floors')?.value || 1);
+  const frequency = document.getElementById('quote-cleaning-frequency')?.value || 'weekly';
+  const perSqftRate = parseFloat(document.getElementById('quote-per-sqft-rate')?.value || 0);
+  
+  // Get selected services
+  const selectedServices = Array.from(document.querySelectorAll('.quote-service-checkbox:checked'))
+    .map(cb => ({
+      id: cb.value,
+      name: cb.dataset.serviceName || 'Service'
+    }));
+
+  // Don't calculate if required fields are missing
+  if (squareFootage === 0 || perSqftRate === 0) {
+    return;
+  }
+
+  // Calculate base monthly price
+  const baseMonthlyPrice = squareFootage * perSqftRate;
+
+  // Frequency multiplier (convert to monthly equivalent)
+  const frequencyMultipliers = {
+    'daily': 30,      // 30x monthly
+    'weekly': 4,      // 4x monthly
+    'bi-weekly': 2,   // 2x monthly
+    'monthly': 1,     // 1x monthly
+    'quarterly': 0.33 // 0.33x monthly
+  };
+  const frequencyMultiplier = frequencyMultipliers[frequency] || 1;
+
+  // Calculate adjusted base price
+  const adjustedBasePrice = baseMonthlyPrice * frequencyMultiplier;
+
+  // Additional costs
+  const restroomCost = restrooms * 25 * frequencyMultiplier; // $25 per restroom per cleaning
+  const kitchenCost = kitchens * 50 * frequencyMultiplier;   // $50 per kitchen per cleaning
+  const floorCost = (floors - 1) * 100 * frequencyMultiplier; // $100 per additional floor per cleaning
+
+  // Service add-ons (flat monthly rates that scale with frequency)
+  const serviceAddOns = {
+    'Carpet, Rug & Upholstery Cleaning': 200,
+    'Desk & Equipment Wipe-Down': 150,
+    'Elevator Cab & Track Cleaning': 75,
+    'Entrance Detailing & Glass Polishing': 100,
+    'Garbage & Recycling Removal': 50,
+    'High Dusting (Vents, Ledges, Fixtures)': 125,
+    'Interior & Exterior Window Cleaning': 300,
+    'Touch-Point Disinfecting': 100,
+    'Spot Cleaning (Walls, Doors, Glass)': 150
+  };
+
+  let serviceCost = 0;
+  selectedServices.forEach(service => {
+    const addOnPrice = serviceAddOns[service.name] || 0;
+    if (addOnPrice > 0) {
+      serviceCost += addOnPrice * frequencyMultiplier;
+    }
+  });
+
+  // Generate line items
+  const lineItems = [];
+
+  // Base cleaning service
+  if (adjustedBasePrice > 0) {
+    lineItems.push({
+      name: `Base Cleaning Service (${frequency})`,
+      description: `${squareFootage.toLocaleString()} sq ft @ $${perSqftRate.toFixed(2)}/sqft`,
+      quantity: 1,
+      unit: 'flat',
+      unit_price: adjustedBasePrice,
+      category: 'Base Service'
+    });
+  }
+
+  // Restrooms
+  if (restrooms > 0 && restroomCost > 0) {
+    lineItems.push({
+      name: 'Restroom Cleaning',
+      description: `${restrooms} restroom${restrooms > 1 ? 's' : ''}`,
+      quantity: restrooms,
+      unit: 'flat',
+      unit_price: 25 * frequencyMultiplier,
+      category: 'Additional Services'
+    });
+  }
+
+  // Kitchens
+  if (kitchens > 0 && kitchenCost > 0) {
+    lineItems.push({
+      name: 'Kitchen Cleaning',
+      description: `${kitchens} kitchen${kitchens > 1 ? 's' : ''}`,
+      quantity: kitchens,
+      unit: 'flat',
+      unit_price: 50 * frequencyMultiplier,
+      category: 'Additional Services'
+    });
+  }
+
+  // Additional floors
+  if (floors > 1 && floorCost > 0) {
+    lineItems.push({
+      name: 'Additional Floor Cleaning',
+      description: `${floors - 1} additional floor${floors > 2 ? 's' : ''}`,
+      quantity: floors - 1,
+      unit: 'flat',
+      unit_price: 100 * frequencyMultiplier,
+      category: 'Additional Services'
+    });
+  }
+
+  // Selected services
+  selectedServices.forEach(service => {
+    const addOnPrice = serviceAddOns[service.name];
+    if (addOnPrice > 0) {
+      lineItems.push({
+        name: service.name,
+        description: 'Additional service',
+        quantity: 1,
+        unit: 'flat',
+        unit_price: addOnPrice * frequencyMultiplier,
+        category: 'Premium Services'
+      });
+    }
+  });
+
+  // Update wizardData with calculated line items
+  wizardData.line_items = lineItems;
+  
+  // Re-render line items
+  renderLineItems();
+  
+  // Update totals
+  updateLineItemsTotals();
+  
+  console.log('[Auto-Calculate] Generated line items:', lineItems);
 }
 
 // Setup line items handlers
