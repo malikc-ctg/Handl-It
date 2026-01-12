@@ -522,7 +522,8 @@
       unassignRepFromTerritory,
       fetchTerritoryAssignments,
       computeTerritoryCoverage,
-      getCachedCoverage
+      getCachedCoverage,
+      isPointInTerritory
     } from './js/territory-management.js';
 
     // Initialize
@@ -1015,22 +1016,56 @@
     // Load route plans (saved optimized routes)
     async function loadRoutePlans() {
       try {
-        const { data, error } = await supabase
+        const { data: plans, error } = await supabase
           .from('route_plans')
-          .select(`
-            *,
-            rep:user_profiles!route_plans_rep_user_id_fkey (id, full_name, email),
-            territory:territories (id, name)
-          `)
+          .select('*')
           .order('date', { ascending: false })
           .limit(50);
         
         if (error) throw error;
         
+        // Fetch user profiles and territories separately
+        if (plans && plans.length > 0) {
+          const repIds = [...new Set(plans.map(p => p.rep_user_id).filter(Boolean))];
+          const territoryIds = [...new Set(plans.map(p => p.territory_id).filter(Boolean))];
+          
+          let reps = [];
+          let territoryData = [];
+          
+          if (repIds.length > 0) {
+            const { data: repsData } = await supabase
+              .from('user_profiles')
+              .select('id, full_name, email')
+              .in('id', repIds);
+            reps = repsData || [];
+          }
+          
+          if (territoryIds.length > 0) {
+            const { data: territoriesData } = await supabase
+              .from('territories')
+              .select('id, name')
+              .in('id', territoryIds);
+            territoryData = territoriesData || [];
+          }
+          
+          const repMap = new Map(reps.map(r => [r.id, r]));
+          const territoryMap = new Map(territoryData.map(t => [t.id, t]));
+          
+          plans.forEach(plan => {
+            if (plan.rep_user_id && repMap.has(plan.rep_user_id)) {
+              plan.rep = repMap.get(plan.rep_user_id);
+            }
+            if (plan.territory_id && territoryMap.has(plan.territory_id)) {
+              plan.territory = territoryMap.get(plan.territory_id);
+            }
+          });
+        }
+        
         // Store for later use
-        window.routePlans = data || [];
+        window.routePlans = plans || [];
       } catch (error) {
         console.error('Error loading route plans:', error);
+        // Don't throw - this is optional data
       }
     }
     

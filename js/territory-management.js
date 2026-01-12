@@ -108,22 +108,47 @@ export async function fetchTerritories() {
  */
 export async function fetchTerritory(territoryId) {
   try {
-    const { data, error } = await supabase
+    // Fetch territory first
+    const { data: territory, error: territoryError } = await supabase
       .from('territories')
-      .select(`
-        *,
-        territory_assignments (
-          *,
-          rep:user_profiles!territory_assignments_rep_user_id_fkey (
-            id, full_name, email
-          )
-        )
-      `)
+      .select('*')
       .eq('id', territoryId)
       .single();
 
-    if (error) throw error;
-    return data;
+    if (territoryError) throw territoryError;
+    
+    // Fetch assignments separately
+    const { data: assignments, error: assignmentsError } = await supabase
+      .from('territory_assignments')
+      .select('*')
+      .eq('territory_id', territoryId);
+
+    if (assignmentsError) throw assignmentsError;
+    
+    // Fetch user profiles for assignments
+    if (assignments && assignments.length > 0) {
+      const repIds = assignments.map(a => a.rep_user_id).filter(Boolean);
+      if (repIds.length > 0) {
+        const { data: reps } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', repIds);
+        
+        if (reps) {
+          const repMap = new Map(reps.map(r => [r.id, r]));
+          assignments.forEach(assignment => {
+            if (assignment.rep_user_id && repMap.has(assignment.rep_user_id)) {
+              assignment.rep = repMap.get(assignment.rep_user_id);
+            }
+          });
+        }
+      }
+    }
+    
+    return {
+      ...territory,
+      territory_assignments: assignments || []
+    };
   } catch (error) {
     console.error('[Territory] Error fetching territory:', error);
     throw error;
@@ -189,18 +214,34 @@ export async function unassignRepFromTerritory(territoryId, repUserId) {
  */
 export async function fetchTerritoryAssignments(territoryId) {
   try {
-    const { data, error } = await supabase
+    const { data: assignments, error } = await supabase
       .from('territory_assignments')
-      .select(`
-        *,
-        rep:user_profiles!territory_assignments_rep_user_id_fkey (
-          id, full_name, email
-        )
-      `)
+      .select('*')
       .eq('territory_id', territoryId);
 
     if (error) throw error;
-    return data || [];
+    
+    // Fetch user profiles for assignments
+    if (assignments && assignments.length > 0) {
+      const repIds = assignments.map(a => a.rep_user_id).filter(Boolean);
+      if (repIds.length > 0) {
+        const { data: reps } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', repIds);
+        
+        if (reps) {
+          const repMap = new Map(reps.map(r => [r.id, r]));
+          assignments.forEach(assignment => {
+            if (assignment.rep_user_id && repMap.has(assignment.rep_user_id)) {
+              assignment.rep = repMap.get(assignment.rep_user_id);
+            }
+          });
+        }
+      }
+    }
+    
+    return assignments || [];
   } catch (error) {
     console.error('[Territory] Error fetching assignments:', error);
     return [];
