@@ -460,18 +460,81 @@
         </div>
 
         <!-- Leads Tab -->
-        <div id="tab-leads" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Leads</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Track and manage sales leads</p>
+        <div id="tab-leads" class="sales-tab-content hidden h-full flex flex-col">
+          <!-- Sticky top bar -->
+          <div class="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-nfgray p-4 md:p-6">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Leads</h2>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Quo-style calling list for lead management</p>
+                </div>
+                <button id="create-lead-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+                  <i data-lucide="plus" class="w-4 h-4"></i> New Lead
+                </button>
+              </div>
+              
+              <!-- Search and Filters -->
+              <div class="flex flex-col md:flex-row gap-3">
+                <div class="flex-1">
+                  <input
+                    type="text"
+                    id="leads-search"
+                    placeholder="Search by company, person, phone, or email..."
+                    class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-4 py-2 focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800"
+                  />
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                  <select id="leads-status-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
+                    <option value="">All Status</option>
+                    <option value="new">New</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="dm_reached">DM Reached</option>
+                    <option value="walkthrough_booked">Walkthrough Booked</option>
+                    <option value="quote_pending">Quote Pending</option>
+                    <option value="unqualified">Unqualified</option>
+                    <option value="do_not_contact">Do Not Contact</option>
+                  </select>
+                  <select id="leads-source-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
+                    <option value="">All Sources</option>
+                    <option value="glsa">GLSA</option>
+                    <option value="coldlist">Cold List</option>
+                    <option value="referral">Referral</option>
+                    <option value="web">Web</option>
+                    <option value="other">Other</option>
+                  </select>
+                  <select id="leads-owner-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800 hidden">
+                    <option value="">All Owners</option>
+                  </select>
+                  <select id="leads-priority-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
+                    <option value="">All Priorities</option>
+                    <option value="5">Priority 5 (Highest)</option>
+                    <option value="4">Priority 4</option>
+                    <option value="3">Priority 3</option>
+                    <option value="2">Priority 2</option>
+                    <option value="1">Priority 1 (Lowest)</option>
+                  </select>
+                  <select id="leads-has-phone-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
+                    <option value="">All Leads</option>
+                    <option value="yes">Has Phone</option>
+                    <option value="no">No Phone</option>
+                  </select>
+                  <select id="leads-sort" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
+                    <option value="next_action_at_asc">Next Action Due</option>
+                    <option value="last_touch_at_desc">Last Touched</option>
+                    <option value="priority_desc">Highest Priority</option>
+                    <option value="created_at_desc">Newest</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <button id="create-lead-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-              <i data-lucide="plus" class="w-4 h-4"></i> New Lead
-            </button>
           </div>
-          <div id="leads-list" class="space-y-4">
-            <!-- Leads will be rendered here -->
+
+          <!-- Leads List -->
+          <div class="flex-1 overflow-auto p-4 md:p-6">
+            <div id="leads-list" class="space-y-3">
+              <!-- Leads will be rendered here -->
+            </div>
           </div>
         </div>
 
@@ -742,6 +805,168 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Create Lead Modal -->
+  <div id="create-lead-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create New Lead</h3>
+          <button id="close-create-lead-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <form id="create-lead-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Company Name</label>
+          <input type="text" name="company_name" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Company name (optional)">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Person Name</label>
+          <input type="text" name="person_name" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Contact person name">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Title</label>
+          <input type="text" name="title" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Job title">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+            <input type="tel" name="phone" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="(555) 123-4567">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Email</label>
+            <input type="email" name="email" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="email@example.com">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address</label>
+          <input type="text" name="address" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Street address">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City</label>
+            <input type="text" name="city" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="City">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Source</label>
+            <select name="source" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+              <option value="other">Other</option>
+              <option value="glsa">GLSA</option>
+              <option value="coldlist">Cold List</option>
+              <option value="referral">Referral</option>
+              <option value="web">Web</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority</label>
+          <select name="priority" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+            <option value="3" selected>3 (Medium)</option>
+            <option value="5">5 (Highest)</option>
+            <option value="4">4</option>
+            <option value="2">2</option>
+            <option value="1">1 (Lowest)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+          <textarea name="notes_lite" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Brief notes..."></textarea>
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="cancel-create-lead" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+            Create Lead
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Disposition Modal -->
+  <div id="disposition-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Call Disposition</h3>
+          <button id="close-disposition-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="p-6">
+        <div id="dispositions-list" class="space-y-2">
+          <!-- Disposition options will be rendered here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Convert Lead Modal -->
+  <div id="convert-lead-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Convert Lead to Account</h3>
+          <button id="close-convert-lead-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <form id="convert-lead-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Name</label>
+          <input type="text" id="convert-account-name" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Company name">
+        </div>
+        <div class="flex items-center">
+          <input type="checkbox" id="convert-create-deal" name="create_deal" class="w-4 h-4 text-nfgblue rounded border-nfgray focus:ring-2 focus:ring-nfgblue">
+          <label for="convert-create-deal" class="ml-2 text-sm text-gray-700 dark:text-gray-300">Create Deal</label>
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button type="button" id="cancel-convert-lead" class="flex-1 px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+            Cancel
+          </button>
+          <button type="submit" class="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
+            Convert
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Lead Drawer -->
+  <div id="lead-drawer" class="hidden fixed inset-0 bg-black/50 z-50 flex items-end md:items-center md:justify-end p-0">
+    <div class="bg-white dark:bg-gray-800 w-full md:w-96 h-full md:h-[90vh] flex flex-col shadow-xl">
+      <div class="p-6 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Lead Details</h3>
+          <button id="lead-drawer-close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+      </div>
+      <div class="flex-1 overflow-y-auto p-6 space-y-6">
+        <div id="drawer-lead-summary">
+          <!-- Lead summary will be rendered here -->
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-3">Recent Activity</h4>
+          <div id="drawer-activities" class="space-y-2">
+            <!-- Activities will be rendered here -->
+          </div>
+        </div>
+        <div>
+          <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-3">Conversion Status</h4>
+          <div id="drawer-conversion">
+            <!-- Conversion status will be rendered here -->
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -1157,6 +1382,10 @@
       window.accountsDirectory = await import('./js/accounts-directory.js');
       console.log('[Sales Dashboard] ✅ accounts directory module loaded');
       
+      // Load leads directory module
+      window.leadsDirectory = await import('./js/leads-directory.js');
+      console.log('[Sales Dashboard] ✅ leads directory module loaded');
+      
       console.log('[Sales Dashboard] ✅ All modules loaded successfully');
     } catch (error) {
       console.error('[Sales Dashboard] ❌ Error loading modules:', error);
@@ -1323,7 +1552,12 @@
             await loadQuotes();
             break;
           case 'leads':
-            await loadLeads();
+            // Initialize leads directory on first load
+            if (window.leadsDirectory && typeof window.leadsDirectory.init === 'function') {
+              await window.leadsDirectory.init();
+            } else {
+              await loadLeads();
+            }
             break;
           case 'contacts':
             // Initialize accounts directory on first load
@@ -2357,6 +2591,77 @@
       if (quoteDetailCloseBtn) {
         quoteDetailCloseBtn.addEventListener('click', () => {
           document.getElementById('quote-detail-modal')?.classList.add('hidden');
+        });
+      }
+
+      // Setup lead modals close buttons
+      const closeCreateLeadBtn = document.getElementById('close-create-lead-modal');
+      const cancelCreateLeadBtn = document.getElementById('cancel-create-lead');
+      if (closeCreateLeadBtn) {
+        closeCreateLeadBtn.addEventListener('click', () => {
+          document.getElementById('create-lead-modal')?.classList.add('hidden');
+        });
+      }
+      if (cancelCreateLeadBtn) {
+        cancelCreateLeadBtn.addEventListener('click', () => {
+          document.getElementById('create-lead-modal')?.classList.add('hidden');
+        });
+      }
+
+      const closeDispositionBtn = document.getElementById('close-disposition-modal');
+      if (closeDispositionBtn) {
+        closeDispositionBtn.addEventListener('click', () => {
+          document.getElementById('disposition-modal')?.classList.add('hidden');
+        });
+      }
+
+      const closeConvertLeadBtn = document.getElementById('close-convert-lead-modal');
+      const cancelConvertLeadBtn = document.getElementById('cancel-convert-lead');
+      if (closeConvertLeadBtn) {
+        closeConvertLeadBtn.addEventListener('click', () => {
+          document.getElementById('convert-lead-modal')?.classList.add('hidden');
+        });
+      }
+      if (cancelConvertLeadBtn) {
+        cancelConvertLeadBtn.addEventListener('click', () => {
+          document.getElementById('convert-lead-modal')?.classList.add('hidden');
+        });
+      }
+
+      // Setup create lead form
+      const createLeadForm = document.getElementById('create-lead-form');
+      if (createLeadForm) {
+        createLeadForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          if (!window.leadsDirectory) {
+            console.error('Leads directory not loaded');
+            return;
+          }
+          const formData = new FormData(e.target);
+          try {
+            const { createLead } = await import('./js/leads-service.js');
+            await createLead({
+              company_name: formData.get('company_name'),
+              person_name: formData.get('person_name'),
+              title: formData.get('title'),
+              phone: formData.get('phone'),
+              email: formData.get('email'),
+              address: formData.get('address'),
+              city: formData.get('city'),
+              source: formData.get('source'),
+              priority: parseInt(formData.get('priority')),
+              notes_lite: formData.get('notes_lite')
+            });
+            if (toast) toast.success('Lead created');
+            document.getElementById('create-lead-modal')?.classList.add('hidden');
+            e.target.reset();
+            if (window.leadsDirectory && typeof window.leadsDirectory.loadLeads === 'function') {
+              await window.leadsDirectory.loadLeads();
+            }
+          } catch (error) {
+            console.error('Error creating lead:', error);
+            if (toast) toast.error('Failed to create lead', 'Error');
+          }
         });
       }
 
