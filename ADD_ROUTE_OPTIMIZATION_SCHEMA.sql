@@ -296,6 +296,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_territory_assignment_updated_at ON territory_assignments;
 CREATE TRIGGER trigger_update_territory_assignment_updated_at
   BEFORE UPDATE ON territory_assignments
   FOR EACH ROW
@@ -309,6 +310,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_route_plan_updated_at ON route_plans;
 CREATE TRIGGER trigger_update_route_plan_updated_at
   BEFORE UPDATE ON route_plans
   FOR EACH ROW
@@ -322,6 +324,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_update_route_plan_stop_updated_at ON route_plan_stops;
 CREATE TRIGGER trigger_update_route_plan_stop_updated_at
   BEFORE UPDATE ON route_plan_stops
   FOR EACH ROW
