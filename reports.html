@@ -7327,8 +7327,7 @@
         await viewInvoice(invoiceId);
         
         // Refresh invoices list and summary if on billing tab
-        const billingTab = document.getElementById('tab-billing');
-        if (billingTab && (billingTab.classList.contains('active') || billingTab.classList.contains('bg-nfgblue'))) {
+                if (billingTab && (billingTab.classList.contains('active') || billingTab.classList.contains('bg-nfgblue'))) {
           await loadInvoices();
           await loadBillingSummary();
         }
@@ -8150,9 +8149,7 @@
       const urlParams = new URLSearchParams(window.location.search);
       const tabParam = urlParams.get('tab');
       if (tabParam === 'billing') {
-        const billingTab = document.getElementById('tab-billing');
-        if (billingTab) {
-          billingTab.click();
+                          billingTab.click();
         }
         
         // Check if we should open invoice creation modal
