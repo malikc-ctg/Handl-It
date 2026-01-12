@@ -59,7 +59,17 @@ export function getDisplayRole(role) {
 
 // Check if current user is admin, client, or super_admin
 export function canManageUsers() {
-  return currentUserProfile && ['admin', 'client', 'super_admin'].includes(currentUserProfile.role);
+  // Check both currentUserProfile (from module) and try to get from auth if not set
+  if (currentUserProfile && ['admin', 'client', 'super_admin'].includes(currentUserProfile.role)) {
+    return true;
+  }
+  // Fallback: check if we can determine from current user data
+  return false;
+}
+
+// Check if user can manage users (with profile parameter)
+export function canManageUsersWithProfile(profile) {
+  return profile && ['admin', 'client', 'super_admin'].includes(profile.role);
 }
 
 // Fetch all users
@@ -439,9 +449,17 @@ export async function removeUser(userId) {
   }
 }
 
-// Render users list
-export async function renderUsersList() {
-  console.log('renderUsersList called');
+// Store all users for filtering
+let allUsers = [];
+
+// Clear user cache (call after updates to force refresh)
+export function clearUserCache() {
+  allUsers = [];
+}
+
+// Render users list with optional filters
+export async function renderUsersList(searchTerm = '', roleFilter = 'all', statusFilter = 'all') {
+  console.log('renderUsersList called', { searchTerm, roleFilter, statusFilter });
   const list = document.getElementById('users-list');
   
   if (!list) {
@@ -449,11 +467,42 @@ export async function renderUsersList() {
     return;
   }
   
-  console.log('Fetching users...');
-  const users = await fetchUsers();
-  console.log('Users fetched:', users);
+  // Only fetch if we don't have users cached or if explicitly requested
+  if (allUsers.length === 0) {
+    console.log('Fetching users...');
+    allUsers = await fetchUsers();
+    console.log('Users fetched:', allUsers);
+  }
   
-  if (!users || users.length === 0) {
+  // Apply filters
+  let users = [...allUsers];
+  
+  // Search filter
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    users = users.filter(user => {
+      const name = (user.full_name || user.email.split('@')[0]).toLowerCase();
+      const email = user.email.toLowerCase();
+      const role = (user.role || '').toLowerCase();
+      return name.includes(searchLower) || email.includes(searchLower) || role.includes(searchLower);
+    });
+  }
+  
+  // Role filter
+  if (roleFilter !== 'all') {
+    users = users.filter(user => {
+      const userRole = user.role === 'super_admin' ? 'admin' : user.role;
+      return userRole === roleFilter;
+    });
+  }
+  
+  // Status filter
+  if (statusFilter !== 'all') {
+    users = users.filter(user => user.status === statusFilter);
+  }
+  
+  // Check if no users at all (setup issue) vs filtered out
+  if (allUsers.length === 0) {
     console.warn('No users found, showing setup message');
     list.innerHTML = `
       <div class="text-center py-12 text-gray-500 dark:text-gray-400">
@@ -470,6 +519,19 @@ export async function renderUsersList() {
           <p class="text-blue-800">Open <code class="bg-white px-2 py-0.5 rounded">supabase_user_management_schema.sql</code></p>
           <p class="text-blue-800 mt-1">Copy the SQL and run in Supabase SQL Editor</p>
         </div>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
+    return;
+  }
+  
+  // Show message if filters result in no users
+  if (users.length === 0) {
+    list.innerHTML = `
+      <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <i data-lucide="search-x" class="w-12 h-12 mx-auto mb-3 opacity-50"></i>
+        <p class="text-sm">No users match your filters</p>
+        <button onclick="clearUserFilters()" class="mt-3 text-sm text-nfgblue hover:underline">Clear filters</button>
       </div>
     `;
     if (window.lucide) lucide.createIcons();
@@ -501,13 +563,14 @@ export async function renderUsersList() {
       ? `<img src="${user.profile_picture}" alt="${displayName}" class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full object-cover border-2 border-nfgray" />`
       : `<div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-base md:text-lg">${initials}</div>`;
     
-    // Only show View button for admin/client users
-    const viewButton = canManageUsers() ? `
+    // Show View button for all users (they can view their own details at least)
+    // Admin/client/super_admin can manage others
+    const viewButton = `
       <button onclick="openUserDetails('${user.id}')" class="px-3 py-2 md:px-4 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition flex items-center gap-2 flex-shrink-0 text-sm">
         <i data-lucide="eye" class="w-4 h-4"></i>
         <span class="hidden sm:inline">View</span>
       </button>
-    ` : '';
+    `;
     
     return `
       <div class="flex items-center gap-3 p-3 md:p-4 bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow">
@@ -530,16 +593,41 @@ export async function renderUsersList() {
   if (window.lucide) lucide.createIcons();
 }
 
+// Clear user filters and refresh
+window.clearUserFilters = function() {
+  const searchInput = document.getElementById('user-search-input');
+  const roleFilter = document.getElementById('user-role-filter');
+  const statusFilter = document.getElementById('user-status-filter');
+  
+  if (searchInput) searchInput.value = '';
+  if (roleFilter) roleFilter.value = 'all';
+  if (statusFilter) statusFilter.value = 'all';
+  
+  renderUsersList('', 'all', 'all');
+};
+
 // Render pending invitations
 export async function renderPendingInvitations() {
   const invitations = await fetchPendingInvitations();
   const container = document.getElementById('pending-invitations-container');
   const list = document.getElementById('pending-invitations-list');
   
-  if (!container || !list) return;
+  if (!container || !list) {
+    console.warn('Pending invitations container or list not found');
+    return;
+  }
   
+  // Always show container if user can manage, even if no invitations
+  // This allows users to see the section exists
   if (invitations.length === 0) {
-    container.classList.add('hidden');
+    container.classList.remove('hidden');
+    list.innerHTML = `
+      <div class="text-center py-4 text-gray-500 dark:text-gray-400 text-sm">
+        <i data-lucide="inbox" class="w-6 h-6 mx-auto mb-2 opacity-50"></i>
+        <p>No pending invitations</p>
+      </div>
+    `;
+    if (window.lucide) lucide.createIcons();
     return;
   }
   

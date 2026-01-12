@@ -1170,7 +1170,8 @@
       renderPendingInvitations,
       updateUserRole,
       assignUserToSite,
-      removeUser
+      removeUser,
+      clearUserCache
     } from './js/user-management.js'
 
     let currentUserData = null;
@@ -2018,6 +2019,9 @@
         await sendInvitation(email, role)
         
         closeInviteModal()
+        // Clear cache and refresh both users list and pending invitations
+        clearUserCache()
+        await renderUsersList()
         await renderPendingInvitations()
         toast.success('Invitation sent successfully!')
       } catch (error) {
@@ -2074,6 +2078,8 @@
         await updateUserRole(selectedUserId, role, status)
         toast.success('User updated successfully!')
         closeUserDetailsModal()
+        // Clear cache and refresh
+        clearUserCache()
         await renderUsersList()
       } catch (error) {
         console.error('Error updating user:', error);
@@ -2169,11 +2175,37 @@
         await removeUser(selectedUserId)
         toast.success('User removed successfully!')
         closeUserDetailsModal()
+        // Clear cache and refresh
+        clearUserCache()
         await renderUsersList()
       } catch (error) {
         toast.error('Failed to remove user. Please try again.')
       }
     })
+
+    // User search and filter
+    const userSearchInput = document.getElementById('user-search-input');
+    const userRoleFilter = document.getElementById('user-role-filter');
+    const userStatusFilter = document.getElementById('user-status-filter');
+    
+    function applyUserFilters() {
+      const searchTerm = userSearchInput?.value || '';
+      const roleFilter = userRoleFilter?.value || 'all';
+      const statusFilter = userStatusFilter?.value || 'all';
+      renderUsersList(searchTerm, roleFilter, statusFilter);
+    }
+    
+    // Debounce search input
+    let searchTimeout;
+    userSearchInput?.addEventListener('input', (e) => {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => {
+        applyUserFilters();
+      }, 300);
+    });
+    
+    userRoleFilter?.addEventListener('change', applyUserFilters);
+    userStatusFilter?.addEventListener('change', applyUserFilters);
 
     // Initialize
     async function init() {
@@ -2194,20 +2226,25 @@
         currentUserData = await getCurrentUser()
         console.log('Current user data:', currentUserData)
         
+        // Clear cache to ensure fresh data
+        clearUserCache()
+        
         // Always try to render user list
         console.log('Rendering users list...')
         await renderUsersList()
         console.log('Users list rendered')
         
-        // Show invite button for all users
+        // Show invite button and load pending invitations
         const inviteBtn = document.getElementById('invite-user-btn')
         if (inviteBtn) {
           inviteBtn.classList.remove('hidden')
           inviteBtn.classList.add('flex')
-          // Load pending invitations if user can manage users
-          if (currentUserData && canManageUsers()) {
-            await renderPendingInvitations()
-          }
+          
+          // Always try to load pending invitations
+          // The renderPendingInvitations function will handle showing/hiding appropriately
+          console.log('Loading pending invitations...')
+          await renderPendingInvitations()
+          console.log('Pending invitations loaded')
         }
         
         // Hide Reports navigation for staff (but allow Bookings for calendar view)
