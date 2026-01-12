@@ -724,16 +724,47 @@ async function handleSaveDraft() {
 
 // Show quote send confirmation modal
 function showQuoteSendConfirmation() {
-  // Calculate totals
+  // First, save current step data to ensure wizardData is up to date
+  saveCurrentStepData();
+  
+  // Update line items totals first to ensure wizardData is synced with DOM
+  updateLineItemsTotals();
+  
+  // Try to read from the displayed totals first (most reliable)
+  const displayedSubtotalEl = document.getElementById('quote-subtotal');
+  const displayedTaxEl = document.getElementById('quote-tax');
+  const displayedTotalEl = document.getElementById('quote-total');
+  
   let subtotal = 0;
-  wizardData.line_items.forEach(item => {
-    const qty = parseFloat(item.quantity || 1);
-    const price = parseFloat(item.unit_price || 0);
-    subtotal += qty * price;
-  });
-
-  const tax = subtotal * 0.13; // 13% HST
-  const total = subtotal + tax;
+  let tax = 0;
+  let total = 0;
+  
+  // If totals are displayed on the page, use those values
+  if (displayedSubtotalEl && displayedTaxEl && displayedTotalEl) {
+    const subtotalText = displayedSubtotalEl.textContent.replace(/[^0-9.]/g, '');
+    const taxText = displayedTaxEl.textContent.replace(/[^0-9.]/g, '');
+    const totalText = displayedTotalEl.textContent.replace(/[^0-9.]/g, '');
+    
+    subtotal = parseFloat(subtotalText) || 0;
+    tax = parseFloat(taxText) || 0;
+    total = parseFloat(totalText) || 0;
+    
+    console.log('[Quote Confirmation] Read from displayed totals:', { subtotal, tax, total });
+  }
+  
+  // If displayed totals are 0 or not available, calculate from wizardData
+  if (subtotal === 0 && total === 0) {
+    console.log('[Quote Confirmation] Calculating from wizardData');
+    wizardData.line_items.forEach((item, index) => {
+      const qty = parseFloat(item.quantity || 1);
+      const price = parseFloat(item.unit_price || 0);
+      subtotal += qty * price;
+      console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
+    });
+    
+    tax = subtotal * 0.13; // 13% HST
+    total = subtotal + tax;
+  }
 
   // Update confirmation modal with totals
   const subtotalEl = document.getElementById('confirmation-subtotal');
@@ -743,6 +774,13 @@ function showQuoteSendConfirmation() {
   if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (taxEl) taxEl.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
+  console.log('[Quote Confirmation] Final confirmation totals:', { 
+    subtotal, 
+    tax, 
+    total, 
+    lineItemsCount: wizardData.line_items?.length || 0
+  });
 
   // Show modal
   const modal = document.getElementById('quote-send-confirmation-modal');
