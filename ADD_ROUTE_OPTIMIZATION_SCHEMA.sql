@@ -149,6 +149,7 @@ ALTER TABLE route_plan_stops ENABLE ROW LEVEL SECURITY;
 ALTER TABLE coverage_cache ENABLE ROW LEVEL SECURITY;
 
 -- RLS Policies for territory_assignments
+DROP POLICY IF EXISTS "Users can view territory assignments" ON territory_assignments;
 CREATE POLICY "Users can view territory assignments" ON territory_assignments
   FOR SELECT USING (
     auth.role() = 'authenticated' AND (
@@ -161,6 +162,7 @@ CREATE POLICY "Users can view territory assignments" ON territory_assignments
     )
   );
 
+DROP POLICY IF EXISTS "Managers can manage territory assignments" ON territory_assignments;
 CREATE POLICY "Managers can manage territory assignments" ON territory_assignments
   FOR ALL USING (
     auth.role() = 'authenticated' AND
@@ -172,6 +174,7 @@ CREATE POLICY "Managers can manage territory assignments" ON territory_assignmen
   );
 
 -- RLS Policies for route_plans
+DROP POLICY IF EXISTS "Users can view accessible route plans" ON route_plans;
 CREATE POLICY "Users can view accessible route plans" ON route_plans
   FOR SELECT USING (
     auth.role() = 'authenticated' AND (
@@ -185,6 +188,7 @@ CREATE POLICY "Users can view accessible route plans" ON route_plans
     )
   );
 
+DROP POLICY IF EXISTS "Users can create route plans" ON route_plans;
 CREATE POLICY "Users can create route plans" ON route_plans
   FOR INSERT WITH CHECK (
     auth.role() = 'authenticated' AND (
@@ -197,6 +201,7 @@ CREATE POLICY "Users can create route plans" ON route_plans
     )
   );
 
+DROP POLICY IF EXISTS "Users can update accessible route plans" ON route_plans;
 CREATE POLICY "Users can update accessible route plans" ON route_plans
   FOR UPDATE USING (
     auth.role() = 'authenticated' AND (
@@ -211,6 +216,7 @@ CREATE POLICY "Users can update accessible route plans" ON route_plans
   );
 
 -- RLS Policies for route_plan_stops
+DROP POLICY IF EXISTS "Users can view stops for accessible route plans" ON route_plan_stops;
 CREATE POLICY "Users can view stops for accessible route plans" ON route_plan_stops
   FOR SELECT USING (
     auth.role() = 'authenticated' AND EXISTS (
@@ -228,6 +234,7 @@ CREATE POLICY "Users can view stops for accessible route plans" ON route_plan_st
     )
   );
 
+DROP POLICY IF EXISTS "Users can manage stops for accessible route plans" ON route_plan_stops;
 CREATE POLICY "Users can manage stops for accessible route plans" ON route_plan_stops
   FOR ALL USING (
     auth.role() = 'authenticated' AND EXISTS (
@@ -246,6 +253,7 @@ CREATE POLICY "Users can manage stops for accessible route plans" ON route_plan_
   );
 
 -- RLS Policies for coverage_cache
+DROP POLICY IF EXISTS "Users can view coverage cache" ON coverage_cache;
 CREATE POLICY "Users can view coverage cache" ON coverage_cache
   FOR SELECT USING (
     auth.role() = 'authenticated' AND (
@@ -262,6 +270,7 @@ CREATE POLICY "Users can view coverage cache" ON coverage_cache
     )
   );
 
+DROP POLICY IF EXISTS "Managers can manage coverage cache" ON coverage_cache;
 CREATE POLICY "Managers can manage coverage cache" ON coverage_cache
   FOR ALL USING (
     auth.role() = 'authenticated' AND
