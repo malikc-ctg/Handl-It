@@ -3,6 +3,12 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import { 
+  onQuoteRevisionSent, 
+  onQuoteAccepted, 
+  onQuoteDeclined,
+  onQuoteViewed
+} from './services/deal-linking-service.js';
 
 // ==========================================
 // STATE MANAGEMENT
@@ -494,6 +500,17 @@ export async function sendRevision(quoteId, revisionNumber, emails, expiryDays =
     // Log event
     await logQuoteEvent(quoteId, revisionNumber, 'sent', { emails });
 
+    // Auto-create/link deal (server-side, idempotent)
+    try {
+      const { dealId, created } = await onQuoteRevisionSent(quoteId, revisionNumber, 24);
+      if (dealId) {
+        console.log(`[Quotes] Deal ${created ? 'created' : 'linked'}: ${dealId}`);
+      }
+    } catch (dealLinkError) {
+      // Don't fail quote send if deal linking fails, but log it
+      console.error('[Quotes] Deal linking failed (quote still sent):', dealLinkError);
+    }
+
     // Load quote details for email
     const { data: quote } = await supabase
       .from('quotes')
@@ -839,7 +856,21 @@ export async function acceptFinalQuote(quoteId, revisionNumber, acceptData) {
     // Log event
     await logQuoteEvent(quoteId, revisionNumber, 'accepted', acceptData);
 
-    // Update deal stage
+    // Auto-update deal to Won (server-side, idempotent)
+    try {
+      const { dealId } = await onQuoteAccepted(quoteId, revisionNumber, {
+        name: acceptData.name,
+        email: acceptData.email
+      });
+      if (dealId) {
+        console.log(`[Quotes] Deal marked as Won: ${dealId}`);
+      }
+    } catch (dealLinkError) {
+      // Don't fail quote accept if deal linking fails, but log it
+      console.error('[Quotes] Deal linking failed (quote still accepted):', dealLinkError);
+    }
+
+    // Update deal stage (legacy - keeping for backward compatibility)
     const { data: quote } = await supabase
       .from('quotes')
       .select('deal_id')
@@ -882,7 +913,18 @@ export async function declineFinalQuote(quoteId, revisionNumber, declineData) {
     // Log event
     await logQuoteEvent(quoteId, revisionNumber, 'declined', declineData);
 
-    // Update deal stage
+    // Auto-update deal to Lost (server-side, idempotent)
+    try {
+      const { dealId } = await onQuoteDeclined(quoteId, revisionNumber, declineData.reason);
+      if (dealId) {
+        console.log(`[Quotes] Deal marked as Lost: ${dealId}`);
+      }
+    } catch (dealLinkError) {
+      // Don't fail quote decline if deal linking fails, but log it
+      console.error('[Quotes] Deal linking failed (quote still declined):', dealLinkError);
+    }
+
+    // Update deal stage (legacy - keeping for backward compatibility)
     const { data: quote } = await supabase
       .from('quotes')
       .select('deal_id')
@@ -967,6 +1009,14 @@ export async function logPortalEvent(publicToken, eventType, metadata = {}) {
           .update({ status: 'viewed' })
           .eq('id', revision.quote_id)
           .eq('status', 'sent');
+        
+        // Update deal last activity (server-side, idempotent)
+        try {
+          await onQuoteViewed(revision.quote_id, revision.revision_number);
+        } catch (dealLinkError) {
+          // Don't fail quote view if deal linking fails, but log it
+          console.error('[Quotes] Deal linking failed (quote still viewed):', dealLinkError);
+        }
       }
     }
   } catch (error) {

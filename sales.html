@@ -475,19 +475,83 @@
           </div>
         </div>
 
-        <!-- Contacts Tab -->
-        <div id="tab-contacts" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Contacts</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your contact database</p>
+        <!-- Contacts Tab (Accounts Directory) -->
+        <div id="tab-contacts" class="sales-tab-content hidden h-full flex flex-col">
+          <!-- Sticky top bar -->
+          <div class="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-nfgray p-4 md:p-6">
+            <div class="flex flex-col gap-4">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Client Accounts</h2>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your client accounts directory</p>
+                </div>
+                <button id="create-account-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+                  <i data-lucide="plus" class="w-4 h-4"></i> New Account
+                </button>
+              </div>
+              
+              <!-- Search and Filters -->
+              <div class="flex flex-col md:flex-row gap-3">
+                <div class="flex-1">
+                  <input
+                    type="text"
+                    id="accounts-search"
+                    placeholder="Search by company name, DM, phone, or email..."
+                    class="w-full border border-nfgray rounded-xl px-4 py-2 focus:ring-2 focus:ring-nfgblue outline-none"
+                  />
+                </div>
+                <div class="flex gap-2 flex-wrap">
+                  <select id="accounts-status-filter" class="border border-nfgray rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                    <option value="">All Status</option>
+                    <option value="prospect">Prospect</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="active">Active</option>
+                    <option value="dormant">Dormant</option>
+                  </select>
+                  <select id="accounts-owner-filter" class="border border-nfgray rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none hidden">
+                    <option value="">All Owners</option>
+                  </select>
+                  <select id="accounts-sites-filter" class="border border-nfgray rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                    <option value="">All Sites</option>
+                    <option value="1">1 site</option>
+                    <option value="2-5">2-5 sites</option>
+                    <option value="6+">6+ sites</option>
+                  </select>
+                  <select id="accounts-sort" class="border border-nfgray rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none">
+                    <option value="last_touch_at_desc">Recently Touched</option>
+                    <option value="site_count_desc">Most Sites</option>
+                    <option value="name_asc">A-Z</option>
+                  </select>
+                </div>
+              </div>
             </div>
-            <button id="create-contact-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-              <i data-lucide="plus" class="w-4 h-4"></i> New Contact
-            </button>
           </div>
-          <div id="contacts-list" class="space-y-4">
-            <!-- Contacts will be rendered here -->
+
+          <!-- Accounts Table -->
+          <div class="flex-1 overflow-auto p-4 md:p-6">
+            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl overflow-hidden">
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead class="bg-nfglight dark:bg-gray-700 border-b border-nfgray">
+                    <tr>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Company</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Decision Maker</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Contact</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Sites</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Status</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Owner</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Last Touch</th>
+                      <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400"></th>
+                    </tr>
+                  </thead>
+                  <tbody id="accounts-table-body">
+                    <tr>
+                      <td colspan="8" class="px-4 py-12 text-center text-gray-500">Loading...</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -1089,6 +1153,10 @@
       window.quoteDetail = await import('./js/quote-detail.js');
       console.log('[Sales Dashboard] ✅ quote detail module loaded');
       
+      // Load accounts directory module
+      window.accountsDirectory = await import('./js/accounts-directory.js');
+      console.log('[Sales Dashboard] ✅ accounts directory module loaded');
+      
       console.log('[Sales Dashboard] ✅ All modules loaded successfully');
     } catch (error) {
       console.error('[Sales Dashboard] ❌ Error loading modules:', error);
@@ -1258,7 +1326,12 @@
             await loadLeads();
             break;
           case 'contacts':
-            await loadContacts();
+            // Initialize accounts directory on first load
+            if (window.accountsDirectory && typeof window.accountsDirectory.init === 'function') {
+              await window.accountsDirectory.init();
+            } else {
+              await loadContacts();
+            }
             break;
           case 'calls':
             await loadCalls();
@@ -1944,45 +2017,9 @@
     }
     
     async function loadContacts() {
-      const contactsList = document.getElementById('contacts-list');
-      if (!contactsList) return;
-      
-      try {
-        const { data: contacts, error } = await supabase
-          .from('contacts')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (error) throw error;
-        
-        if (!contacts || contacts.length === 0) {
-          contactsList.innerHTML = `
-            <div class="text-center py-12">
-              <i data-lucide="users" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-              <p class="text-gray-500">No contacts yet</p>
-            </div>
-          `;
-          if (window.lucide) lucide.createIcons();
-          return;
-        }
-        
-        contactsList.innerHTML = contacts.map(contact => `
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${contact.name || 'Unnamed Contact'}</h3>
-                <p class="text-sm text-gray-500 mt-1">${contact.email || contact.phone || 'No contact info'}</p>
-                <p class="text-sm text-gray-600 mt-2">${contact.company || 'No company'}</p>
-              </div>
-            </div>
-          </div>
-        `).join('');
-        
-        if (window.lucide) lucide.createIcons();
-      } catch (error) {
-        console.error('Error loading contacts:', error);
-        contactsList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load contacts</div>`;
+      // Load accounts directory instead
+      if (window.accountsDirectory && typeof window.accountsDirectory.loadAccounts === 'function') {
+        await window.accountsDirectory.loadAccounts();
       }
     }
     
