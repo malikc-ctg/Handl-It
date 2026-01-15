@@ -3,6 +3,9 @@
 
 import * as quotesModule from './quotes.js';
 import { toast } from './notifications.js';
+import { calculateQuote } from './quote-engine/calculator.js';
+import { generateQuoteEmail, generateWalkthroughWelcomeEmail } from './quote-engine/email-template.js';
+import { createWalkthroughRequest, sendWalkthroughWelcomeEmail } from './services/walkthrough-service.js';
 
 let currentWizardStep = 1;
 let currentQuoteId = null;
@@ -12,7 +15,7 @@ let wizardData = {
   new_account_data: null,
   primary_contact_id: null,
   deal_id: null,
-  quote_type: 'walkthrough_required',
+  quote_type: 'standard',
   revision_data: {},
   line_items: [],
   cleaning_metrics: {
@@ -190,7 +193,7 @@ function resetWizard() {
     new_account_data: null,
     primary_contact_id: null,
     deal_id: null,
-    quote_type: 'walkthrough_required',
+    quote_type: 'standard',
     revision_data: {},
     line_items: [],
     cleaning_metrics: {
@@ -292,18 +295,31 @@ function validateCurrentStep() {
     const quoteType = wizardData.quote_type;
     
     if (quoteType === 'walkthrough_required') {
-      const serviceSchedule = document.getElementById('quote-service-schedule')?.value;
-      const scopeSummary = document.getElementById('quote-scope-summary')?.value;
+      // Walkthrough - just need basic info, will send welcome email
+      return true;
+    } else {
+      // Standard Quote - validate quote engine inputs
+      const serviceType = document.getElementById('quote-service-type')?.value;
+      const frequencyPerMonth = parseInt(document.getElementById('quote-frequency-per-month')?.value);
       
-      if (!serviceSchedule || !scopeSummary) {
-        toast.error('Service schedule and scope summary are required', 'Validation Error');
+      if (!serviceType) {
+        toast.error('Please select a service type', 'Validation Error');
         return false;
       }
-    } else {
-      // Standard/Ballpark - need at least one line item
-      if (wizardData.line_items.length === 0) {
-        toast.error('Please add at least one line item', 'Validation Error');
+      if (!frequencyPerMonth || frequencyPerMonth <= 0) {
+        toast.error('Please enter a valid frequency (visits per month)', 'Validation Error');
         return false;
+      }
+      
+      // Check if calculation was successful
+      if (!wizardData.quote_calculation || !wizardData.quote_calculation.result) {
+        toast.error('Please fill in the quote form to calculate pricing', 'Validation Error');
+        return false;
+      }
+      
+      // Check if walkthrough is required
+      if (wizardData.quote_calculation.result.walkthrough_required) {
+        toast.warning('A walkthrough is recommended for accurate pricing. You can still proceed, but consider scheduling a walkthrough.', 'Walkthrough Recommended');
       }
     }
     return true;
@@ -371,7 +387,7 @@ function saveCurrentStepData() {
         }
       }
     } else {
-      // Standard/Ballpark - line items are already in wizardData.line_items
+      // Standard Quote - line items are already in wizardData.line_items
     }
   } else if (currentWizardStep === 4) {
     wizardData.revision_data.billing_frequency = document.getElementById('quote-billing-frequency')?.value || 'monthly';
@@ -447,10 +463,8 @@ function updateWizardUI() {
   // Update step 3 UI based on quote type
   if (currentWizardStep === 3) {
     updateStep2UI();
-    // Setup auto-calculate when step 3 is shown
-    setupAutoCalculatePricing();
-    // Calculate if metrics are already filled
-    setTimeout(() => calculatePriceFromMetrics(), 100);
+    // Calculate quote if form is already filled
+    setTimeout(() => calculateQuoteFromEngine(), 100);
   }
 }
 
@@ -478,15 +492,22 @@ function updateStep2UI() {
   const quoteType = quoteTypeSelect?.value || wizardData.quote_type || 'standard';
   const walkthroughSection = document.getElementById('walkthrough-scope-section');
   const bindingSection = document.getElementById('binding-line-items-section');
+  const quoteEngineForm = document.getElementById('quote-engine-form-section');
 
   if (quoteType === 'walkthrough_required') {
     if (walkthroughSection) walkthroughSection.classList.remove('hidden');
     if (bindingSection) bindingSection.classList.add('hidden');
+    if (quoteEngineForm) quoteEngineForm.classList.add('hidden');
   } else {
+    // Standard quote - use quote engine form
     if (walkthroughSection) walkthroughSection.classList.add('hidden');
-    if (bindingSection) bindingSection.classList.remove('hidden');
-    // Trigger calculation when binding section becomes visible
-    setTimeout(() => calculatePriceFromMetrics(), 200);
+    if (bindingSection) bindingSection.classList.add('hidden'); // Hide old line items builder
+    if (quoteEngineForm) quoteEngineForm.classList.remove('hidden');
+    
+    // Setup event listeners for quote engine form
+    setupQuoteEngineListeners();
+    // Trigger calculation when form becomes visible
+    setTimeout(() => calculateQuoteFromEngine(), 200);
   }
 }
 
@@ -609,43 +630,117 @@ function setupAutoCalculatePricing() {
   autoCalculateSetup = true;
 }
 
-// Calculate price from cleaning metrics and auto-generate line items
-function calculatePriceFromMetrics() {
-  // Get quote type from DOM or wizardData
-  const quoteTypeSelect = document.getElementById('quote-type-select');
-  const quoteType = quoteTypeSelect?.value || wizardData.quote_type || 'standard';
+// Calculate quote using Quote Engine v2
+function calculateQuoteFromEngine() {
+  const quoteType = wizardData.quote_type || 'standard';
   
-  console.log('[Auto-Calculate] Quote type:', quoteType);
-  
-  // Only auto-calculate for standard/ballpark quotes (not walkthrough_required)
-  if (quoteType === 'walkthrough_required') {
-    console.log('[Auto-Calculate] Skipping - walkthrough quote type');
-    return; // Don't auto-calculate for walkthrough quotes
-  }
-
-  const squareFootage = parseFloat(document.getElementById('quote-square-footage')?.value || 0);
-  const restrooms = parseInt(document.getElementById('quote-restrooms')?.value || 0);
-  const kitchens = parseInt(document.getElementById('quote-kitchens')?.value || 0);
-  const floors = parseInt(document.getElementById('quote-floors')?.value || 1);
-  const frequency = document.getElementById('quote-cleaning-frequency')?.value || 'weekly';
-  const perSqftRate = parseFloat(document.getElementById('quote-per-sqft-rate')?.value || 0);
-  
-  console.log('[Auto-Calculate] Metrics:', { squareFootage, restrooms, kitchens, floors, frequency, perSqftRate });
-  
-  // Get selected services
-  const selectedServices = Array.from(document.querySelectorAll('.quote-service-checkbox:checked'))
-    .map(cb => ({
-      id: cb.value,
-      name: cb.dataset.serviceName || 'Service'
-    }));
-
-  console.log('[Auto-Calculate] Selected services:', selectedServices);
-
-  // Don't calculate if required fields are missing
-  if (squareFootage === 0 || perSqftRate === 0) {
-    console.log('[Auto-Calculate] Missing required fields - skipping calculation');
+  // Only calculate for standard quotes
+  if (quoteType !== 'standard') {
     return;
   }
+
+  // Get form inputs
+  const serviceType = document.getElementById('quote-service-type')?.value;
+  const sqftEstimate = parseFloat(document.getElementById('quote-sqft-estimate')?.value) || null;
+  const frequencyPerMonth = parseInt(document.getElementById('quote-frequency-per-month')?.value) || 4;
+  const numWashrooms = parseInt(document.getElementById('quote-num-washrooms')?.value) || 0;
+  const numTreatmentRooms = parseInt(document.getElementById('quote-num-treatment-rooms')?.value) || 0;
+  const hasReception = document.getElementById('quote-has-reception')?.checked || false;
+  const hasKitchen = document.getElementById('quote-has-kitchen')?.checked || false;
+  const flooring = document.getElementById('quote-flooring')?.value || 'mostly_hard';
+  const afterHours = document.getElementById('quote-after-hours')?.checked || false;
+  const suppliesIncluded = document.getElementById('quote-supplies-included')?.checked !== false;
+  const highTouchDisinfection = document.getElementById('quote-high-touch-disinfection')?.checked || false;
+  const urgencyDays = parseInt(document.getElementById('quote-urgency-days')?.value) || 30;
+  const notes = document.getElementById('quote-notes')?.value || '';
+
+  // Validate required fields
+  if (!serviceType || !frequencyPerMonth) {
+    document.getElementById('quote-calculation-result')?.classList.add('hidden');
+    return;
+  }
+
+  try {
+    // Calculate quote using engine
+    const inputs = {
+      service_type: serviceType,
+      sqft_estimate: sqftEstimate,
+      frequency_per_month: frequencyPerMonth,
+      num_washrooms: numWashrooms,
+      num_treatment_rooms: numTreatmentRooms,
+      has_reception: hasReception,
+      has_kitchen: hasKitchen,
+      flooring: flooring,
+      after_hours_required: afterHours,
+      supplies_included: suppliesIncluded,
+      high_touch_disinfection: highTouchDisinfection,
+      urgency_start_days: urgencyDays,
+      notes: notes
+    };
+
+    const quoteResult = calculateQuote(inputs);
+
+    // Store result in wizardData
+    wizardData.quote_calculation = {
+      inputs: inputs,
+      result: quoteResult,
+      engine_version: 'v2'
+    };
+
+    // Update line items from calculation
+    wizardData.line_items = quoteResult.line_items || [];
+
+    // Display results
+    displayQuoteCalculation(quoteResult);
+
+    // Update totals
+    updateLineItemsTotals();
+
+  } catch (error) {
+    console.error('[Quote Engine] Calculation error:', error);
+    toast.error(error.message || 'Failed to calculate quote', 'Error');
+  }
+}
+
+// Display quote calculation results
+function displayQuoteCalculation(result) {
+  const resultDiv = document.getElementById('quote-calculation-result');
+  if (!resultDiv) return;
+
+  if (result.status === 'requires_walkthrough') {
+    resultDiv.classList.remove('hidden');
+    document.getElementById('calc-walkthrough-warning')?.classList.remove('hidden');
+    return;
+  }
+
+  resultDiv.classList.remove('hidden');
+  document.getElementById('calc-walkthrough-warning')?.classList.add('hidden');
+
+  // Update displayed values
+  const formatCurrency = (val) => `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  
+  document.getElementById('calc-monthly-ex-hst').textContent = formatCurrency(result.monthly_price_ex_hst);
+  document.getElementById('calc-per-visit').textContent = formatCurrency(result.per_visit_price);
+  document.getElementById('calc-hst').textContent = formatCurrency(result.hst_amount);
+  document.getElementById('calc-total').textContent = formatCurrency(result.monthly_price_inc_hst);
+
+  // Update assumptions
+  const assumptionsEl = document.getElementById('calc-assumptions');
+  if (assumptionsEl) {
+    let assumptionsText = `Assumes up to ${result.assumptions.sqft_cap.toLocaleString()} sq ft (${result.assumptions.band_label})`;
+    if (result.assumptions.supplies_included) {
+      assumptionsText += ', all supplies included';
+    }
+    if (result.assumptions.healthcare_disinfection) {
+      assumptionsText += ', healthcare-focused disinfection';
+    }
+    assumptionsEl.textContent = assumptionsText;
+  }
+}
+
+// Legacy function name for backward compatibility
+function calculatePriceFromMetrics() {
+  calculateQuoteFromEngine();
 
   // Calculate base monthly price
   const baseMonthlyPrice = squareFootage * perSqftRate;
@@ -924,10 +1019,17 @@ async function handleSaveDraft() {
     const revisionData = {
       ...wizardData.revision_data,
       revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
-      is_binding: wizardData.quote_type !== 'walkthrough_required' && wizardData.quote_type !== 'ballpark'
+      is_binding: wizardData.quote_type === 'standard',
+      // Include quote engine calculation data if available
+      quote_engine_version: wizardData.quote_calculation?.engine_version || null,
+      quote_calculation_inputs: wizardData.quote_calculation?.inputs || null,
+      quote_calculation_outputs: wizardData.quote_calculation?.result || null
     };
 
-    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, wizardData.line_items);
+    // Use line items from quote engine if available, otherwise use manual line items
+    const lineItemsToSave = wizardData.quote_calculation?.result?.line_items || wizardData.line_items;
+
+    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, lineItemsToSave);
 
     toast.success('Quote saved as draft', 'Success');
     closeWizard();
@@ -972,18 +1074,28 @@ function showQuoteSendConfirmation() {
     console.log('[Quote Confirmation] Read from displayed totals:', { subtotal, tax, total });
   }
   
-  // If displayed totals are 0 or not available, calculate from wizardData
+  // If displayed totals are 0 or not available, use quote engine results or calculate from wizardData
   if (subtotal === 0 && total === 0) {
-    console.log('[Quote Confirmation] Calculating from wizardData');
-    wizardData.line_items.forEach((item, index) => {
-      const qty = parseFloat(item.quantity || 1);
-      const price = parseFloat(item.unit_price || 0);
-      subtotal += qty * price;
-      console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
-    });
-    
-    tax = subtotal * 0.13; // 13% HST
-    total = subtotal + tax;
+    // Try quote engine results first
+    if (wizardData.quote_calculation?.result) {
+      const result = wizardData.quote_calculation.result;
+      subtotal = result.monthly_price_ex_hst || 0;
+      tax = result.hst_amount || 0;
+      total = result.monthly_price_inc_hst || 0;
+      console.log('[Quote Confirmation] Using quote engine results:', { subtotal, tax, total });
+    } else {
+      // Fallback to calculating from line items
+      console.log('[Quote Confirmation] Calculating from wizardData line items');
+      wizardData.line_items.forEach((item, index) => {
+        const qty = parseFloat(item.quantity || 1);
+        const price = parseFloat(item.unit_price || 0);
+        subtotal += qty * price;
+        console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
+      });
+      
+      tax = subtotal * 0.13; // 13% HST
+      total = subtotal + tax;
+    }
   }
 
   // Update confirmation modal with totals
@@ -1050,10 +1162,17 @@ async function confirmAndSendQuote() {
     const revisionData = {
       ...wizardData.revision_data,
       revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
-      is_binding: wizardData.quote_type !== 'walkthrough_required' && wizardData.quote_type !== 'ballpark'
+      is_binding: wizardData.quote_type === 'standard',
+      // Include quote engine calculation data if available
+      quote_engine_version: wizardData.quote_calculation?.engine_version || null,
+      quote_calculation_inputs: wizardData.quote_calculation?.inputs || null,
+      quote_calculation_outputs: wizardData.quote_calculation?.result || null
     };
 
-    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, wizardData.line_items);
+    // Use line items from quote engine if available, otherwise use manual line items
+    const lineItemsToSave = wizardData.quote_calculation?.result?.line_items || wizardData.line_items;
+
+    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, lineItemsToSave);
 
     // Send revision
     const emailsInput = document.getElementById('quote-send-emails')?.value || '';

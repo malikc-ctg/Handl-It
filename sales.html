@@ -545,7 +545,6 @@
                 <option value="">All Types</option>
                 <option value="standard">Standard</option>
                 <option value="walkthrough_required">Walkthrough Required</option>
-                <option value="ballpark">Ballpark</option>
               </select>
             </div>
             <div class="flex items-end">
@@ -1216,9 +1215,8 @@
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quote Type <span class="text-red-500">*</span></label>
             <select id="quote-type-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-              <option value="standard">Standard Quote</option>
-              <option value="walkthrough_required" selected>Walkthrough Required (Default for Commercial)</option>
-              <option value="ballpark">Ballpark Estimate</option>
+              <option value="standard" selected>Standard Quote</option>
+              <option value="walkthrough_required">Walkthrough Request (Send Welcome Email)</option>
             </select>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Walkthrough Required: Client must complete a site walkthrough before final quote</p>
           </div>
@@ -1226,55 +1224,134 @@
 
         <!-- Step 3: Pricing + Scope (dynamic based on quote type) -->
         <div id="wizard-step-3" class="wizard-step hidden space-y-6">
-          <!-- CLEANING METRICS SECTION (All Quote Types) -->
-          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-4 bg-nfglight dark:bg-gray-700/50">
-            <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Cleaning Metrics</h4>
+          <!-- QUOTE ENGINE FORM (Standard Quote Only) -->
+          <div id="quote-engine-form-section" class="hidden border border-nfgray dark:border-gray-700 rounded-xl p-6 bg-nfglight dark:bg-gray-700/50 space-y-6">
+            <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Quote Calculation</h4>
             
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <!-- Service Type & Basic Info -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Square Footage</label>
-                <input type="number" id="quote-square-footage" min="0" step="100" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="5000">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Restrooms</label>
-                <input type="number" id="quote-restrooms" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="3">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kitchens</label>
-                <input type="number" id="quote-kitchens" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="1">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Floors</label>
-                <input type="number" id="quote-floors" min="1" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="2" value="1">
-              </div>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cleaning Frequency</label>
-                <select id="quote-cleaning-frequency" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
-                  <option value="daily">Daily</option>
-                  <option value="weekly" selected>Weekly</option>
-                  <option value="biweekly">Bi-Weekly (Every 2 weeks)</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="one_time">One-Time</option>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service Type <span class="text-red-500">*</span></label>
+                <select id="quote-service-type" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+                  <option value="">Select service type...</option>
+                  <option value="commercial_office">Commercial Office</option>
+                  <option value="medical_clinic">Medical Clinic</option>
+                  <option value="physio_chiro">Physio/Chiro</option>
+                  <option value="dental">Dental</option>
+                  <option value="optical">Optical</option>
+                  <option value="industrial">Industrial</option>
+                  <option value="residential_common_area">Residential Common Area</option>
                 </select>
               </div>
               <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Per Square Foot Rate ($/sqft/month)</label>
-                <input type="number" id="quote-per-sqft-rate" min="0" step="0.01" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm" placeholder="0.15">
-                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty for manual pricing</p>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Square Footage Estimate</label>
+                <input type="number" id="quote-sqft-estimate" min="0" step="100" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="1500">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional but recommended. Conservative default used if empty.</p>
               </div>
             </div>
 
-            <div class="mt-4">
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cleaning Services</label>
-              <div class="border border-nfgray dark:border-gray-600 rounded-lg p-3 bg-white dark:bg-gray-800 max-h-48 overflow-y-auto">
-                <div id="quote-services-list" class="space-y-2">
-                  <p class="text-sm text-gray-500 dark:text-gray-400">Loading services...</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Frequency (Visits per Month) <span class="text-red-500">*</span></label>
+                <input type="number" id="quote-frequency-per-month" min="1" max="20" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="4" value="4" required>
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">4 = Weekly, 8 = Twice Weekly, 12 = 3x Weekly</p>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Urgency (Days Until Start)</label>
+                <input type="number" id="quote-urgency-days" min="0" max="30" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="30" value="30">
+                <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">0-2 = Urgent (+10%), 3-7 = Moderate (+5%), 8+ = Normal</p>
+              </div>
+            </div>
+
+            <!-- Touchpoints -->
+            <div class="border-t border-nfgray dark:border-gray-700 pt-4">
+              <h5 class="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">Touchpoints</h5>
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Washrooms</label>
+                  <input type="number" id="quote-num-washrooms" min="0" max="10" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0" value="0">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Treatment Rooms</label>
+                  <input type="number" id="quote-num-treatment-rooms" min="0" max="20" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0" value="0">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Reception</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-has-reception" class="w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Kitchen</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-has-kitchen" class="w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
                 </div>
               </div>
-              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Select services that will be included in this quote</p>
+            </div>
+
+            <!-- Complexity Factors -->
+            <div class="border-t border-nfgray dark:border-gray-700 pt-4">
+              <h5 class="text-md font-semibold text-gray-700 dark:text-gray-300 mb-3">Complexity Factors</h5>
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Flooring Type</label>
+                  <select id="quote-flooring" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                    <option value="mostly_hard" selected>Mostly Hard (Tile/Hardwood)</option>
+                    <option value="mixed">Mixed</option>
+                    <option value="mostly_carpet">Mostly Carpet</option>
+                  </select>
+                </div>
+                <div class="space-y-3">
+                  <label class="flex items-center">
+                    <input type="checkbox" id="quote-after-hours" class="mr-2 w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">After Hours Required</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="quote-supplies-included" class="mr-2 w-5 h-5 border border-nfgray dark:border-gray-600 rounded" checked>
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Supplies Included</span>
+                  </label>
+                  <label class="flex items-center">
+                    <input type="checkbox" id="quote-high-touch-disinfection" class="mr-2 w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                    <span class="text-sm font-medium text-gray-700 dark:text-gray-300">High-Touch Disinfection</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+              <textarea id="quote-notes" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Any special requirements, construction dust, biohazards, etc."></textarea>
+            </div>
+
+            <!-- Real-time Quote Calculation Display -->
+            <div id="quote-calculation-result" class="hidden border-t border-nfgray dark:border-gray-700 pt-4 mt-4">
+              <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-lg p-4 space-y-3">
+                <h5 class="font-semibold text-nfgblue dark:text-blue-400">Calculated Quote</h5>
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Monthly (ex-HST)</p>
+                    <p id="calc-monthly-ex-hst" class="text-xl font-semibold text-gray-900 dark:text-gray-100">$0.00</p>
+                  </div>
+                  <div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400">Per Visit</p>
+                    <p id="calc-per-visit" class="text-xl font-semibold text-gray-900 dark:text-gray-100">$0.00</p>
+                  </div>
+                </div>
+                <div>
+                  <p class="text-sm text-gray-600 dark:text-gray-400">HST (13%)</p>
+                  <p id="calc-hst" class="text-lg font-semibold text-gray-900 dark:text-gray-100">$0.00</p>
+                </div>
+                <div class="border-t border-nfgray dark:border-gray-700 pt-3">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">Total (inc-HST)</p>
+                  <p id="calc-total" class="text-2xl font-bold text-nfgblue dark:text-blue-400">$0.00</p>
+                </div>
+                <div id="calc-assumptions" class="text-xs text-gray-500 dark:text-gray-400 mt-2"></div>
+                <div id="calc-walkthrough-warning" class="hidden mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-sm text-yellow-800 dark:text-yellow-200">
+                  ⚠️ Walkthrough recommended for accurate pricing
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1315,7 +1392,7 @@
             </div>
           </div>
 
-          <!-- For Standard/Ballpark: Line Items Builder -->
+          <!-- For Standard Quote: Line Items Builder -->
           <div id="binding-line-items-section" class="hidden space-y-4">
             <div class="flex justify-between items-center">
               <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Line Items</h4>
@@ -2602,7 +2679,7 @@
             <tr class="hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer quote-row" data-quote-id="${quote.id}">
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${siteName}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough' : quote.quote_type === 'standard' ? 'Standard' : 'Ballpark'}
+                ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough' : 'Standard'}
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span class="px-2 py-1 text-xs font-medium rounded-lg ${statusColor}">${quote.status || 'draft'}</span>

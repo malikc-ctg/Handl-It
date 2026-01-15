@@ -57,7 +57,7 @@ function renderQuoteDetail(quote) {
     };
     subtitleEl.innerHTML = `
       <span class="${statusColors[quote.status] || 'text-gray-600'} font-medium">${quote.status || 'draft'}</span> • 
-      ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough Required' : quote.quote_type === 'standard' ? 'Standard' : 'Ballpark'}
+      ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough Required' : 'Standard'}
     `;
   }
 

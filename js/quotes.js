@@ -260,7 +260,7 @@ export async function createQuote(formData) {
     // Create initial draft revision
     await createRevision(data.id, 1, {
       revision_type: formData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
-      is_binding: formData.quote_type !== 'walkthrough_required' && formData.quote_type !== 'ballpark'
+      is_binding: formData.quote_type === 'standard'
     });
 
     toast.success('Quote created successfully', 'Success');
