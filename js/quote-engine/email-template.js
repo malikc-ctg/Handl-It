@@ -38,6 +38,9 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
     return serviceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
   
+  // Format scope bullets (avoid nested template literal)
+  const scopeBulletsText = scopeBullets.map(bullet => '• ' + bullet).join('\n');
+  
   // Build assumptions line
   let assumptionsLine = `This quote assumes up to ${quoteResult.assumptions.sqft_cap.toLocaleString()} sq ft`;
   if (quoteResult.assumptions.supplies_included) {
@@ -79,7 +82,7 @@ SERVICE DETAILS:
 - Service Type: ${serviceTypeDisplay}
 
 SCOPE OF SERVICES:
-${scopeBullets.map(bullet => `• ${bullet}`).join('\n')}
+${scopeBulletsText}
 
 INVESTMENT:
 Monthly Service Fee (ex-HST): ${formatCurrency(quoteResult.monthly_price_ex_hst)}
@@ -104,11 +107,7 @@ Email: info@northernfacilitiesgroup.ca
 Website: www.northernfacilitiesgroup.ca
 
 ---
-This quote was generated on ${new Date().toLocaleDateString('en-CA', { 
-  year: 'numeric', 
-  month: 'long', 
-  day: 'numeric' 
-})}.
+This quote was generated on ${new Date().toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}.
 `.trim();
 
   return email;
