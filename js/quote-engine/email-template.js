@@ -33,6 +33,11 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
     return `$${amount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
   
+  // Format service type for display
+  const formatServiceType = (serviceType) => {
+    return serviceType.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  };
+  
   // Build assumptions line
   let assumptionsLine = `This quote assumes up to ${quoteResult.assumptions.sqft_cap.toLocaleString()} sq ft`;
   if (quoteResult.assumptions.supplies_included) {
@@ -57,6 +62,9 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
     startDatePromise = `\n\nWe can begin service as early as ${startDateStr}.`;
   }
   
+  const serviceTypeDisplay = formatServiceType(inputs.service_type);
+  const serviceTypeSimple = inputs.service_type.replace(/_/g, ' ');
+  
   // Build email
   const email = `
 ${businessName}
@@ -64,11 +72,11 @@ ${address}
 
 Dear ${contactName},
 
-Thank you for your interest in Northern Facilities Group's commercial cleaning services. We're pleased to provide you with a quote for your ${inputs.service_type.replace(/_/g, ' ')} facility.
+Thank you for your interest in Northern Facilities Group's commercial cleaning services. We're pleased to provide you with a quote for your ${serviceTypeSimple} facility.
 
 SERVICE DETAILS:
 - Frequency: ${frequencyText} (${frequency} visits per month)
-- Service Type: ${inputs.service_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+- Service Type: ${serviceTypeDisplay}
 
 SCOPE OF SERVICES:
 ${scopeBullets.map(bullet => `• ${bullet}`).join('\n')}
