@@ -7,16 +7,26 @@
 
 BEGIN;
 
--- Add quote engine version field
+
+-- Add quote calculation inputs (JSONB to store all input parameters)
 ALTER TABLE quotes 
 ADD COLUMN IF NOT EXISTS quote_engine_version TEXT DEFAULT NULL;
 
--- Add quote calculation inputs (JSONB to store all input parameters)
 ALTER TABLE quotes 
 ADD COLUMN IF NOT EXISTS quote_calculation_inputs JSONB DEFAULT NULL;
 
 -- Add quote calculation outputs (JSONB to store calculation results)
 ALTER TABLE quotes 
+ADD COLUMN IF NOT EXISTS quote_calculation_outputs JSONB DEFAULT NULL;
+
+-- Add quote engine fields to quote_revisions table (where revision data is actually stored)
+ALTER TABLE quote_revisions
+ADD COLUMN IF NOT EXISTS quote_engine_version TEXT DEFAULT NULL;
+
+ALTER TABLE quote_revisions
+ADD COLUMN IF NOT EXISTS quote_calculation_inputs JSONB DEFAULT NULL;
+
+ALTER TABLE quote_revisions
 ADD COLUMN IF NOT EXISTS quote_calculation_outputs JSONB DEFAULT NULL;
 
 -- Add quote breakdown (line items, assumptions, etc.)
@@ -49,6 +59,9 @@ WHERE quote_calculation_inputs IS NOT NULL;
 COMMENT ON COLUMN quotes.quote_engine_version IS 'Version of quote calculation engine used (e.g., "v2")';
 COMMENT ON COLUMN quotes.quote_calculation_inputs IS 'JSONB object containing all inputs to quote calculation engine';
 COMMENT ON COLUMN quotes.quote_calculation_outputs IS 'JSONB object containing calculation results (monthly_price_ex_hst, hst_amount, assumptions, line_items, etc.)';
+COMMENT ON COLUMN quote_revisions.quote_engine_version IS 'Version of quote calculation engine used for this revision (e.g., "v2")';
+COMMENT ON COLUMN quote_revisions.quote_calculation_inputs IS 'JSONB object containing all inputs to quote calculation engine for this revision';
+COMMENT ON COLUMN quote_revisions.quote_calculation_outputs IS 'JSONB object containing calculation results for this revision (monthly_price_ex_hst, hst_amount, assumptions, line_items, etc.)';
 COMMENT ON COLUMN quote_revisions.quote_breakdown IS 'JSONB object containing detailed breakdown of quote (line items, multipliers, etc.)';
 
 COMMIT;
