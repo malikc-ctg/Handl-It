@@ -84,9 +84,7 @@ ${assumptionsLine}${startDatePromise}
 This quote is valid for ${quoteResult.quote_valid_for_days} days from the date of this email.
 
 NEXT STEPS:
-${quoteResult.walkthrough_required 
-  ? 'We recommend scheduling a site walkthrough to ensure we capture all specific requirements and provide the most accurate quote for your facility.'
-  : 'No walkthrough required. If you're ready to proceed, simply reply to this email or give us a call to get started.'}
+${quoteResult.walkthrough_required ? 'We recommend scheduling a site walkthrough to ensure we capture all specific requirements and provide the most accurate quote for your facility.' : 'No walkthrough required. If you're ready to proceed, simply reply to this email or give us a call to get started.'}
 
 We're here to answer any questions you may have. Please don't hesitate to reach out.
 
