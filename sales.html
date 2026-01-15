@@ -98,6 +98,68 @@
       max-height: calc(100vh - 8rem);
       overflow-y: auto;
     }
+
+    /* Kanban Board Styles */
+    #deals-kanban {
+      scrollbar-width: thin;
+      scrollbar-color: #E5E7EB transparent;
+    }
+
+    #deals-kanban::-webkit-scrollbar {
+      height: 8px;
+    }
+
+    #deals-kanban::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    #deals-kanban::-webkit-scrollbar-thumb {
+      background: #E5E7EB;
+      border-radius: 4px;
+    }
+
+    .dark #deals-kanban::-webkit-scrollbar-thumb {
+      background: #374151;
+    }
+
+    .kanban-column {
+      min-height: 400px;
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+
+    .kanban-deals {
+      min-height: 200px;
+    }
+
+    .deal-card {
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .deal-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .deal-card:active {
+      cursor: grabbing;
+    }
+
+    .kanban-deals.drag-over {
+      background-color: rgba(13, 71, 161, 0.1);
+      border: 2px dashed #0D47A1;
+      border-radius: 8px;
+    }
+
+    .dark .kanban-deals.drag-over {
+      background-color: rgba(59, 130, 246, 0.2);
+      border-color: #3B82F6;
+    }
+
+    .deal-card.dragging {
+      opacity: 0.5;
+      transform: rotate(2deg);
+    }
   </style>
 </head>
 
@@ -368,9 +430,73 @@
           </button>
         </div>
 
-        <!-- Deal List -->
-        <div id="deals-list" class="space-y-4">
-          <!-- Deals will be rendered here -->
+        <!-- Kanban Board View -->
+        <div id="deals-kanban" class="flex gap-4 overflow-x-auto pb-4">
+          <!-- Prospecting Column -->
+          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="prospecting">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Prospecting</h3>
+              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
+            </div>
+            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="prospecting">
+              <!-- Deals will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Qualification Column -->
+          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="qualification">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Qualification</h3>
+              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
+            </div>
+            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="qualification">
+              <!-- Deals will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Proposal Column -->
+          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="proposal">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Proposal</h3>
+              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
+            </div>
+            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="proposal">
+              <!-- Deals will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Negotiation Column -->
+          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="negotiation">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Negotiation</h3>
+              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
+            </div>
+            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="negotiation">
+              <!-- Deals will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Closed Won Column -->
+          <div class="kanban-column flex-shrink-0 w-80 bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-800" data-stage="closed_won">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-green-700 dark:text-green-300">Closed Won</h3>
+              <span class="kanban-count bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
+            </div>
+            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_won">
+              <!-- Deals will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Closed Lost Column -->
+          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="closed_lost">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Closed Lost</h3>
+              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
+            </div>
+            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_lost">
+              <!-- Deals will be rendered here -->
+            </div>
+          </div>
         </div>
 
         <!-- Empty State -->
@@ -1600,6 +1726,9 @@
             await loadDashboardData();
             break;
           case 'deals':
+            // Load deals and render kanban board
+            const dealsData = await loadDealsForDashboard();
+            renderDealsKanban(dealsData);
             if (sales && typeof sales.loadDeals === 'function') {
               await sales.loadDeals();
             }
@@ -1657,6 +1786,7 @@
 
         // Render active deals table
         renderActiveDealsTable(dealsData);
+        renderDealsKanban(dealsData);
 
         // Render pipeline stage snapshot
         renderPipelineSnapshot(dealsData);
@@ -1680,10 +1810,13 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
 
+        // Load all deals including closed ones for kanban board
         let query = supabase
           .from('deals')
-          .select('*')
-          .in('stage', ['prospecting', 'qualification', 'proposal', 'negotiation'])
+          .select(`
+            *,
+            contact:contacts(id, full_name, email, phone, address)
+          `)
           .order('updated_at', { ascending: false });
 
         // Filter by assigned user if rep
@@ -1941,7 +2074,138 @@
       if (window.lucide) lucide.createIcons();
     }
 
-    // Render active deals table
+    // Render deals in kanban board
+    function renderDealsKanban(deals) {
+      const kanbanBoard = document.getElementById('deals-kanban');
+      if (!kanbanBoard) return;
+
+      const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
+      
+      // Clear all columns
+      stages.forEach(stage => {
+        const column = kanbanBoard.querySelector(`.kanban-deals[data-stage="${stage}"]`);
+        const countEl = kanbanBoard.querySelector(`.kanban-column[data-stage="${stage}"] .kanban-count`);
+        if (column) column.innerHTML = '';
+        if (countEl) countEl.textContent = '0';
+      });
+
+      if (deals.length === 0) {
+        return;
+      }
+
+      // Group deals by stage
+      const dealsByStage = {};
+      stages.forEach(stage => {
+        dealsByStage[stage] = deals.filter(d => d.stage === stage);
+      });
+
+      // Render deals in each column
+      stages.forEach(stage => {
+        const column = kanbanBoard.querySelector(`.kanban-deals[data-stage="${stage}"]`);
+        const countEl = kanbanBoard.querySelector(`.kanban-column[data-stage="${stage}"] .kanban-count`);
+        const stageDeals = dealsByStage[stage] || [];
+
+        if (countEl) countEl.textContent = stageDeals.length;
+
+        if (column) {
+          column.innerHTML = stageDeals.map(deal => {
+            const lastContact = deal.last_contacted_at ? new Date(deal.last_contacted_at) : null;
+            const daysIdle = lastContact ? Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24)) : null;
+            const isIdle = daysIdle && daysIdle > 7;
+            const contactName = deal.contact?.full_name || deal.contact?.email || 'No contact';
+
+            return `
+              <div 
+                class="deal-card bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-move ${isIdle ? 'border-red-300 dark:border-red-700' : ''}" 
+                data-deal-id="${deal.id}"
+                draggable="true"
+              >
+                <div class="flex items-start justify-between mb-2">
+                  <h4 class="font-semibold text-nfgblue dark:text-blue-400 text-sm">${deal.company_name || deal.title || 'Unnamed Deal'}</h4>
+                  ${isIdle ? '<span class="text-xs text-red-600 dark:text-red-400 font-medium">Idle</span>' : ''}
+                </div>
+                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">${contactName}</p>
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">$${Number(deal.deal_value || 0).toLocaleString()}</span>
+                  ${lastContact ? `<span class="text-xs text-gray-500 dark:text-gray-400">${daysIdle !== null ? daysIdle + 'd ago' : 'Recently'}</span>` : ''}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          // Add drag and drop event listeners
+          column.querySelectorAll('.deal-card').forEach(card => {
+            card.addEventListener('dragstart', handleDragStart);
+            card.addEventListener('dragend', handleDragEnd);
+            card.addEventListener('click', (e) => {
+              if (!e.target.closest('.deal-card')) return;
+              const dealId = card.dataset.dealId;
+              if (window.openDeal) window.openDeal(dealId);
+            });
+          });
+
+          // Add drop zone listeners
+          column.addEventListener('dragover', handleDragOver);
+          column.addEventListener('drop', handleDrop);
+          column.addEventListener('dragenter', handleDragEnter);
+          column.addEventListener('dragleave', handleDragLeave);
+        }
+      });
+    }
+
+    // Drag and drop handlers
+    let draggedDeal = null;
+
+    function handleDragStart(e) {
+      draggedDeal = e.target;
+      e.target.style.opacity = '0.5';
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/html', e.target.outerHTML);
+    }
+
+    function handleDragEnd(e) {
+      e.target.style.opacity = '1';
+      document.querySelectorAll('.kanban-deals').forEach(col => {
+        col.classList.remove('drag-over');
+      });
+    }
+
+    function handleDragOver(e) {
+      if (e.preventDefault) {
+        e.preventDefault();
+      }
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleDragEnter(e) {
+      e.currentTarget.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    async function handleDrop(e) {
+      if (e.stopPropagation) {
+        e.stopPropagation();
+      }
+
+      e.currentTarget.classList.remove('drag-over');
+
+      if (draggedDeal) {
+        const dealId = draggedDeal.dataset.dealId;
+        const newStage = e.currentTarget.dataset.stage;
+
+        if (newStage) {
+          await updateDealStageAndConvert(dealId, newStage);
+        }
+      }
+
+      return false;
+    }
+
+    // Render active deals table (kept for backward compatibility)
     function renderActiveDealsTable(deals) {
       const tbody = document.getElementById('deals-table-body');
       if (!tbody) return;
@@ -2156,20 +2420,124 @@
       console.log('Open lead:', leadId);
     };
 
-    window.updateDealStage = async (dealId, newStage) => {
+    // Update deal stage and convert to site if closed_won
+    async function updateDealStageAndConvert(dealId, newStage) {
       try {
-        const { error } = await supabase
+        // Get current deal to check if it's moving to closed_won
+        const { data: currentDeal } = await supabase
           .from('deals')
-          .update({ status: newStage, updated_at: new Date().toISOString() })
+          .select('*')
+          .eq('id', dealId)
+          .single();
+
+        if (!currentDeal) {
+          throw new Error('Deal not found');
+        }
+
+        const wasClosedWon = currentDeal.stage === 'closed_won';
+        const isMovingToClosedWon = newStage === 'closed_won';
+
+        // Update deal stage (fix: use 'stage' not 'status')
+        const { error: updateError } = await supabase
+          .from('deals')
+          .update({ 
+            stage: newStage, 
+            updated_at: new Date().toISOString(),
+            last_touch_at: new Date().toISOString()
+          })
           .eq('id', dealId);
         
-        if (error) throw error;
+        if (updateError) throw updateError;
+
+        // If moving to closed_won and wasn't already closed_won, convert to site
+        if (isMovingToClosedWon && !wasClosedWon) {
+          await convertDealToSite(dealId, currentDeal);
+        }
+
         toast.success('Deal stage updated', 'Success');
         await loadDashboardData();
       } catch (error) {
         console.error('Error updating deal stage:', error);
         toast.error('Failed to update deal stage', 'Error');
       }
+    }
+
+    // Convert closed deal to site
+    async function convertDealToSite(dealId, deal) {
+      try {
+        // Check if site already exists for this deal
+        const { data: existingSite } = await supabase
+          .from('sites')
+          .select('id')
+          .eq('deal_id', dealId)
+          .maybeSingle();
+
+        if (existingSite) {
+          console.log('[Deal Conversion] Site already exists for this deal');
+          return existingSite;
+        }
+
+        // Get current user
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+
+        // Get contact information
+        let contactName = null;
+        let contactPhone = null;
+        let contactEmail = null;
+        let address = null;
+
+        if (deal.contact_id) {
+          const { data: contact } = await supabase
+            .from('contacts')
+            .select('full_name, phone, email, address')
+            .eq('id', deal.contact_id)
+            .single();
+
+          if (contact) {
+            contactName = contact.full_name;
+            contactPhone = contact.phone;
+            contactEmail = contact.email;
+            address = contact.address;
+          }
+        }
+
+        // Create site from deal
+        const siteData = {
+          name: deal.company_name || deal.title || 'New Site',
+          address: address || deal.address || 'Address TBD',
+          contact_phone: contactPhone || deal.contact_phone || null,
+          contact_email: contactEmail || deal.contact_email || null,
+          deal_value: deal.deal_value || null,
+          status: 'Active',
+          notes: deal.notes || null,
+          created_by: user.id
+        };
+
+        // Add deal_id if column exists (optional)
+        // Note: You may need to run: ALTER TABLE sites ADD COLUMN IF NOT EXISTS deal_id UUID REFERENCES deals(id);
+
+        const { data: newSite, error: siteError } = await supabase
+          .from('sites')
+          .insert(siteData)
+          .select()
+          .single();
+
+        if (siteError) throw siteError;
+
+        toast.success(`Deal converted to site: ${newSite.name}`, 'Success');
+        console.log('[Deal Conversion] Site created:', newSite);
+
+        return newSite;
+      } catch (error) {
+        console.error('[Deal Conversion] Error converting deal to site:', error);
+        toast.error('Deal stage updated, but failed to create site. Please create site manually.', 'Warning');
+        throw error;
+      }
+    }
+
+    window.updateDealStage = async (dealId, newStage) => {
+      await updateDealStageAndConvert(dealId, newStage);
     };
     
     async function loadQuotes() {
