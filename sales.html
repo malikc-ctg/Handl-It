@@ -155,6 +155,21 @@
       background-color: rgba(59, 130, 246, 0.2);
       border-color: #3B82F6;
     }
+    
+    .line-clamp-2 {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    
+    .view-option.active {
+      background-color: white;
+    }
+    
+    .dark .view-option.active {
+      background-color: #374151;
+    }
 
     .deal-card.dragging {
       opacity: 0.5;
@@ -418,86 +433,193 @@
         </div>
 
         <!-- Deals Tab -->
-        <div id="tab-deals" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
-          <!-- Deal Queue View -->
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-          <div>
-            <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Deal Queue</h2>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your sales pipeline</p>
-          </div>
-          <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> New Deal
-          </button>
-        </div>
+        <div id="tab-deals" class="sales-tab-content hidden h-full overflow-y-auto">
+          <!-- Modern Header Section -->
+          <div class="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 md:px-6 py-6">
+            <div class="flex flex-col gap-4">
+              <!-- Title and Description -->
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-2">Deals</h1>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Keep track of your sales pipeline all in one place.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <button id="create-deal-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition inline-flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i> New Deal
+                  </button>
+                </div>
+              </div>
 
-        <!-- Kanban Board View -->
-        <div id="deals-kanban" class="flex gap-4 overflow-x-auto pb-4">
-          <!-- Prospecting Column -->
-          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="prospecting">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Prospecting</h3>
-              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
-            </div>
-            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="prospecting">
-              <!-- Deals will be rendered here -->
-            </div>
-          </div>
+              <!-- View Options and Filters -->
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <!-- View Tabs -->
+                <div class="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
+                  <button class="view-option px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 rounded transition" data-view="overview">
+                    <i data-lucide="layout-grid" class="w-4 h-4 inline mr-1"></i> Overview
+                  </button>
+                  <button class="view-option active px-3 py-1.5 text-sm font-medium text-nfgblue dark:text-blue-400 bg-white dark:bg-gray-700 rounded transition" data-view="board">
+                    <i data-lucide="columns" class="w-4 h-4 inline mr-1"></i> Board
+                  </button>
+                  <button class="view-option px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 rounded transition" data-view="list">
+                    <i data-lucide="list" class="w-4 h-4 inline mr-1"></i> List
+                  </button>
+                  <button class="view-option px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 rounded transition" data-view="table">
+                    <i data-lucide="table" class="w-4 h-4 inline mr-1"></i> Table
+                  </button>
+                </div>
 
-          <!-- Qualification Column -->
-          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="qualification">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Qualification</h3>
-              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
-            </div>
-            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="qualification">
-              <!-- Deals will be rendered here -->
-            </div>
-          </div>
-
-          <!-- Proposal Column -->
-          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="proposal">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Proposal</h3>
-              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
-            </div>
-            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="proposal">
-              <!-- Deals will be rendered here -->
-            </div>
-          </div>
-
-          <!-- Negotiation Column -->
-          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="negotiation">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Negotiation</h3>
-              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
-            </div>
-            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="negotiation">
-              <!-- Deals will be rendered here -->
+                <!-- Filter Controls -->
+                <div class="flex items-center gap-2">
+                  <button class="filter-btn px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border border-gray-300 dark:border-gray-600 rounded-lg transition inline-flex items-center gap-2">
+                    <i data-lucide="filter" class="w-4 h-4"></i> Filter
+                  </button>
+                  <button class="group-btn px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border border-gray-300 dark:border-gray-600 rounded-lg transition inline-flex items-center gap-2">
+                    <i data-lucide="layers" class="w-4 h-4"></i> Group by
+                  </button>
+                  <button class="sort-btn px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border border-gray-300 dark:border-gray-600 rounded-lg transition inline-flex items-center gap-2">
+                    <i data-lucide="arrow-up-down" class="w-4 h-4"></i> Sort
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
-          <!-- Closed Won Column -->
-          <div class="kanban-column flex-shrink-0 w-80 bg-green-50 dark:bg-green-900/20 rounded-xl p-4 border-2 border-green-200 dark:border-green-800" data-stage="closed_won">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-green-700 dark:text-green-300">Closed Won</h3>
-              <span class="kanban-count bg-green-200 dark:bg-green-800 text-green-700 dark:text-green-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
-            </div>
-            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_won">
-              <!-- Deals will be rendered here -->
-            </div>
-          </div>
+          <!-- Kanban Board View -->
+          <div class="p-4 md:p-6">
+            <div id="deals-kanban" class="flex gap-4 overflow-x-auto pb-4">
+              <!-- Prospecting Column -->
+              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="prospecting">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
+                    <h3 class="font-semibold text-gray-700 dark:text-gray-300">Prospecting</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="prospecting">
+                  <!-- Deals will be rendered here -->
+                </div>
+              </div>
 
-          <!-- Closed Lost Column -->
-          <div class="kanban-column flex-shrink-0 w-80 bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4" data-stage="closed_lost">
-            <div class="flex items-center justify-between mb-4">
-              <h3 class="font-semibold text-gray-700 dark:text-gray-300">Closed Lost</h3>
-              <span class="kanban-count bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-2 py-1 rounded-full text-xs font-medium">0</span>
-            </div>
-            <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_lost">
-              <!-- Deals will be rendered here -->
+              <!-- Qualification Column -->
+              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="qualification">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+                    <h3 class="font-semibold text-gray-700 dark:text-gray-300">Qualification</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="qualification">
+                  <!-- Deals will be rendered here -->
+                </div>
+              </div>
+
+              <!-- Proposal Column -->
+              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="proposal">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                    <h3 class="font-semibold text-gray-700 dark:text-gray-300">Proposal</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="proposal">
+                  <!-- Deals will be rendered here -->
+                </div>
+              </div>
+
+              <!-- Negotiation Column -->
+              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="negotiation">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-orange-400"></span>
+                    <h3 class="font-semibold text-gray-700 dark:text-gray-300">Negotiation</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="negotiation">
+                  <!-- Deals will be rendered here -->
+                </div>
+              </div>
+
+              <!-- Closed Won Column -->
+              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-green-200 dark:border-green-800" data-stage="closed_won">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-green-400"></span>
+                    <h3 class="font-semibold text-green-700 dark:text-green-300">Closed Won</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="kanban-count bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_won">
+                  <!-- Deals will be rendered here -->
+                </div>
+              </div>
+
+              <!-- Closed Lost Column -->
+              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="closed_lost">
+                <div class="flex items-center justify-between mb-4">
+                  <div class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-gray-400"></span>
+                    <h3 class="font-semibold text-gray-700 dark:text-gray-300">Closed Lost</h3>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="kanban-count bg-gray-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
+                    </button>
+                  </div>
+                </div>
+                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_lost">
+                  <!-- Deals will be rendered here -->
+                </div>
+              </div>
             </div>
           </div>
-        </div>
 
         <!-- Empty State -->
         <div id="empty-state" class="hidden text-center py-16">
@@ -2190,21 +2312,124 @@
             const daysIdle = lastContact ? Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24)) : null;
             const isIdle = daysIdle && daysIdle > 7;
             const contactName = deal.contact?.full_name || deal.contact?.email || 'No contact';
-
+            const dealValue = Number(deal.deal_value || 0);
+            
+            // Determine status and priority
+            let statusTag = '';
+            let statusColorClass = 'bg-purple-400';
+            if (stage === 'prospecting') {
+              statusTag = 'Not Started';
+              statusColorClass = 'bg-purple-400';
+            } else if (stage === 'qualification') {
+              statusTag = 'In Research';
+              statusColorClass = 'bg-yellow-400';
+            } else if (stage === 'proposal') {
+              statusTag = 'On Track';
+              statusColorClass = 'bg-pink-400';
+            } else if (stage === 'negotiation') {
+              statusTag = 'On Track';
+              statusColorClass = 'bg-pink-400';
+            } else if (stage === 'closed_won') {
+              statusTag = 'Complete';
+              statusColorClass = 'bg-green-400';
+            } else {
+              statusTag = 'Not Started';
+              statusColorClass = 'bg-purple-400';
+            }
+            
+            // Determine priority based on deal value and stage
+            let priority = 'Low';
+            let priorityBgClass = 'bg-purple-100';
+            let priorityTextClass = 'text-purple-700';
+            let priorityDarkBgClass = 'dark:bg-purple-900/30';
+            let priorityDarkTextClass = 'dark:text-purple-300';
+            if (dealValue >= 10000) {
+              priority = 'High';
+              priorityBgClass = 'bg-red-100';
+              priorityTextClass = 'text-red-700';
+              priorityDarkBgClass = 'dark:bg-red-900/30';
+              priorityDarkTextClass = 'dark:text-red-300';
+            } else if (dealValue >= 5000) {
+              priority = 'Medium';
+              priorityBgClass = 'bg-orange-100';
+              priorityTextClass = 'text-orange-700';
+              priorityDarkBgClass = 'dark:bg-orange-900/30';
+              priorityDarkTextClass = 'dark:text-orange-300';
+            }
+            
+            // Format due date or last contact
+            let dateText = '';
+            if (deal.expected_close_date) {
+              const closeDate = new Date(deal.expected_close_date);
+              const today = new Date();
+              const daysUntil = Math.ceil((closeDate - today) / (1000 * 60 * 60 * 24));
+              if (daysUntil < 0) {
+                dateText = 'Overdue';
+              } else if (daysUntil === 0) {
+                dateText = 'Today';
+              } else if (daysUntil <= 7) {
+                dateText = closeDate.toLocaleDateString('en-CA', { day: 'numeric', month: 'short', year: 'numeric' });
+              } else {
+                dateText = closeDate.toLocaleDateString('en-CA', { day: 'numeric', month: 'short', year: 'numeric' });
+              }
+            } else if (lastContact) {
+              dateText = daysIdle !== null ? daysIdle + 'd ago' : 'Recently';
+            }
+            
+            // Get assignee initials (placeholder for now)
+            const assigneeInitials = contactName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'NF';
+            
+            // Count comments and links (placeholder - would need to fetch from related tables)
+            const commentCount = 0; // deal.comments?.length || 0;
+            const linkCount = 0; // deal.links?.length || 0;
+            
             return `
               <div 
-                class="deal-card bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-move ${isIdle ? 'border-red-300 dark:border-red-700' : ''}" 
+                class="deal-card bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 shadow-sm hover:shadow-md transition cursor-move ${isIdle ? 'border-red-300 dark:border-red-700' : ''}" 
                 data-deal-id="${deal.id}"
                 draggable="true"
               >
-                <div class="flex items-start justify-between mb-2">
-                  <h4 class="font-semibold text-nfgblue dark:text-blue-400 text-sm">${deal.company_name || deal.title || 'Unnamed Deal'}</h4>
-                  ${isIdle ? '<span class="text-xs text-red-600 dark:text-red-400 font-medium">Idle</span>' : ''}
+                <!-- Status Tag -->
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full ${statusColorClass}"></span>
+                    <span class="text-xs font-medium text-gray-600 dark:text-gray-400">${statusTag}</span>
+                  </div>
                 </div>
-                <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">${contactName}</p>
-                <div class="flex items-center justify-between">
-                  <span class="text-sm font-semibold text-gray-900 dark:text-gray-100">$${Number(deal.deal_value || 0).toLocaleString()}</span>
-                  ${lastContact ? `<span class="text-xs text-gray-500 dark:text-gray-400">${daysIdle !== null ? daysIdle + 'd ago' : 'Recently'}</span>` : ''}
+                
+                <!-- Deal Title -->
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2 line-clamp-2">${deal.company_name || deal.title || 'Unnamed Deal'}</h4>
+                
+                <!-- Description -->
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${contactName}${deal.address ? ' • ' + deal.address : ''}</p>
+                
+                <!-- Assignees and Due Date -->
+                <div class="flex items-center justify-between mb-3">
+                  <div class="flex items-center -space-x-2">
+                    <div class="w-6 h-6 rounded-full bg-nfgblue text-white text-xs flex items-center justify-center font-medium border-2 border-white dark:border-gray-800">
+                      ${assigneeInitials}
+                    </div>
+                  </div>
+                  ${dateText ? `<span class="text-xs text-gray-500 dark:text-gray-400">${dateText}</span>` : ''}
+                </div>
+                
+                <!-- Priority and Value -->
+                <div class="flex items-center justify-between mb-3">
+                  <span class="px-2 py-0.5 rounded text-xs font-medium ${priorityBgClass} ${priorityTextClass} ${priorityDarkBgClass} ${priorityDarkTextClass}">${priority}</span>
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">$${dealValue.toLocaleString()}</span>
+                </div>
+                
+                <!-- Metadata (Comments, Links, Progress) -->
+                <div class="flex items-center gap-4 pt-2 border-t border-gray-100 dark:border-gray-700">
+                  <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i data-lucide="message-circle" class="w-3 h-3"></i>
+                    <span>${commentCount}</span>
+                  </div>
+                  <div class="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                    <i data-lucide="link" class="w-3 h-3"></i>
+                    <span>${linkCount}</span>
+                  </div>
+                  ${isIdle ? '<span class="ml-auto text-xs text-red-600 dark:text-red-400 font-medium">Idle</span>' : ''}
                 </div>
               </div>
             `;
@@ -2227,6 +2452,24 @@
           column.addEventListener('dragenter', handleDragEnter);
           column.addEventListener('dragleave', handleDragLeave);
         }
+      });
+      
+      // Initialize icons after rendering
+      if (window.lucide) {
+        lucide.createIcons();
+      }
+    }
+    
+    // View option handlers
+    function initViewOptions() {
+      document.querySelectorAll('.view-option').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          const view = e.currentTarget.dataset.view;
+          document.querySelectorAll('.view-option').forEach(b => b.classList.remove('active'));
+          e.currentTarget.classList.add('active');
+          // Handle view switching (for now, just keep board view)
+          console.log('Switching to view:', view);
+        });
       });
     }
 
@@ -2961,6 +3204,9 @@
         
         console.log('[Sales Dashboard] Step 2: Initializing tabs...');
         initTabs();
+        
+        console.log('[Sales Dashboard] Step 2.5: Initializing view options...');
+        initViewOptions();
         
         console.log('[Sales Dashboard] Step 3: Initializing UI...');
         // Initialize UI first
