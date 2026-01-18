@@ -1073,9 +1073,12 @@ async function handleSaveDraft() {
       currentQuoteId = quote.id;
     }
 
+    // Extract booking date/time from revision_data (they're only needed for email, not DB storage)
+    const { booking_date: _bookingDate, booking_time: _bookingTime, ...revisionDataForDB } = wizardData.revision_data || {};
+
     // Save revision as draft
     const revisionData = {
-      ...wizardData.revision_data,
+      ...revisionDataForDB,
       revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
       is_binding: wizardData.quote_type === 'standard',
       // Include quote engine calculation data if available
@@ -1216,9 +1219,12 @@ async function confirmAndSendQuote() {
       currentQuoteId = quote.id;
     }
 
+    // Extract booking date/time from revision_data (they're only needed for email, not DB storage)
+    const { booking_date, booking_time, ...revisionDataForDB } = wizardData.revision_data || {};
+
     // Save revision
     const revisionData = {
-      ...wizardData.revision_data,
+      ...revisionDataForDB,
       revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
       is_binding: wizardData.quote_type === 'standard',
       // Include quote engine calculation data if available
@@ -1264,9 +1270,9 @@ async function confirmAndSendQuote() {
         }
       }
 
-      // Get booking date and time from revision data
-      const bookingDate = wizardData.revision_data.booking_date || '';
-      const bookingTime = wizardData.revision_data.booking_time || '';
+      // Use booking date and time that we extracted earlier
+      const bookingDate = booking_date || '';
+      const bookingTime = booking_time || '';
 
       // Send welcome email
       const emailsInput = document.getElementById('quote-send-emails')?.value || '';
