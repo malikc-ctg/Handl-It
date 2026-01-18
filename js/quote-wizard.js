@@ -6,6 +6,7 @@ import { toast } from './notifications.js';
 import { calculateQuote } from './quote-engine/calculator.js';
 import { generateQuoteEmail, generateWalkthroughWelcomeEmail } from './quote-engine/email-template.js';
 import { createWalkthroughRequest, sendWalkthroughWelcomeEmail } from './services/walkthrough-service.js';
+import { supabase } from './supabase.js';
 
 let currentWizardStep = 1;
 let currentQuoteId = null;
@@ -295,7 +296,19 @@ function validateCurrentStep() {
     const quoteType = wizardData.quote_type;
     
     if (quoteType === 'walkthrough_required') {
-      // Walkthrough - just need basic info, will send welcome email
+      // Walkthrough - validate booking date and time
+      const bookingDate = document.getElementById('quote-walkthrough-booking-date')?.value;
+      const bookingTime = document.getElementById('quote-walkthrough-booking-time')?.value;
+      
+      if (!bookingDate) {
+        toast.error('Please select a booking date', 'Validation Error');
+        return false;
+      }
+      if (!bookingTime) {
+        toast.error('Please select a booking time', 'Validation Error');
+        return false;
+      }
+      
       return true;
     } else {
       // Standard Quote - validate quote engine inputs
@@ -368,7 +381,9 @@ function saveCurrentStepData() {
         scope_summary: document.getElementById('quote-scope-summary')?.value || '',
         assumptions: document.getElementById('quote-assumptions')?.value || '',
         exclusions: document.getElementById('quote-exclusions')?.value || '',
-        cleaning_metrics: cleaningMetrics
+        cleaning_metrics: cleaningMetrics,
+        booking_date: document.getElementById('quote-walkthrough-booking-date')?.value || '',
+        booking_time: document.getElementById('quote-walkthrough-booking-time')?.value || ''
       };
       
       // Range estimate
@@ -1217,14 +1232,70 @@ async function confirmAndSendQuote() {
 
     await quotesModule.saveRevision(currentQuoteId, 1, revisionData, lineItemsToSave);
 
-    // Send revision
-    const emailsInput = document.getElementById('quote-send-emails')?.value || '';
-    const emails = emailsInput.split(',').map(e => e.trim()).filter(e => e);
-    const expiryDays = parseInt(document.getElementById('quote-expiry-days')?.value || 7);
+    // For walkthrough quotes, send welcome email instead of regular quote email
+    if (wizardData.quote_type === 'walkthrough_required') {
+      // Get business and contact data
+      let businessData = {};
+      let contactData = {};
 
-    await quotesModule.sendRevision(currentQuoteId, 1, emails, expiryDays);
+      // Get account/site data
+      if (wizardData.account_id) {
+        const { data: account } = await supabase
+          .from('accounts')
+          .select('name, company_name')
+          .eq('id', wizardData.account_id)
+          .single();
+        if (account) {
+          businessData = account;
+        }
+      } else if (wizardData.new_account_data) {
+        businessData = wizardData.new_account_data;
+      }
 
-    toast.success('Quote sent successfully', 'Success');
+      // Get contact data
+      if (wizardData.primary_contact_id) {
+        const { data: contact } = await supabase
+          .from('account_contacts')
+          .select('full_name, name, email, contact_email')
+          .eq('id', wizardData.primary_contact_id)
+          .single();
+        if (contact) {
+          contactData = contact;
+        }
+      }
+
+      // Get booking date and time from revision data
+      const bookingDate = wizardData.revision_data.booking_date || '';
+      const bookingTime = wizardData.revision_data.booking_time || '';
+
+      // Send welcome email
+      const emailsInput = document.getElementById('quote-send-emails')?.value || '';
+      const emails = emailsInput.split(',').map(e => e.trim()).filter(e => e);
+      
+      if (emails.length > 0) {
+        // Send to each email address
+        for (const email of emails) {
+          await sendWalkthroughWelcomeEmail(
+            businessData,
+            { ...contactData, email },
+            { bookingDate, bookingTime }
+          );
+        }
+        toast.success('Welcome email sent successfully', 'Success');
+      } else {
+        toast.warning('No email addresses provided', 'Warning');
+      }
+    } else {
+      // Standard quote - send revision
+      const emailsInput = document.getElementById('quote-send-emails')?.value || '';
+      const emails = emailsInput.split(',').map(e => e.trim()).filter(e => e);
+      const expiryDays = parseInt(document.getElementById('quote-expiry-days')?.value || 7);
+
+      await quotesModule.sendRevision(currentQuoteId, 1, emails, expiryDays);
+
+      toast.success('Quote sent successfully', 'Success');
+    }
+
     closeWizard();
     
     // Reload quotes list

@@ -114,28 +114,46 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
  * Generate walkthrough welcome email
  * @param {Object} businessData - Business/account information
  * @param {Object} contactData - Contact information
+ * @param {Object} options - Additional options including booking time
+ * @param {string} options.bookingDate - Booking date (YYYY-MM-DD format)
+ * @param {string} options.bookingTime - Booking time (HH:MM format)
  * @returns {string} Plain text email
  */
-export function generateWalkthroughWelcomeEmail(businessData, contactData) {
+export function generateWalkthroughWelcomeEmail(businessData, contactData, options = {}) {
   const businessName = businessData.name || businessData.company_name || 'Valued Client';
   const contactName = contactData.full_name || contactData.name || 'Dear Client';
   
-  const email = businessName + '\n\n' +
-    'Dear ' + contactName + ',\n\n' +
+  // Format booking date and time
+  let bookingInfo = '';
+  if (options.bookingDate && options.bookingTime) {
+    const bookingDate = new Date(options.bookingDate + 'T' + options.bookingTime);
+    const dateStr = bookingDate.toLocaleDateString('en-CA', { 
+      weekday: 'long',
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const timeStr = bookingDate.toLocaleTimeString('en-US', { 
+      hour: 'numeric', 
+      minute: '2-digit',
+      hour12: true 
+    });
+    bookingInfo = '\n\nWe have scheduled your walkthrough for ' + dateStr + ' at ' + timeStr + '.';
+  }
+  
+  const email = 'Dear ' + contactName + ',\n\n' +
     'Thank you for your interest in Northern Facilities Group\'s commercial cleaning services!\n\n' +
-    'We\'ve received your request and would love to learn more about your facility\'s specific needs. To provide you with the most accurate quote and service plan, we\'d like to schedule a complimentary site walkthrough.\n\n' +
-    'During the walkthrough, we\'ll:\n' +
+    'We\'re excited to work with you and look forward to learning more about your facility\'s specific needs.' + bookingInfo + '\n\n' +
+    'Our team will arrive at the scheduled time to:\n' +
     '• Assess your facility\'s unique requirements\n' +
     '• Identify high-traffic areas and special considerations\n' +
     '• Discuss your cleaning priorities and schedule preferences\n' +
     '• Provide a detailed, customized quote\n\n' +
-    'Our team will contact you within 24 hours to schedule a convenient time for the walkthrough.\n\n' +
-    'In the meantime, if you have any questions or specific requirements you\'d like to discuss, please don\'t hesitate to reach out.\n\n' +
+    'If you have any questions or need to reschedule, please contact us directly.\n\n' +
     'Best regards,\n\n' +
     'Northern Facilities Group\n' +
     'Phone: (416) 555-0100\n' +
-    'Email: info@northernfacilitiesgroup.ca\n' +
-    'Website: www.northernfacilitiesgroup.ca';
+    'Email: info@northernfacilitiesgroup.ca';
 
   return email;
 }

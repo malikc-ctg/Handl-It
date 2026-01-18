@@ -52,18 +52,21 @@ export async function createWalkthroughRequest(data) {
  * Send walkthrough welcome email
  * @param {Object} businessData - Business/account information
  * @param {Object} contactData - Contact information
+ * @param {Object} options - Additional options including booking time
+ * @param {string} options.bookingDate - Booking date (YYYY-MM-DD format)
+ * @param {string} options.bookingTime - Booking time (HH:MM format)
  * @returns {Promise<boolean>} Success status
  */
-export async function sendWalkthroughWelcomeEmail(businessData, contactData) {
+export async function sendWalkthroughWelcomeEmail(businessData, contactData, options = {}) {
   try {
     // Generate email content
-    const emailContent = generateWalkthroughWelcomeEmail(businessData, contactData);
+    const emailContent = generateWalkthroughWelcomeEmail(businessData, contactData, options);
     
     // TODO: Integrate with your email service (SendGrid, AWS SES, etc.)
     // For now, we'll log it and you can implement the actual sending
     console.log('[Walkthrough Service] Welcome email generated:');
     console.log('To:', contactData.email || contactData.contact_email);
-    console.log('Subject: Welcome to Northern Facilities Group - Let\'s Schedule Your Walkthrough');
+    console.log('Subject: Welcome to Northern Facilities Group');
     console.log('Content:', emailContent);
     
     // In production, you would:
