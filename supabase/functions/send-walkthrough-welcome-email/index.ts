@@ -143,7 +143,7 @@ serve(async (req) => {
           <!-- Header -->
           <tr>
             <td class="header">
-              <img src="${logoUrl}" alt="Northern Facilities Group" class="logo" style="max-width: 300px; height: auto; margin-bottom: 15px;">
+              <img src="${logoUrl}" alt="Northern Facilities Group Inc" class="logo" style="max-width: 300px; height: auto; margin-bottom: 15px;">
             </td>
           </tr>
           
@@ -186,7 +186,7 @@ serve(async (req) => {
                 </p>
               </div>
               
-              <p class="footer-text" style="margin-top: 20px; font-size: 11px; color: #999999;">© 2025 Northern Facilities Group. All rights reserved.</p>
+              <p class="footer-text" style="margin-top: 20px; font-size: 11px; color: #999999;">© 2025 Northern Facilities Group Inc. All rights reserved.</p>
             </td>
           </tr>
           
@@ -207,7 +207,7 @@ serve(async (req) => {
     const emailPayload = {
       from: fromEmail,
       to: Array.isArray(to) ? to : [to],
-      subject: subject || 'Welcome to Northern Facilities Group',
+      subject: subject || 'Welcome to Northern Facilities Group Inc',
       html: emailHTML,
     }
 
