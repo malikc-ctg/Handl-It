@@ -8,11 +8,11 @@ export const QUOTE_CONFIG = {
   // Base monthly prices (ex-HST) for 4 visits/mo, 1200-1600 sqft band (baseline)
   basePrices: {
     commercial_office: 349,
-    physio_chiro: 579,
-    medical_clinic: 649,
-    dental: 699,
-    optical: 599,
-    industrial: 799,
+    physio_chiro: 499,
+    medical_clinic: 549,
+    dental: 529,
+    optical: 499,
+    industrial: 699,
     residential_common_area: 499
   },
 
@@ -31,10 +31,10 @@ export const QUOTE_CONFIG = {
   // Based on visits per month
   frequencyMultipliers: [
     { maxVisits: 4, multiplier: 1.00 },
-    { maxVisits: 8, multiplier: 1.65 },
-    { maxVisits: 12, multiplier: 2.20 },
-    { maxVisits: 16, multiplier: 2.70 },
-    { maxVisits: 20, multiplier: 3.20 },
+    { maxVisits: 8, multiplier: 1.55 },
+    { maxVisits: 12, multiplier: 2.05 },
+    { maxVisits: 16, multiplier: 2.50 },
+    { maxVisits: 20, multiplier: 2.95 },
     { maxVisits: Infinity, multiplier: null, customOnly: true }
   ],
 
@@ -69,11 +69,11 @@ export const QUOTE_CONFIG = {
   // Minimum monthly floors (same as base prices or higher)
   minimumMonthly: {
     commercial_office: 349,
-    physio_chiro: 579,
-    medical_clinic: 649,
-    dental: 699,
-    optical: 599,
-    industrial: 799,
+    physio_chiro: 499,
+    medical_clinic: 549,
+    dental: 529,
+    optical: 499,
+    industrial: 699,
     residential_common_area: 499
   },
 
