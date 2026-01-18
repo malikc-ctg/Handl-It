@@ -84,11 +84,11 @@ export function calculateQuote(inputs) {
   // Calculate touchpoint multiplier
   let touchpointScore = 0;
   
-  // Washrooms (cap at 4 = 0.32)
-  touchpointScore += Math.min(numWashrooms * QUOTE_CONFIG.touchpointScores.washroom, 0.32);
+  // Washrooms (cap at 4 = 0.24)
+  touchpointScore += Math.min(numWashrooms * QUOTE_CONFIG.touchpointScores.washroom, 0.24);
   
-  // Treatment rooms (cap at 5 = 0.25)
-  touchpointScore += Math.min(numTreatmentRooms * QUOTE_CONFIG.touchpointScores.treatment_room, 0.25);
+  // Treatment rooms (cap at 5 = 0.20)
+  touchpointScore += Math.min(numTreatmentRooms * QUOTE_CONFIG.touchpointScores.treatment_room, 0.20);
   
   // Reception
   if (hasReception) {
