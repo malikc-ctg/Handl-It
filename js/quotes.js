@@ -399,12 +399,13 @@ export async function saveRevision(quoteId, revisionNumber, revisionData, lineIt
     // Insert new line items
     if (lineItems && lineItems.length > 0) {
       const itemsToInsert = lineItems.map((item, index) => {
+        // The quote_line_items table uses 'description' as the main text field, not 'name'
+        const itemDescription = item.description || item.name || '';
         const baseItem = {
           quote_id: quoteId,
           revision_number: revisionNumber,
           category: item.category || null,
-          name: item.name,
-          description: item.description || null,
+          description: itemDescription, // Use description as the required field
           quantity: item.quantity || 1,
           unit: item.unit,
           unit_price: item.unit_price || null,
@@ -858,12 +859,13 @@ export async function createFinalQuoteFromWalkthrough(quoteId) {
 
     if (oldItems && oldItems.length > 0) {
       const newItems = oldItems.map((item, index) => {
+        // The quote_line_items table uses 'description' as the main text field
+        const itemDescription = item.description || item.name || '';
         const newItem = {
           quote_id: quoteId,
           revision_number: newRevisionNumber,
           category: item.category,
-          name: item.name,
-          description: item.description,
+          description: itemDescription, // Use description as the required field
           quantity: item.quantity,
           unit: item.unit === 'range' ? 'flat' : item.unit, // Convert range to flat
           unit_price: item.unit === 'range' ? (item.range_high + item.range_low) / 2 : item.unit_price, // Use midpoint for range
