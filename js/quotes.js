@@ -263,6 +263,74 @@ export async function createQuote(formData) {
       is_binding: formData.quote_type === 'standard'
     });
 
+    // Auto-create deal if not already provided
+    if (!formData.deal_id && insertData.account_id) {
+      try {
+        // Get account name for deal title
+        const { data: account } = await supabase
+          .from('sites')
+          .select('name')
+          .eq('id', insertData.account_id)
+          .single();
+
+        const accountName = account?.name || 'Unknown Account';
+        const quoteTypeLabel = formData.quote_type === 'walkthrough_required' ? 'Walkthrough' : 'Standard Quote';
+        const currentYear = new Date().getFullYear();
+
+        // Map quote type to deal stage
+        const dealStage = formData.quote_type === 'walkthrough_required' ? 'qualification' : 'proposal';
+
+        // Create deal
+        const { data: newDeal, error: dealError } = await supabase
+          .from('deals')
+          .insert({
+            account_id: insertData.account_id,
+            primary_contact_id: insertData.primary_contact_id || null,
+            owner_user_id: insertData.owner_user_id,
+            name: `${accountName} - ${quoteTypeLabel} - ${currentYear}`,
+            stage: dealStage,
+            latest_quote_id: data.id,
+            latest_quote_revision_number: 1,
+            source: 'quote_auto',
+            is_closed: false,
+            last_activity_at: new Date().toISOString(),
+            next_action_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+          })
+          .select()
+          .single();
+
+        if (dealError) {
+          console.warn('[Quotes] Failed to auto-create deal:', dealError);
+          // Don't throw - quote was created successfully
+        } else {
+          // Link quote to deal
+          await supabase
+            .from('quotes')
+            .update({ deal_id: newDeal.id })
+            .eq('id', data.id);
+
+          // Create deal event
+          await supabase
+            .from('deal_events')
+            .insert({
+              deal_id: newDeal.id,
+              event_type: 'deal_created',
+              metadata: {
+                quote_id: data.id,
+                revision_number: 1,
+                source: 'quote_auto'
+              }
+            });
+
+          data.deal_id = newDeal.id;
+          console.log('[Quotes] Auto-created deal:', newDeal.id);
+        }
+      } catch (dealCreationError) {
+        console.warn('[Quotes] Error auto-creating deal:', dealCreationError);
+        // Don't throw - quote was created successfully, deal creation is optional
+      }
+    }
+
     toast.success('Quote created successfully', 'Success');
     return data;
   } catch (error) {
