@@ -174,12 +174,12 @@ serve(async (req) => {
           <!-- Footer -->
           <tr>
             <td class="footer">
-              <p class="footer-brand" style="margin: 0; font-weight: 700; color: #0D47A1; font-size: 18px; margin-bottom: 8px;">Northern Facilities Group</p>
+              <p class="footer-brand" style="margin: 0; font-weight: 700; color: #0D47A1; font-size: 18px; margin-bottom: 8px;">Northern Facilities Group Inc</p>
               <p class="footer-text" style="margin: 5px 0; font-size: 13px; color: #6c757d;">Professional Facilities Management Solutions</p>
               
               <div style="border-top: 1px solid #e9ecef; padding-top: 15px; margin-top: 15px;">
                 <p class="footer-text" style="margin: 5px 0; font-size: 12px;">
-                  <strong>Phone:</strong> (416) 555-0100
+                  <strong>Phone:</strong> 855-664-1144
                 </p>
                 <p class="footer-text" style="margin: 5px 0; font-size: 12px;">
                   <strong>Email:</strong> info@northernfacilitiesgroup.ca
