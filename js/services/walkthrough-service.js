@@ -49,7 +49,7 @@ export async function createWalkthroughRequest(data) {
 }
 
 /**
- * Send walkthrough welcome email
+ * Send walkthrough welcome email via Resend
  * @param {Object} businessData - Business/account information
  * @param {Object} contactData - Contact information
  * @param {Object} options - Additional options including booking time
@@ -59,22 +59,43 @@ export async function createWalkthroughRequest(data) {
  */
 export async function sendWalkthroughWelcomeEmail(businessData, contactData, options = {}) {
   try {
-    // Generate email content
+    // Generate email content (plain text)
     const emailContent = generateWalkthroughWelcomeEmail(businessData, contactData, options);
     
-    // TODO: Integrate with your email service (SendGrid, AWS SES, etc.)
-    // For now, we'll log it and you can implement the actual sending
-    console.log('[Walkthrough Service] Welcome email generated:');
-    console.log('To:', contactData.email || contactData.contact_email);
-    console.log('Subject: Welcome to Northern Facilities Group');
-    console.log('Content:', emailContent);
-    
-    // In production, you would:
-    // 1. Call your email API
-    // 2. Log the email send event
-    // 3. Update the walkthrough request status
-    
-    return true;
+    const recipientEmail = contactData.email || contactData.contact_email;
+    if (!recipientEmail) {
+      throw new Error('Recipient email address is required');
+    }
+
+    const subject = 'Welcome to Northern Facilities Group';
+
+    console.log('[Walkthrough Service] Sending welcome email via Resend...');
+    console.log('To:', recipientEmail);
+    console.log('Subject:', subject);
+
+    // Send email via Supabase Edge Function (which uses Resend)
+    const { data, error } = await supabase.functions.invoke('send-walkthrough-welcome-email', {
+      method: 'POST',
+      body: {
+        to: recipientEmail,
+        subject: subject,
+        emailContent: emailContent,
+        bookingDate: options.bookingDate || null,
+        bookingTime: options.bookingTime || null,
+      },
+    });
+
+    if (error) {
+      console.error('[Walkthrough Service] Edge Function error:', error);
+      throw error;
+    }
+
+    if (data && data.success) {
+      console.log('[Walkthrough Service] Welcome email sent successfully via Resend!', data);
+      return true;
+    } else {
+      throw new Error(data?.error || 'Failed to send email');
+    }
   } catch (error) {
     console.error('[Walkthrough Service] Error sending welcome email:', error);
     throw error;
