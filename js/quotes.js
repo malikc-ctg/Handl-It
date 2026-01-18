@@ -282,6 +282,7 @@ export async function createQuote(formData) {
 
         // Create deal
         // Deals table uses site_id and title (per ADD_SALES_PORTAL_SCHEMA.sql)
+        // Only include columns that exist in the schema
         const dealData = {
           site_id: insertData.account_id, // Deals table uses site_id column
           primary_contact_id: insertData.primary_contact_id || null,
@@ -290,10 +291,9 @@ export async function createQuote(formData) {
           stage: dealStage,
           latest_quote_id: data.id,
           latest_quote_revision_number: 1,
-          source: 'quote_auto',
-          // is_closed column may not exist - only include if column exists
-          last_activity_at: new Date().toISOString(),
-          next_action_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+          source: 'quote_auto'
+          // last_activity_at and next_action_at columns may not exist - removed
+          // is_closed column may not exist - removed
         };
         
         // If deals table has account_id column (added by migration), use it
@@ -411,9 +411,14 @@ export async function saveRevision(quoteId, revisionNumber, revisionData, lineIt
           unit_price: item.unit_price || null,
           range_low: item.range_low || null,
           range_high: item.range_high || null,
-          line_total: calculateLineTotal(item),
           display_order: index
         };
+        // Only include line_total if column exists
+        // This column may not exist in all schema versions
+        const calculatedTotal = calculateLineTotal(item);
+        if (calculatedTotal !== null && calculatedTotal !== undefined) {
+          baseItem.line_total = calculatedTotal;
+        }
         // Only include frequency_multiplier if column exists and item has it
         // This column may not exist in all schema versions
         if (item.frequency_multiplier !== undefined && item.frequency_multiplier !== null) {
@@ -868,9 +873,11 @@ export async function createFinalQuoteFromWalkthrough(quoteId) {
           unit_price: item.unit === 'range' ? (item.range_high + item.range_low) / 2 : item.unit_price, // Use midpoint for range
           range_low: null,
           range_high: null,
-          line_total: null, // Will be calculated
           display_order: index
         };
+        // Only include line_total if column exists
+        // This column may not exist in all schema versions - will be calculated by recalculateRevisionTotals if needed
+        // line_total: null - removed, column may not exist
         // Only include frequency_multiplier if column exists and item has it
         if (item.frequency_multiplier !== undefined && item.frequency_multiplier !== null) {
           newItem.frequency_multiplier = item.frequency_multiplier;
