@@ -211,48 +211,31 @@ function validateCurrentStep() {
     
     return true;
   } else if (currentWizardStep === 2) {
-    const quoteType = wizardData.quote_type;
+    // Step 2: Context - validate account, contact, quote type selection
     
-    if (quoteType === 'walkthrough_required') {
-      // Walkthrough - validate booking date and time
-      const bookingDate = document.getElementById('quote-walkthrough-booking-date')?.value;
-      const bookingTime = document.getElementById('quote-walkthrough-booking-time')?.value;
-      
-      if (!bookingDate) {
-        toast.error('Please select a booking date', 'Validation Error');
+    // Validate account selection based on account type
+    if (accountType === 'existing') {
+      const accountSelect = document.getElementById('quote-account-select')?.value;
+      if (!accountSelect) {
+        toast.error('Please select an account', 'Validation Error');
         return false;
       }
-      if (!bookingTime) {
-        toast.error('Please select a booking time', 'Validation Error');
+    } else if (accountType === 'new') {
+      const accountName = document.getElementById('new-account-name')?.value;
+      const accountAddress = document.getElementById('new-account-address')?.value;
+      if (!accountName || !accountAddress) {
+        toast.error('Please fill in required account fields (Name and Address)', 'Validation Error');
         return false;
-      }
-      
-      return true;
-    } else {
-      // Standard Quote - validate quote engine inputs
-      const serviceType = document.getElementById('quote-service-type')?.value;
-      const frequencyPerMonth = parseInt(document.getElementById('quote-frequency-per-month')?.value);
-      
-      if (!serviceType) {
-        toast.error('Please select a service type', 'Validation Error');
-        return false;
-      }
-      if (!frequencyPerMonth || frequencyPerMonth <= 0) {
-        toast.error('Please enter a valid frequency (visits per month)', 'Validation Error');
-        return false;
-      }
-      
-      // Check if calculation was successful
-      if (!wizardData.quote_calculation || !wizardData.quote_calculation.result) {
-        toast.error('Please fill in the quote form to calculate pricing', 'Validation Error');
-        return false;
-      }
-      
-      // Check if walkthrough is required
-      if (wizardData.quote_calculation.result.walkthrough_required) {
-        toast.warning('A walkthrough is recommended for accurate pricing. You can still proceed, but consider scheduling a walkthrough.', 'Walkthrough Recommended');
       }
     }
+    
+    // Validate quote type is selected
+    const quoteType = document.getElementById('quote-type-select')?.value || wizardData.quote_type;
+    if (!quoteType) {
+      toast.error('Please select a quote type', 'Validation Error');
+      return false;
+    }
+    
     return true;
   } else if (currentWizardStep === 4) {
     const expiryDays = document.getElementById('quote-expiry-days')?.value;
