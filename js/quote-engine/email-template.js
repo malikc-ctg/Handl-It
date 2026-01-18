@@ -142,7 +142,7 @@ export function generateWalkthroughWelcomeEmail(businessData, contactData, optio
   }
   
   const email = 'Dear ' + contactName + ',\n\n' +
-    'Thank you for your interest in Northern Facilities Group\'s commercial cleaning services!\n\n' +
+    'Thank you for your interest in Northern Facilities Group Inc\'s commercial cleaning services!\n\n' +
     'We\'re excited to work with you and look forward to learning more about your facility\'s specific needs.' + bookingInfo + '\n\n' +
     'Our team will arrive at the scheduled time to:\n' +
     '• Assess your facility\'s unique requirements\n' +
@@ -151,8 +151,8 @@ export function generateWalkthroughWelcomeEmail(businessData, contactData, optio
     '• Provide a detailed, customized quote\n\n' +
     'If you have any questions or need to reschedule, please contact us directly.\n\n' +
     'Best regards,\n\n' +
-    'Northern Facilities Group\n' +
-    'Phone: (416) 555-0100\n' +
+    'Northern Facilities Group Inc\n' +
+    'Phone: 855-664-1144\n' +
     'Email: info@northernfacilitiesgroup.ca';
 
   return email;
