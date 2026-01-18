@@ -164,7 +164,7 @@ function selectAccountType(type) {
     } else {
       existingBtn.classList.add('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
       existingBtn.classList.remove('border-nfgray', 'dark:border-gray-600');
-      newBtn.classList.remove('border-nfgray', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
+      newBtn.classList.remove('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
       newBtn.classList.add('border-nfgray', 'dark:border-gray-600');
     }
   }
@@ -712,20 +712,32 @@ function displayQuoteCalculation(result) {
   // Show result div
   resultDiv.classList.remove('hidden');
 
-  // Display monthly price
-  const monthlyPriceEl = document.getElementById('quote-monthly-price');
-  if (monthlyPriceEl) {
-    monthlyPriceEl.textContent = `$${result.monthly_price_inc_hst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  // Display monthly price (ex-HST)
+  const monthlyExHstEl = document.getElementById('calc-monthly-ex-hst');
+  if (monthlyExHstEl) {
+    monthlyExHstEl.textContent = `$${result.monthly_price_ex_hst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  // Display HST amount
+  const hstEl = document.getElementById('calc-hst');
+  if (hstEl) {
+    hstEl.textContent = `$${result.hst_amount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
+
+  // Display total (inc-HST)
+  const totalEl = document.getElementById('calc-total');
+  if (totalEl) {
+    totalEl.textContent = `$${result.monthly_price_inc_hst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Display per-visit price
-  const perVisitPriceEl = document.getElementById('quote-per-visit-price');
+  const perVisitPriceEl = document.getElementById('calc-per-visit');
   if (perVisitPriceEl) {
     perVisitPriceEl.textContent = `$${result.per_visit_price.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Display assumptions
-  const assumptionsEl = document.getElementById('quote-assumptions-display');
+  const assumptionsEl = document.getElementById('calc-assumptions');
   if (assumptionsEl) {
     let assumptionsText = `Up to ${result.assumptions.sqft_cap.toLocaleString()} sq ft`;
     if (result.assumptions.supplies_included) {
@@ -738,10 +750,9 @@ function displayQuoteCalculation(result) {
   }
 
   // Display walkthrough recommendation
-  const walkthroughEl = document.getElementById('quote-walkthrough-recommendation');
+  const walkthroughEl = document.getElementById('calc-walkthrough-warning');
   if (walkthroughEl) {
     if (result.walkthrough_required) {
-      walkthroughEl.textContent = 'Walkthrough recommended for accurate pricing';
       walkthroughEl.classList.remove('hidden');
     } else {
       walkthroughEl.classList.add('hidden');
@@ -1086,13 +1097,20 @@ async function confirmAndSendQuote() {
 
       // Get account/site data
       if (wizardData.account_id) {
-        const { data: account } = await supabase
-          .from('accounts')
-          .select('name, company_name')
+        // Query from sites table (where account_id references sites.id)
+        const { data: site } = await supabase
+          .from('sites')
+          .select('name, address, contact_email, contact_phone')
           .eq('id', wizardData.account_id)
           .single();
-        if (account) {
-          businessData = account;
+        if (site) {
+          businessData = {
+            name: site.name,
+            company_name: site.name,
+            address: site.address,
+            contact_email: site.contact_email,
+            contact_phone: site.contact_phone
+          };
         }
       } else if (wizardData.new_account_data) {
         businessData = wizardData.new_account_data;
