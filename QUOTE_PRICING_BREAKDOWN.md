@@ -95,15 +95,15 @@ Square footage determines a **multiplier** applied to base price. Bands are **no
 |------|------------|------------|---------------------|
 | **band_1** | 0-1,200 | 0.92 | No |
 | **band_2** | 1,201-1,600 | 1.00 (baseline) | No |
-| **band_3** | 1,601-2,000 | 1.14 | No |
-| **band_4** | 2,001-2,600 | 1.32 | **Yes** |
-| **band_5** | 2,601-3,500 | 1.55 | **Yes** |
+| **band_3** | 1,601-2,000 | 1.07 | No |
+| **band_4** | 2,001-2,600 | 1.15 | **Yes** |
+| **band_5** | 2,601-3,500 | 1.25 | **Yes** |
 | **band_6** | 3,501+ | Custom only | **Yes** |
 
 **Example:**
 - 1,500 sqft → band_2 → 1.00x multiplier
-- 1,800 sqft → band_3 → 1.14x multiplier (14% more than baseline)
-- 2,400 sqft → band_4 → 1.32x multiplier (32% more than baseline, requires walkthrough)
+- 1,800 sqft → band_3 → 1.07x multiplier (7% more than baseline)
+- 2,400 sqft → band_4 → 1.15x multiplier (15% more than baseline, requires walkthrough)
 
 ---
 

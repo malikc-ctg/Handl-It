@@ -21,9 +21,9 @@ export const QUOTE_CONFIG = {
   sqftBands: [
     { min: 0, max: 1200, multiplier: 0.92, label: 'band_1', walkthroughRequired: false },
     { min: 1201, max: 1600, multiplier: 1.00, label: 'band_2', walkthroughRequired: false }, // baseline
-    { min: 1601, max: 2000, multiplier: 1.14, label: 'band_3', walkthroughRequired: false },
-    { min: 2001, max: 2600, multiplier: 1.32, label: 'band_4', walkthroughRequired: true },
-    { min: 2601, max: 3500, multiplier: 1.55, label: 'band_5', walkthroughRequired: true },
+    { min: 1601, max: 2000, multiplier: 1.07, label: 'band_3', walkthroughRequired: false },
+    { min: 2001, max: 2600, multiplier: 1.15, label: 'band_4', walkthroughRequired: true },
+    { min: 2601, max: 3500, multiplier: 1.25, label: 'band_5', walkthroughRequired: true },
     { min: 3501, max: Infinity, multiplier: null, label: 'band_6', customOnly: true, walkthroughRequired: true }
   ],
 
