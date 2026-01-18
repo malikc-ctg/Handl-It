@@ -2067,12 +2067,10 @@
         if (!user) return [];
 
         // Load all deals including closed ones for kanban board
+        // Don't use relationship syntax to avoid FK errors - load contact data separately if needed
         let query = supabase
           .from('deals')
-          .select(`
-            *,
-            contact:contacts(id, full_name, email, phone, address)
-          `)
+          .select('*')
           .order('updated_at', { ascending: false });
 
         // Filter by assigned user if rep
