@@ -237,6 +237,51 @@ function validateCurrentStep() {
     }
     
     return true;
+  } else if (currentWizardStep === 3) {
+    // Step 3: Pricing - validate based on quote type
+    const quoteType = wizardData.quote_type;
+    
+    if (quoteType === 'walkthrough_required') {
+      // Walkthrough - validate booking date and time
+      const bookingDate = document.getElementById('quote-walkthrough-booking-date')?.value;
+      const bookingTime = document.getElementById('quote-walkthrough-booking-time')?.value;
+      
+      if (!bookingDate) {
+        toast.error('Please select a booking date', 'Validation Error');
+        return false;
+      }
+      if (!bookingTime) {
+        toast.error('Please select a booking time', 'Validation Error');
+        return false;
+      }
+      
+      return true;
+    } else {
+      // Standard Quote - validate quote engine inputs
+      const serviceType = document.getElementById('quote-service-type')?.value;
+      const frequencyPerMonth = parseInt(document.getElementById('quote-frequency-per-month')?.value);
+      
+      if (!serviceType) {
+        toast.error('Please select a service type', 'Validation Error');
+        return false;
+      }
+      if (!frequencyPerMonth || frequencyPerMonth <= 0) {
+        toast.error('Please enter a valid frequency (visits per month)', 'Validation Error');
+        return false;
+      }
+      
+      // Check if calculation was successful
+      if (!wizardData.quote_calculation || !wizardData.quote_calculation.result) {
+        toast.error('Please fill in the quote form to calculate pricing', 'Validation Error');
+        return false;
+      }
+      
+      // Check if walkthrough is required
+      if (wizardData.quote_calculation.result.walkthrough_required) {
+        toast.warning('A walkthrough is recommended for accurate pricing. You can still proceed, but consider scheduling a walkthrough.', 'Walkthrough Recommended');
+      }
+    }
+    return true;
   } else if (currentWizardStep === 4) {
     const expiryDays = document.getElementById('quote-expiry-days')?.value;
     if (!expiryDays || parseInt(expiryDays) < 1) {
