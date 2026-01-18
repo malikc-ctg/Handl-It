@@ -2458,10 +2458,10 @@
                 </div>
                 
                 <!-- Deal Title -->
-                <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2 line-clamp-2">${deal.company_name || deal.title || 'Unnamed Deal'}</h4>
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2 line-clamp-2">${deal.name || deal.company_name || deal.title || 'Unnamed Deal'}</h4>
                 
                 <!-- Description -->
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${contactName}${deal.address ? ' • ' + deal.address : ''}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${contactName}</p>
                 
                 <!-- Assignees and Due Date -->
                 <div class="flex items-center justify-between mb-3">
