@@ -315,8 +315,19 @@ function saveCurrentStepData() {
   } else if (currentWizardStep === 2) {
     if (accountType === 'existing') {
       wizardData.account_id = document.getElementById('quote-account-select')?.value || null;
+      wizardData.new_account_data = null; // Clear new account data
     } else {
-      wizardData.account_id = null; // New account
+      wizardData.account_id = null; // New account - will be created later
+      // Save new account data for later creation
+      wizardData.new_account_data = {
+        name: document.getElementById('new-account-name')?.value || '',
+        address: document.getElementById('new-account-address')?.value || '',
+        city: document.getElementById('new-account-city')?.value || '',
+        province: document.getElementById('new-account-province')?.value || '',
+        postal_code: document.getElementById('new-account-postal-code')?.value || '',
+        contact_phone: document.getElementById('new-account-phone')?.value || '',
+        contact_email: document.getElementById('new-account-email')?.value || ''
+      };
     }
     wizardData.primary_contact_id = document.getElementById('quote-contact-select')?.value || null;
     wizardData.deal_id = document.getElementById('quote-deal-select')?.value || null;
@@ -1002,6 +1013,41 @@ async function confirmAndSendQuote() {
   closeQuoteSendConfirmation();
 
   try {
+    // Create new account/site if needed before creating quote
+    if (!wizardData.account_id && wizardData.new_account_data && accountType === 'new') {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) throw new Error('User not authenticated');
+
+        // Create new site/account
+        const { data: newSite, error: siteError } = await supabase
+          .from('sites')
+          .insert({
+            name: wizardData.new_account_data.name,
+            address: wizardData.new_account_data.address,
+            contact_phone: wizardData.new_account_data.contact_phone || null,
+            contact_email: wizardData.new_account_data.contact_email || null,
+            status: 'Active',
+            created_by: user.id
+          })
+          .select()
+          .single();
+
+        if (siteError) {
+          console.error('[Quote Wizard] Error creating new site:', siteError);
+          toast.error('Failed to create account. Please try again.', 'Error');
+          throw siteError;
+        }
+
+        // Set account_id for quote creation
+        wizardData.account_id = newSite.id;
+        console.log('[Quote Wizard] Created new site/account:', newSite.id);
+      } catch (error) {
+        console.error('[Quote Wizard] Error creating account:', error);
+        throw error;
+      }
+    }
+
     // Create quote if not exists
     if (!currentQuoteId) {
       const quote = await quotesModule.createQuote({
