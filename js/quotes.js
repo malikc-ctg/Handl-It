@@ -281,12 +281,12 @@ export async function createQuote(formData) {
         const dealStage = formData.quote_type === 'walkthrough_required' ? 'qualification' : 'proposal';
 
         // Create deal
-        // Try account_id first, fallback to site_id (deals table may use either)
+        // Deals table uses site_id and title (per ADD_SALES_PORTAL_SCHEMA.sql)
         const dealData = {
-          site_id: insertData.account_id, // Primary column in deals table
+          site_id: insertData.account_id, // Deals table uses site_id column
           primary_contact_id: insertData.primary_contact_id || null,
           owner_user_id: insertData.owner_user_id,
-          name: `${accountName} - ${quoteTypeLabel} - ${currentYear}`,
+          title: `${accountName} - ${quoteTypeLabel} - ${currentYear}`, // Deals table uses title, not name
           stage: dealStage,
           latest_quote_id: data.id,
           latest_quote_revision_number: 1,
