@@ -282,16 +282,15 @@ export async function createQuote(formData) {
 
         // Create deal
         // Deals table uses site_id and title (per ADD_SALES_PORTAL_SCHEMA.sql)
-        // Only include columns that exist in the schema
+        // Only include columns that exist in the base schema
         const dealData = {
           site_id: insertData.account_id, // Deals table uses site_id column
           primary_contact_id: insertData.primary_contact_id || null,
           owner_user_id: insertData.owner_user_id,
           title: `${accountName} - ${quoteTypeLabel} - ${currentYear}`, // Deals table uses title, not name
           stage: dealStage,
-          latest_quote_id: data.id,
-          latest_quote_revision_number: 1,
           source: 'quote_auto'
+          // latest_quote_id, latest_quote_revision_number may not exist - removed
           // last_activity_at and next_action_at columns may not exist - removed
           // is_closed column may not exist - removed
         };
@@ -413,12 +412,9 @@ export async function saveRevision(quoteId, revisionNumber, revisionData, lineIt
           range_high: item.range_high || null,
           display_order: index
         };
-        // Only include line_total if column exists
+        // line_total column may not exist - removed from insert
         // This column may not exist in all schema versions
-        const calculatedTotal = calculateLineTotal(item);
-        if (calculatedTotal !== null && calculatedTotal !== undefined) {
-          baseItem.line_total = calculatedTotal;
-        }
+        // Totals are calculated on-the-fly when needed, not stored
         // Only include frequency_multiplier if column exists and item has it
         // This column may not exist in all schema versions
         if (item.frequency_multiplier !== undefined && item.frequency_multiplier !== null) {
