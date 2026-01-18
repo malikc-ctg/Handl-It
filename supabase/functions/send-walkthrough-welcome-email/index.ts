@@ -21,8 +21,23 @@ serve(async (req) => {
     // Get request body
     const { to, subject, emailContent, bookingDate, bookingTime } = await req.json()
 
+    console.log('[Walkthrough Email] Received request:', { 
+      to, 
+      subject, 
+      hasEmailContent: !!emailContent,
+      emailContentLength: emailContent?.length || 0,
+      bookingDate, 
+      bookingTime 
+    });
+
     if (!to || !emailContent) {
       throw new Error('to and emailContent are required')
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(to)) {
+      throw new Error(`Invalid email address format: ${to}`);
     }
 
     // Convert plain text email to HTML format with NFG branding
@@ -222,11 +237,20 @@ serve(async (req) => {
       body: JSON.stringify(emailPayload),
     })
 
-    const emailData = await emailResponse.json()
+    // Handle response - Resend might return non-JSON on some errors
+    let emailData;
+    const contentType = emailResponse.headers.get('content-type');
+    if (contentType && contentType.includes('application/json')) {
+      emailData = await emailResponse.json();
+    } else {
+      const textResponse = await emailResponse.text();
+      console.error('Resend API returned non-JSON response:', textResponse);
+      throw new Error(`Failed to send email: ${emailResponse.status} ${emailResponse.statusText} - ${textResponse}`);
+    }
 
     if (!emailResponse.ok) {
-      console.error('Resend API error:', emailData)
-      throw new Error(`Failed to send email: ${emailData.message || JSON.stringify(emailData)}`)
+      console.error('Resend API error:', emailData);
+      throw new Error(`Failed to send email: ${emailData.message || emailData.error?.message || JSON.stringify(emailData)}`);
     }
 
     console.log('✅ Walkthrough welcome email sent successfully via Resend!', emailData)
