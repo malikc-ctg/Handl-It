@@ -3,7 +3,15 @@
  * Deterministic pricing calculation based on service type, sqft, frequency, touchpoints, and complexity
  */
 
-import { QUOTE_CONFIG, getSqftBand, getFrequencyMultiplier } from './config.js';
+import { 
+  QUOTE_CONFIG, 
+  getSqftBand, 
+  getFrequencyMultiplier,
+  getTouchpointScores,
+  getTouchpointMax,
+  getComplexityFactors,
+  getComplexityMax
+} from './config.js';
 
 /**
  * Calculate quote from inputs
@@ -52,8 +60,14 @@ export function calculateQuote(inputs) {
     throw new Error(`Invalid service_type: ${inputs.service_type}`);
   }
 
-  // Determine sqft band
-  const sqftBand = getSqftBand(sqft);
+  // Get service-specific configurations
+  const touchpointScores = getTouchpointScores(inputs.service_type);
+  const touchpointMax = getTouchpointMax(inputs.service_type);
+  const complexityFactors = getComplexityFactors(inputs.service_type);
+  const complexityMax = getComplexityMax(inputs.service_type);
+
+  // Determine sqft band (with service-specific bands if available)
+  const sqftBand = getSqftBand(sqft, inputs.service_type);
   const estimationRequired = !sqft || sqft <= 0;
 
   // Check if custom-only (requires walkthrough)
@@ -68,8 +82,8 @@ export function calculateQuote(inputs) {
     };
   }
 
-  // Get frequency multiplier
-  const freqMultiplier = getFrequencyMultiplier(inputs.frequency_per_month);
+  // Get frequency multiplier (with service-specific multipliers if available)
+  const freqMultiplier = getFrequencyMultiplier(inputs.frequency_per_month, inputs.service_type);
   if (freqMultiplier.customOnly) {
     return {
       status: 'requires_walkthrough',
@@ -81,59 +95,61 @@ export function calculateQuote(inputs) {
     };
   }
 
-  // Calculate touchpoint multiplier
+  // Calculate touchpoint multiplier (using service-specific scores)
   let touchpointScore = 0;
   
-  // Washrooms (cap at 4 = 0.24)
-  touchpointScore += Math.min(numWashrooms * QUOTE_CONFIG.touchpointScores.washroom, 0.24);
+  // Washrooms (cap at 4 washrooms worth)
+  const washroomCap = 4 * touchpointScores.washroom;
+  touchpointScore += Math.min(numWashrooms * touchpointScores.washroom, washroomCap);
   
-  // Treatment rooms (cap at 5 = 0.20)
-  touchpointScore += Math.min(numTreatmentRooms * QUOTE_CONFIG.touchpointScores.treatment_room, 0.20);
+  // Treatment rooms (cap at 5 rooms worth)
+  const treatmentRoomCap = 5 * touchpointScores.treatment_room;
+  touchpointScore += Math.min(numTreatmentRooms * touchpointScores.treatment_room, treatmentRoomCap);
   
   // Reception
   if (hasReception) {
-    touchpointScore += QUOTE_CONFIG.touchpointScores.reception;
+    touchpointScore += touchpointScores.reception;
   }
   
   // Kitchen
   if (hasKitchen) {
-    touchpointScore += QUOTE_CONFIG.touchpointScores.kitchen;
+    touchpointScore += touchpointScores.kitchen;
   }
   
   // High touch disinfection
   if (highTouchDisinfection) {
-    touchpointScore += QUOTE_CONFIG.touchpointScores.high_touch_disinfection;
+    touchpointScore += touchpointScores.high_touch_disinfection;
   }
   
-  // Cap touchpoint score
-  touchpointScore = Math.min(touchpointScore, QUOTE_CONFIG.touchpointMax);
+  // Cap touchpoint score (using service-specific max)
+  touchpointScore = Math.min(touchpointScore, touchpointMax);
   const touchpointMultiplier = 1 + touchpointScore;
 
-  // Calculate complexity multiplier
+  // Calculate complexity multiplier (using service-specific factors)
   let complexityScore = 0;
   
   // Flooring
-  const flooringFactor = QUOTE_CONFIG.complexityFactors.flooring[flooring] || 0;
+  const flooringFactor = complexityFactors.flooring[flooring] || 0;
   complexityScore += flooringFactor;
   
   // After hours
   if (afterHours) {
-    complexityScore += QUOTE_CONFIG.complexityFactors.after_hours;
+    complexityScore += complexityFactors.after_hours;
   }
   
   // Supplies included
   if (suppliesIncluded) {
-    complexityScore += QUOTE_CONFIG.complexityFactors.supplies_included;
+    complexityScore += complexityFactors.supplies_included;
   }
   
   // Urgency
   let urgencyKey = '8+';
   if (urgencyDays <= 2) urgencyKey = '0-2';
   else if (urgencyDays <= 7) urgencyKey = '3-7';
-  complexityScore += QUOTE_CONFIG.complexityFactors.urgency[urgencyKey];
+  complexityScore += complexityFactors.urgency[urgencyKey];
   
-  // Cap complexity score
-  complexityScore = Math.min(complexityScore, QUOTE_CONFIG.complexityMax);
+  // Cap complexity score (using service-specific max)
+  complexityScore = Math.min(complexityScore, complexityMax);
   const complexityMultiplier = 1 + complexityScore;
 
   // Calculate base monthly price
