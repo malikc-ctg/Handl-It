@@ -630,6 +630,49 @@ function setupAutoCalculatePricing() {
   autoCalculateSetup = true;
 }
 
+// Track if quote engine listeners are set up to prevent duplicates
+let quoteEngineListenersSetup = false;
+
+// Setup event listeners for quote engine form inputs
+function setupQuoteEngineListeners() {
+  // Prevent duplicate listeners
+  if (quoteEngineListenersSetup) {
+    return;
+  }
+
+  // Get all quote engine form inputs
+  const serviceType = document.getElementById('quote-service-type');
+  const sqftEstimate = document.getElementById('quote-sqft-estimate');
+  const frequencyPerMonth = document.getElementById('quote-frequency-per-month');
+  const numWashrooms = document.getElementById('quote-num-washrooms');
+  const numTreatmentRooms = document.getElementById('quote-num-treatment-rooms');
+  const hasReception = document.getElementById('quote-has-reception');
+  const hasKitchen = document.getElementById('quote-has-kitchen');
+  const flooring = document.getElementById('quote-flooring');
+  const afterHours = document.getElementById('quote-after-hours');
+  const suppliesIncluded = document.getElementById('quote-supplies-included');
+  const highTouchDisinfection = document.getElementById('quote-high-touch-disinfection');
+  const urgencyDays = document.getElementById('quote-urgency-days');
+  const notes = document.getElementById('quote-notes');
+
+  // Add event listeners to all inputs
+  [serviceType, sqftEstimate, frequencyPerMonth, numWashrooms, numTreatmentRooms, flooring, urgencyDays, notes].forEach(input => {
+    if (input) {
+      input.addEventListener('input', calculateQuoteFromEngine);
+      input.addEventListener('change', calculateQuoteFromEngine);
+    }
+  });
+
+  // Add event listeners to checkboxes
+  [hasReception, hasKitchen, afterHours, suppliesIncluded, highTouchDisinfection].forEach(checkbox => {
+    if (checkbox) {
+      checkbox.addEventListener('change', calculateQuoteFromEngine);
+    }
+  });
+
+  quoteEngineListenersSetup = true;
+}
+
 // Calculate quote using Quote Engine v2
 function calculateQuoteFromEngine() {
   const quoteType = wizardData.quote_type || 'standard';
