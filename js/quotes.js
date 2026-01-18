@@ -281,21 +281,26 @@ export async function createQuote(formData) {
         const dealStage = formData.quote_type === 'walkthrough_required' ? 'qualification' : 'proposal';
 
         // Create deal
+        // Try account_id first, fallback to site_id (deals table may use either)
+        const dealData = {
+          site_id: insertData.account_id, // Primary column in deals table
+          primary_contact_id: insertData.primary_contact_id || null,
+          owner_user_id: insertData.owner_user_id,
+          name: `${accountName} - ${quoteTypeLabel} - ${currentYear}`,
+          stage: dealStage,
+          latest_quote_id: data.id,
+          latest_quote_revision_number: 1,
+          source: 'quote_auto',
+          is_closed: false,
+          last_activity_at: new Date().toISOString(),
+          next_action_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
+        };
+        
+        // If deals table has account_id column (added by migration), use it
+        // Otherwise site_id will be used
         const { data: newDeal, error: dealError } = await supabase
           .from('deals')
-          .insert({
-            account_id: insertData.account_id,
-            primary_contact_id: insertData.primary_contact_id || null,
-            owner_user_id: insertData.owner_user_id,
-            name: `${accountName} - ${quoteTypeLabel} - ${currentYear}`,
-            stage: dealStage,
-            latest_quote_id: data.id,
-            latest_quote_revision_number: 1,
-            source: 'quote_auto',
-            is_closed: false,
-            last_activity_at: new Date().toISOString(),
-            next_action_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
-          })
+          .insert(dealData)
           .select()
           .single();
 
