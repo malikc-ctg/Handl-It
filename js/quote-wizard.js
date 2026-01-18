@@ -88,6 +88,21 @@ export function initQuoteWizard() {
   // Auto-calculate pricing from cleaning metrics
   setupAutoCalculatePricing();
 
+  // Quote send confirmation modal handlers
+  const closeConfirmationBtn = document.getElementById('close-quote-send-confirmation-modal');
+  const cancelConfirmationBtn = document.getElementById('cancel-quote-send-btn');
+  const confirmSendBtn = document.getElementById('confirm-quote-send-btn');
+
+  if (closeConfirmationBtn) {
+    closeConfirmationBtn.addEventListener('click', closeQuoteSendConfirmation);
+  }
+  if (cancelConfirmationBtn) {
+    cancelConfirmationBtn.addEventListener('click', closeQuoteSendConfirmation);
+  }
+  if (confirmSendBtn) {
+    confirmSendBtn.addEventListener('click', confirmAndSendQuote);
+  }
+
   // Account type selection handlers
   const newAccountBtn = document.getElementById('account-type-new');
   const existingAccountBtn = document.getElementById('account-type-existing');
@@ -898,35 +913,44 @@ function showQuoteSendConfirmation() {
   let tax = 0;
   let total = 0;
 
-  // Try to read from displayed totals first (more accurate if quote engine was used)
-  const subtotalEl = document.getElementById('quote-subtotal');
-  const taxEl = document.getElementById('quote-tax');
-  const totalEl = document.getElementById('quote-total');
+  // Priority 1: Check if we have quote engine calculation results (most accurate)
+  if (wizardData.quote_calculation && wizardData.quote_calculation.result) {
+    const calc = wizardData.quote_calculation.result;
+    subtotal = calc.monthly_price_ex_hst || 0;
+    tax = calc.hst_amount || 0;
+    total = calc.monthly_price_inc_hst || 0;
+    console.log('[Quote Confirmation] Read from quote_calculation:', { subtotal, tax, total });
+  } else {
+    // Priority 2: Try to read from displayed totals in DOM
+    const subtotalEl = document.getElementById('quote-subtotal');
+    const taxEl = document.getElementById('quote-tax');
+    const totalEl = document.getElementById('quote-total');
 
-  if (subtotalEl && taxEl && totalEl) {
-    const subtotalText = subtotalEl.textContent.replace(/[^0-9.]/g, '');
-    const taxText = taxEl.textContent.replace(/[^0-9.]/g, '');
-    const totalText = totalEl.textContent.replace(/[^0-9.]/g, '');
-    
-    subtotal = parseFloat(subtotalText) || 0;
-    tax = parseFloat(taxText) || 0;
-    total = parseFloat(totalText) || 0;
+    if (subtotalEl && taxEl && totalEl) {
+      const subtotalText = subtotalEl.textContent.replace(/[^0-9.]/g, '');
+      const taxText = taxEl.textContent.replace(/[^0-9.]/g, '');
+      const totalText = totalEl.textContent.replace(/[^0-9.]/g, '');
+      
+      subtotal = parseFloat(subtotalText) || 0;
+      tax = parseFloat(taxText) || 0;
+      total = parseFloat(totalText) || 0;
 
-    console.log('[Quote Confirmation] Read from displayed totals:', { subtotal, tax, total });
-  }
+      console.log('[Quote Confirmation] Read from displayed totals:', { subtotal, tax, total });
+    }
 
-  // Fallback to calculating from wizardData line items
-  if (subtotal === 0 && wizardData.line_items && wizardData.line_items.length > 0) {
-    console.log('[Quote Confirmation] Calculating from wizardData line items');
-    wizardData.line_items.forEach((item, index) => {
-      const qty = parseFloat(item.quantity || 1);
-      const price = parseFloat(item.unit_price || 0);
-      subtotal += qty * price;
-      console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
-    });
-    
-    tax = subtotal * 0.13; // 13% HST
-    total = subtotal + tax;
+    // Priority 3: Fallback to calculating from wizardData line items
+    if (subtotal === 0 && wizardData.line_items && wizardData.line_items.length > 0) {
+      console.log('[Quote Confirmation] Calculating from wizardData line items');
+      wizardData.line_items.forEach((item, index) => {
+        const qty = parseFloat(item.quantity || 1);
+        const price = parseFloat(item.unit_price || 0);
+        subtotal += qty * price;
+        console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
+      });
+      
+      tax = subtotal * 0.13; // 13% HST
+      total = subtotal + tax;
+    }
   }
 
   // Update confirmation modal with totals
@@ -1079,8 +1103,17 @@ async function confirmAndSendQuote() {
       await loadQuotes();
     }
     
-    // Reload deals if on deals tab (since quote auto-creates a deal)
-    await refreshDealsIfOnDealsTab();
+    // Navigate to deals tab and refresh kanban board (since quote auto-creates a deal)
+    if (typeof window.switchTab === 'function') {
+      window.switchTab('deals');
+      // Give it a moment for the tab to switch, then load deals
+      setTimeout(async () => {
+        await refreshDealsIfOnDealsTab();
+      }, 300);
+    } else {
+      // Fallback: just refresh if already on deals tab
+      await refreshDealsIfOnDealsTab();
+    }
   } catch (error) {
     console.error('[Quote Wizard] Error sending quote:', error);
     toast.error('Failed to send quote', 'Error');
