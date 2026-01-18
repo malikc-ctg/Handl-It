@@ -83,7 +83,7 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
   const email = businessName + '\n' +
     address + '\n\n' +
     'Dear ' + contactName + ',\n\n' +
-    'Thank you for your interest in Northern Facilities Group\'s commercial cleaning services. We\'re pleased to provide you with a quote for your ' + serviceTypeSimple + ' facility.\n\n' +
+    'Thank you for your interest in Northern Facilities Group Inc\'s commercial cleaning services. We\'re pleased to provide you with a quote for your ' + serviceTypeSimple + ' facility.\n\n' +
     'SERVICE DETAILS:\n' +
     '- Frequency: ' + frequencyText + ' (' + frequency + ' visits per month)\n' +
     '- Service Type: ' + serviceTypeDisplay + '\n\n' +
@@ -100,8 +100,8 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
     walkthroughMessage + '\n\n' +
     'We\'re here to answer any questions you may have. Please don\'t hesitate to reach out.\n\n' +
     'Best regards,\n\n' +
-    'Northern Facilities Group\n' +
-    'Phone: (416) 555-0100\n' +
+    'Northern Facilities Group Inc\n' +
+    'Phone: 855-664-1144\n' +
     'Email: info@northernfacilitiesgroup.ca\n' +
     'Website: www.northernfacilitiesgroup.ca\n\n' +
     '---\n' +
