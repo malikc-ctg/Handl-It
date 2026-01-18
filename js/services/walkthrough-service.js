@@ -86,16 +86,22 @@ export async function sendWalkthroughWelcomeEmail(businessData, contactData, opt
     });
 
     if (error) {
-      console.error('[Walkthrough Service] Edge Function error:', error);
-      throw error;
+      console.error('[Walkthrough Service] Edge Function invoke error:', error);
+      throw new Error(`Failed to call email service: ${error.message || JSON.stringify(error)}`);
     }
 
-    if (data && data.success) {
-      console.log('[Walkthrough Service] Welcome email sent successfully via Resend!', data);
-      return true;
-    } else {
-      throw new Error(data?.error || 'Failed to send email');
+    // Handle both success and error responses
+    if (data) {
+      if (data.success) {
+        console.log('[Walkthrough Service] Welcome email sent successfully via Resend!', data);
+        return true;
+      } else if (data.error) {
+        console.error('[Walkthrough Service] Edge Function returned error:', data.error);
+        throw new Error(data.error);
+      }
     }
+
+    throw new Error('Failed to send email: Unknown error from email service');
   } catch (error) {
     console.error('[Walkthrough Service] Error sending welcome email:', error);
     throw error;

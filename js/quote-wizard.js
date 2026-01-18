@@ -1138,14 +1138,20 @@ async function confirmAndSendQuote() {
       
       if (emails.length > 0) {
         // Send to each email address
-        for (const email of emails) {
-          await sendWalkthroughWelcomeEmail(
-            businessData,
-            { ...contactData, email },
-            { bookingDate, bookingTime }
-          );
+        try {
+          for (const email of emails) {
+            await sendWalkthroughWelcomeEmail(
+              businessData,
+              { ...contactData, email },
+              { bookingDate, bookingTime }
+            );
+          }
+          toast.success('Welcome email sent successfully', 'Success');
+        } catch (emailError) {
+          console.error('[Quote Wizard] Error sending walkthrough welcome email:', emailError);
+          toast.error(`Failed to send email: ${emailError.message || 'Unknown error'}`, 'Email Error');
+          throw emailError; // Re-throw to stop the flow
         }
-        toast.success('Welcome email sent successfully', 'Success');
       } else {
         toast.warning('No email addresses provided', 'Warning');
       }
