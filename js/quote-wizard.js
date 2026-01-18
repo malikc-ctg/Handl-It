@@ -380,8 +380,39 @@ function updateWizardUI() {
   }
 }
 
-// Update step 2 UI based on quote type
+// Update step 2 UI based on account type and quote type
 function updateStep2UI() {
+  // Handle account type fields (new vs existing)
+  const existingAccountFields = document.getElementById('existing-account-fields');
+  const newAccountFields = document.getElementById('new-account-fields');
+  const primaryContactSelect = document.getElementById('quote-contact-select');
+  const primaryContactLabel = primaryContactSelect?.previousElementSibling;
+  
+  if (accountType === 'new') {
+    // Show new account fields, hide existing account dropdown
+    if (existingAccountFields) existingAccountFields.classList.add('hidden');
+    if (newAccountFields) newAccountFields.classList.remove('hidden');
+    // For new accounts, make contact field optional or show a different input
+    if (primaryContactSelect) {
+      primaryContactSelect.required = false;
+      primaryContactSelect.disabled = false;
+    }
+  } else if (accountType === 'existing') {
+    // Show existing account dropdown, hide new account fields
+    if (existingAccountFields) existingAccountFields.classList.remove('hidden');
+    if (newAccountFields) newAccountFields.classList.add('hidden');
+    // For existing accounts, contact is selected from dropdown
+    if (primaryContactSelect) {
+      primaryContactSelect.required = false;
+      primaryContactSelect.disabled = false;
+    }
+  } else {
+    // No account type selected yet - hide both
+    if (existingAccountFields) existingAccountFields.classList.add('hidden');
+    if (newAccountFields) newAccountFields.classList.add('hidden');
+  }
+
+  // Handle quote type fields (walkthrough vs standard)
   const quoteTypeSelect = document.getElementById('quote-type-select');
   const quoteType = quoteTypeSelect?.value || wizardData.quote_type || 'standard';
   const walkthroughSection = document.getElementById('walkthrough-scope-section');
