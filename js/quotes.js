@@ -291,7 +291,7 @@ export async function createQuote(formData) {
           latest_quote_id: data.id,
           latest_quote_revision_number: 1,
           source: 'quote_auto',
-          is_closed: false,
+          // is_closed column may not exist - only include if column exists
           last_activity_at: new Date().toISOString(),
           next_action_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 hours from now
         };
@@ -399,21 +399,28 @@ export async function saveRevision(quoteId, revisionNumber, revisionData, lineIt
 
     // Insert new line items
     if (lineItems && lineItems.length > 0) {
-      const itemsToInsert = lineItems.map((item, index) => ({
-        quote_id: quoteId,
-        revision_number: revisionNumber,
-        category: item.category || null,
-        name: item.name,
-        description: item.description || null,
-        quantity: item.quantity || 1,
-        unit: item.unit,
-        unit_price: item.unit_price || null,
-        range_low: item.range_low || null,
-        range_high: item.range_high || null,
-        frequency_multiplier: item.frequency_multiplier || 1,
-        line_total: calculateLineTotal(item),
-        display_order: index
-      }));
+      const itemsToInsert = lineItems.map((item, index) => {
+        const baseItem = {
+          quote_id: quoteId,
+          revision_number: revisionNumber,
+          category: item.category || null,
+          name: item.name,
+          description: item.description || null,
+          quantity: item.quantity || 1,
+          unit: item.unit,
+          unit_price: item.unit_price || null,
+          range_low: item.range_low || null,
+          range_high: item.range_high || null,
+          line_total: calculateLineTotal(item),
+          display_order: index
+        };
+        // Only include frequency_multiplier if column exists and item has it
+        // This column may not exist in all schema versions
+        if (item.frequency_multiplier !== undefined && item.frequency_multiplier !== null) {
+          baseItem.frequency_multiplier = item.frequency_multiplier;
+        }
+        return baseItem;
+      });
 
       const { error: itemsError } = await supabase
         .from('quote_line_items')
@@ -849,21 +856,27 @@ export async function createFinalQuoteFromWalkthrough(quoteId) {
       .order('display_order');
 
     if (oldItems && oldItems.length > 0) {
-      const newItems = oldItems.map((item, index) => ({
-        quote_id: quoteId,
-        revision_number: newRevisionNumber,
-        category: item.category,
-        name: item.name,
-        description: item.description,
-        quantity: item.quantity,
-        unit: item.unit === 'range' ? 'flat' : item.unit, // Convert range to flat
-        unit_price: item.unit === 'range' ? (item.range_high + item.range_low) / 2 : item.unit_price, // Use midpoint for range
-        range_low: null,
-        range_high: null,
-        frequency_multiplier: item.frequency_multiplier,
-        line_total: null, // Will be calculated
-        display_order: index
-      }));
+      const newItems = oldItems.map((item, index) => {
+        const newItem = {
+          quote_id: quoteId,
+          revision_number: newRevisionNumber,
+          category: item.category,
+          name: item.name,
+          description: item.description,
+          quantity: item.quantity,
+          unit: item.unit === 'range' ? 'flat' : item.unit, // Convert range to flat
+          unit_price: item.unit === 'range' ? (item.range_high + item.range_low) / 2 : item.unit_price, // Use midpoint for range
+          range_low: null,
+          range_high: null,
+          line_total: null, // Will be calculated
+          display_order: index
+        };
+        // Only include frequency_multiplier if column exists and item has it
+        if (item.frequency_multiplier !== undefined && item.frequency_multiplier !== null) {
+          newItem.frequency_multiplier = item.frequency_multiplier;
+        }
+        return newItem;
+      });
 
       await supabase
         .from('quote_line_items')
