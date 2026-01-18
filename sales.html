@@ -2061,7 +2061,8 @@
     }
 
     // Helper functions to load data
-    async function loadDealsForDashboard() {
+    // Expose to window for quote wizard to refresh deals
+    window.loadDealsForDashboard = async function loadDealsForDashboard() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
@@ -2329,7 +2330,8 @@
     }
 
     // Render deals in kanban board
-    function renderDealsKanban(deals) {
+    // Expose to window for quote wizard to refresh deals
+    window.renderDealsKanban = function renderDealsKanban(deals) {
       // Store deals globally for view switching
       globalDealsData = deals;
       

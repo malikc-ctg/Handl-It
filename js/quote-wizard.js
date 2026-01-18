@@ -91,57 +91,33 @@ export function initQuoteWizard() {
   // Account type selection handlers
   const newAccountBtn = document.getElementById('account-type-new');
   const existingAccountBtn = document.getElementById('account-type-existing');
+  
   if (newAccountBtn) {
-    newAccountBtn.addEventListener('click', () => selectAccountType('new'));
+    newAccountBtn.addEventListener('click', () => {
+      accountType = 'new';
+      selectAccountType('new');
+      updateStep2UI();
+    });
   }
+  
   if (existingAccountBtn) {
-    existingAccountBtn.addEventListener('click', () => selectAccountType('existing'));
-  }
-
-  // Close on backdrop click
-  if (modal) {
-    modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
-        closeWizard();
-      }
+    existingAccountBtn.addEventListener('click', () => {
+      accountType = 'existing';
+      selectAccountType('existing');
+      updateStep2UI();
     });
   }
-
-  // Quote send confirmation modal handlers
-  const confirmationModal = document.getElementById('quote-send-confirmation-modal');
-  const closeConfirmationBtn = document.getElementById('close-quote-send-confirmation-modal');
-  const cancelConfirmationBtn = document.getElementById('cancel-quote-send-btn');
-  const confirmSendBtn = document.getElementById('confirm-quote-send-btn');
-
-  if (closeConfirmationBtn) {
-    closeConfirmationBtn.addEventListener('click', closeQuoteSendConfirmation);
-  }
-  if (cancelConfirmationBtn) {
-    cancelConfirmationBtn.addEventListener('click', closeQuoteSendConfirmation);
-  }
-  if (confirmSendBtn) {
-    confirmSendBtn.addEventListener('click', confirmAndSendQuote);
-  }
-  if (confirmationModal) {
-    confirmationModal.addEventListener('click', (e) => {
-      if (e.target === confirmationModal) {
-        closeQuoteSendConfirmation();
-      }
-    });
-  }
+  
+  if (window.lucide) lucide.createIcons();
 }
 
-// Open wizard
 export function openQuoteWizard() {
   resetWizard();
-  currentWizardStep = 1;
-  updateWizardUI();
-  populateDropdowns();
-  populateCleaningServices();
-  
   const modal = document.getElementById('quote-builder-modal');
   if (modal) {
     modal.classList.remove('hidden');
+    populateDropdowns();
+    updateWizardUI();
   }
   
   if (window.lucide) lucide.createIcons();
@@ -173,18 +149,15 @@ function selectAccountType(type) {
     } else {
       existingBtn.classList.add('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
       existingBtn.classList.remove('border-nfgray', 'dark:border-gray-600');
-      newBtn.classList.remove('border-nfgblue', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
+      newBtn.classList.remove('border-nfgray', 'dark:border-blue-400', 'bg-nfglight', 'dark:bg-blue-900/30');
       newBtn.classList.add('border-nfgray', 'dark:border-gray-600');
     }
   }
   
-  // Move to next step after a brief delay for visual feedback
-  setTimeout(() => {
-    navigateStep(1);
-  }, 300);
+  updateStep2UI();
 }
 
-// Reset wizard data
+// Reset wizard to initial state
 function resetWizard() {
   currentWizardStep = 1;
   currentQuoteId = null;
@@ -207,48 +180,22 @@ function resetWizard() {
       services: []
     }
   };
-  
-  // Reset new account form fields
-  const newAccountFields = ['new-account-name', 'new-account-address', 'new-account-city', 
-                            'new-account-province', 'new-account-postal-code', 'new-account-phone', 'new-account-email'];
-  newAccountFields.forEach(fieldId => {
-    const field = document.getElementById(fieldId);
-    if (field) field.value = '';
-  });
-  
-  // Reset cleaning metrics form fields
-  const squareFootage = document.getElementById('quote-square-footage');
-  const restrooms = document.getElementById('quote-restrooms');
-  const kitchens = document.getElementById('quote-kitchens');
-  const floors = document.getElementById('quote-floors');
-  const frequency = document.getElementById('quote-cleaning-frequency');
-  const perSqftRate = document.getElementById('quote-per-sqft-rate');
-  
-  if (squareFootage) squareFootage.value = '';
-  if (restrooms) restrooms.value = '';
-  if (kitchens) kitchens.value = '';
-  if (floors) floors.value = '1';
-  if (frequency) frequency.value = 'weekly';
-  if (perSqftRate) perSqftRate.value = '';
-  
-  // Uncheck all service checkboxes
-  document.querySelectorAll('.quote-service-checkbox').forEach(cb => cb.checked = false);
+  updateWizardUI();
 }
 
 // Navigate between steps
 function navigateStep(direction) {
-  const newStep = currentWizardStep + direction;
-  
-  if (newStep < 1 || newStep > 4) return;
-
-  // Validate current step before moving forward
-  if (direction > 0 && !validateCurrentStep()) {
+  if (!validateCurrentStep()) {
     return;
   }
-
-  // Save current step data
+  
   saveCurrentStepData();
-
+  
+  const newStep = currentWizardStep + direction;
+  if (newStep < 1 || newStep > 4) {
+    return;
+  }
+  
   currentWizardStep = newStep;
   updateWizardUI();
 }
@@ -256,43 +203,14 @@ function navigateStep(direction) {
 // Validate current step
 function validateCurrentStep() {
   if (currentWizardStep === 1) {
+    // Validate account type selected
     if (!accountType) {
       toast.error('Please select an account type', 'Validation Error');
       return false;
     }
+    
     return true;
   } else if (currentWizardStep === 2) {
-    const quoteTypeSelect = document.getElementById('quote-type-select');
-    
-    if (!quoteTypeSelect?.value) {
-      toast.error('Please select a quote type', 'Validation Error');
-      return false;
-    }
-    
-    // Validate account selection for existing accounts
-    if (accountType === 'existing') {
-      const accountSelect = document.getElementById('quote-account-select');
-      if (!accountSelect?.value) {
-        toast.error('Please select an account', 'Validation Error');
-        return false;
-      }
-    } else if (accountType === 'new') {
-      // Validate new account fields
-      const accountName = document.getElementById('new-account-name')?.value?.trim();
-      const accountAddress = document.getElementById('new-account-address')?.value?.trim();
-      
-      if (!accountName) {
-        toast.error('Please enter an account name', 'Validation Error');
-        return false;
-      }
-      if (!accountAddress) {
-        toast.error('Please enter an address', 'Validation Error');
-        return false;
-      }
-    }
-    
-    return true;
-  } else if (currentWizardStep === 3) {
     const quoteType = wizardData.quote_type;
     
     if (quoteType === 'walkthrough_required') {
@@ -376,6 +294,9 @@ function saveCurrentStepData() {
     wizardData.cleaning_metrics = cleaningMetrics;
     
     if (quoteType === 'walkthrough_required') {
+      // Extract booking date/time from revision_data (they're only needed for email, not DB storage)
+      const { booking_date: _bookingDate, booking_time: _bookingTime, ...revisionDataForDB } = wizardData.revision_data || {};
+
       wizardData.revision_data = {
         service_schedule_summary: document.getElementById('quote-service-schedule')?.value || '',
         scope_summary: document.getElementById('quote-scope-summary')?.value || '',
@@ -419,85 +340,43 @@ function updateWizardUI() {
   // Update step indicators
   for (let i = 1; i <= 4; i++) {
     const indicator = document.getElementById(`wizard-step-${i}-indicator`);
-    const label = indicator?.nextElementSibling;
+    const stepDiv = document.getElementById(`wizard-step-${i}`);
+    
     if (indicator) {
-      if (i === currentWizardStep) {
-        indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
-        indicator.classList.add('bg-nfgblue', 'text-white');
-        if (label) {
-          label.classList.remove('text-gray-500', 'dark:text-gray-400');
-          label.classList.add('text-nfgblue', 'dark:text-blue-400');
-        }
-      } else if (i < currentWizardStep) {
-        indicator.classList.remove('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
-        indicator.classList.add('bg-green-500', 'text-white');
-        if (label) {
-          label.classList.remove('text-gray-500', 'dark:text-gray-400');
-          label.classList.add('text-green-600', 'dark:text-green-400');
-        }
+      if (i < currentWizardStep) {
+        indicator.classList.add('completed');
+        indicator.classList.remove('active');
+      } else if (i === currentWizardStep) {
+        indicator.classList.add('active');
+        indicator.classList.remove('completed');
       } else {
-        indicator.classList.remove('bg-nfgblue', 'bg-green-500', 'text-white');
-        indicator.classList.add('bg-gray-300', 'dark:bg-gray-600', 'text-gray-600', 'dark:text-gray-300');
-        if (label) {
-          label.classList.remove('text-nfgblue', 'dark:text-blue-400', 'text-green-600', 'dark:text-green-400');
-          label.classList.add('text-gray-500', 'dark:text-gray-400');
-        }
+        indicator.classList.remove('active', 'completed');
       }
     }
-  }
-
-  // Show/hide steps
-  for (let i = 1; i <= 4; i++) {
-    const step = document.getElementById(`wizard-step-${i}`);
-    if (step) {
-      step.classList.toggle('hidden', i !== currentWizardStep);
+    
+    if (stepDiv) {
+      stepDiv.classList.toggle('hidden', i !== currentWizardStep);
     }
   }
-
+  
   // Update navigation buttons
   const backBtn = document.getElementById('wizard-back-btn');
   const nextBtn = document.getElementById('wizard-next-btn');
   const sendBtn = document.getElementById('wizard-send-btn');
-
-  if (backBtn) {
-    backBtn.classList.toggle('hidden', currentWizardStep === 1);
-  }
-  if (nextBtn) {
-    nextBtn.classList.toggle('hidden', currentWizardStep === 4);
-  }
-  if (sendBtn) {
-    sendBtn.classList.toggle('hidden', currentWizardStep !== 4);
-  }
-
-  // Update step 2 UI based on account type
-  if (currentWizardStep === 2) {
-    updateStep2AccountFields();
-    updateStep2UI();
-  }
   
-  // Update step 3 UI based on quote type
+  if (backBtn) backBtn.style.display = currentWizardStep === 1 ? 'none' : 'block';
+  if (nextBtn) nextBtn.style.display = currentWizardStep === 4 ? 'none' : 'block';
+  if (sendBtn) sendBtn.style.display = currentWizardStep === 4 ? 'block' : 'none';
+  
+  // Update step-specific UI
+  updateStep2UI();
+  
   if (currentWizardStep === 3) {
-    updateStep2UI();
-    // Calculate quote if form is already filled
-    setTimeout(() => calculateQuoteFromEngine(), 100);
-  }
-}
-
-// Update step 2 account fields based on account type
-function updateStep2AccountFields() {
-  const existingFields = document.getElementById('existing-account-fields');
-  const newFields = document.getElementById('new-account-fields');
-  
-  if (accountType === 'existing') {
-    if (existingFields) existingFields.classList.remove('hidden');
-    if (newFields) newFields.classList.add('hidden');
-    const accountSelect = document.getElementById('quote-account-select');
-    if (accountSelect) accountSelect.required = true;
-  } else {
-    if (existingFields) existingFields.classList.add('hidden');
-    if (newFields) newFields.classList.remove('hidden');
-    const accountSelect = document.getElementById('quote-account-select');
-    if (accountSelect) accountSelect.required = false;
+    const quoteType = wizardData.quote_type;
+    if (quoteType === 'standard') {
+      // Trigger calculation when step 3 becomes visible
+      setTimeout(() => calculateQuoteFromEngine(), 100);
+    }
   }
 }
 
@@ -553,53 +432,33 @@ async function populateDropdowns() {
   }
 }
 
-// Populate cleaning services checklist
 function populateCleaningServices() {
   const servicesList = document.getElementById('quote-services-list');
-  if (!servicesList || !window.quotesModule) return;
+  if (!servicesList) return;
 
-  const services = window.quotesModule.services || [];
-  const categories = window.quotesModule.serviceCategories || [];
+  const services = [
+    'Office Cleaning (Daily)',
+    'Office Cleaning (Weekly)',
+    'Restroom Sanitizing & Deep Cleaning',
+    'Kitchen & Lunchroom Cleaning',
+    'Garbage & Recycling Removal',
+    'Touch-Point Disinfecting',
+    'Desk & Equipment Wipe-Down',
+    'Spot Cleaning (Walls, Doors, Glass)',
+    'High Dusting (Vents, Ledges, Fixtures)',
+    'Carpet, Rug & Upholstery Cleaning',
+    'Interior & Exterior Window Cleaning',
+    'Elevator Cab & Track Cleaning',
+    'Entrance Detailing & Glass Polishing',
+    'Janitorial Inspections & Quality Audits'
+  ];
 
-  if (services.length === 0) {
-    servicesList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No services available</p>';
-    return;
-  }
-
-  // Group services by category
-  const servicesByCategory = {};
-  categories.forEach(cat => {
-    servicesByCategory[cat.id] = {
-      category: cat,
-      services: services.filter(s => s.category_id === cat.id)
-    };
-  });
-
-  // Render services grouped by category
-  let html = '';
-  categories.forEach(cat => {
-    const catServices = servicesByCategory[cat.id]?.services || [];
-    if (catServices.length === 0) return;
-
-    html += `
-      <div class="mb-3">
-        <div class="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1 uppercase tracking-wide">${cat.name}</div>
-        <div class="space-y-1 pl-2">
-          ${catServices.map(service => `
-            <label class="flex items-center text-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 p-1 rounded">
-              <input type="checkbox" class="quote-service-checkbox mr-2 rounded" value="${service.id}" data-service-name="${service.name}">
-              <span class="text-gray-700 dark:text-gray-300">${service.name}</span>
-            </label>
-          `).join('')}
-        </div>
-      </div>
-    `;
-  });
-
-  servicesList.innerHTML = html || '<p class="text-sm text-gray-500 dark:text-gray-400">No services available</p>';
-  
-  // Re-setup auto-calculate after services are populated
-  setupAutoCalculatePricing();
+  servicesList.innerHTML = services.map(service => `
+    <label class="flex items-center space-x-2 cursor-pointer">
+      <input type="checkbox" class="quote-service-checkbox" value="${service}" data-price="0">
+      <span class="text-sm text-gray-700 dark:text-gray-300">${service}</span>
+    </label>
+  `).join('');
 }
 
 // Track if auto-calculate is set up to prevent duplicate listeners
@@ -765,296 +624,156 @@ function displayQuoteCalculation(result) {
   const resultDiv = document.getElementById('quote-calculation-result');
   if (!resultDiv) return;
 
-  if (result.status === 'requires_walkthrough') {
-    resultDiv.classList.remove('hidden');
-    document.getElementById('calc-walkthrough-warning')?.classList.remove('hidden');
-    return;
+  // Show result div
+  resultDiv.classList.remove('hidden');
+
+  // Display monthly price
+  const monthlyPriceEl = document.getElementById('quote-monthly-price');
+  if (monthlyPriceEl) {
+    monthlyPriceEl.textContent = `$${result.monthly_price_inc_hst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
-  resultDiv.classList.remove('hidden');
-  document.getElementById('calc-walkthrough-warning')?.classList.add('hidden');
+  // Display per-visit price
+  const perVisitPriceEl = document.getElementById('quote-per-visit-price');
+  if (perVisitPriceEl) {
+    perVisitPriceEl.textContent = `$${result.per_visit_price.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  }
 
-  // Update displayed values
-  const formatCurrency = (val) => `$${val.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  
-  document.getElementById('calc-monthly-ex-hst').textContent = formatCurrency(result.monthly_price_ex_hst);
-  document.getElementById('calc-per-visit').textContent = formatCurrency(result.per_visit_price);
-  document.getElementById('calc-hst').textContent = formatCurrency(result.hst_amount);
-  document.getElementById('calc-total').textContent = formatCurrency(result.monthly_price_inc_hst);
-
-  // Update assumptions
-  const assumptionsEl = document.getElementById('calc-assumptions');
+  // Display assumptions
+  const assumptionsEl = document.getElementById('quote-assumptions-display');
   if (assumptionsEl) {
-    let assumptionsText = `Assumes up to ${result.assumptions.sqft_cap.toLocaleString()} sq ft (${result.assumptions.band_label})`;
+    let assumptionsText = `Up to ${result.assumptions.sqft_cap.toLocaleString()} sq ft`;
     if (result.assumptions.supplies_included) {
-      assumptionsText += ', all supplies included';
+      assumptionsText += ', supplies included';
     }
     if (result.assumptions.healthcare_disinfection) {
       assumptionsText += ', healthcare-focused disinfection';
     }
     assumptionsEl.textContent = assumptionsText;
   }
-}
 
-// Legacy function name for backward compatibility
-function calculatePriceFromMetrics() {
-  calculateQuoteFromEngine();
-
-  // Calculate base monthly price
-  const baseMonthlyPrice = squareFootage * perSqftRate;
-
-  // Frequency multiplier (convert to monthly equivalent)
-  const frequencyMultipliers = {
-    'daily': 30,      // 30x monthly
-    'weekly': 4,      // 4x monthly
-    'bi-weekly': 2,   // 2x monthly
-    'monthly': 1,     // 1x monthly
-    'quarterly': 0.33 // 0.33x monthly
-  };
-  const frequencyMultiplier = frequencyMultipliers[frequency] || 1;
-
-  // Calculate adjusted base price
-  const adjustedBasePrice = baseMonthlyPrice * frequencyMultiplier;
-
-  // Additional costs
-  const restroomCost = restrooms * 25 * frequencyMultiplier; // $25 per restroom per cleaning
-  const kitchenCost = kitchens * 50 * frequencyMultiplier;   // $50 per kitchen per cleaning
-  const floorCost = (floors - 1) * 100 * frequencyMultiplier; // $100 per additional floor per cleaning
-
-  // Service add-ons (flat monthly rates that scale with frequency)
-  const serviceAddOns = {
-    'Carpet, Rug & Upholstery Cleaning': 200,
-    'Desk & Equipment Wipe-Down': 150,
-    'Elevator Cab & Track Cleaning': 75,
-    'Entrance Detailing & Glass Polishing': 100,
-    'Garbage & Recycling Removal': 50,
-    'High Dusting (Vents, Ledges, Fixtures)': 125,
-    'Interior & Exterior Window Cleaning': 300,
-    'Touch-Point Disinfecting': 100,
-    'Spot Cleaning (Walls, Doors, Glass)': 150
-  };
-
-  let serviceCost = 0;
-  selectedServices.forEach(service => {
-    const addOnPrice = serviceAddOns[service.name] || 0;
-    if (addOnPrice > 0) {
-      serviceCost += addOnPrice * frequencyMultiplier;
+  // Display walkthrough recommendation
+  const walkthroughEl = document.getElementById('quote-walkthrough-recommendation');
+  if (walkthroughEl) {
+    if (result.walkthrough_required) {
+      walkthroughEl.textContent = 'Walkthrough recommended for accurate pricing';
+      walkthroughEl.classList.remove('hidden');
+    } else {
+      walkthroughEl.classList.add('hidden');
     }
-  });
-
-  // Generate line items
-  const lineItems = [];
-
-  // Base cleaning service
-  if (adjustedBasePrice > 0) {
-    lineItems.push({
-      name: `Base Cleaning Service (${frequency})`,
-      description: `${squareFootage.toLocaleString()} sq ft @ $${perSqftRate.toFixed(2)}/sqft`,
-      quantity: 1,
-      unit: 'flat',
-      unit_price: adjustedBasePrice,
-      category: 'Base Service'
-    });
-  }
-
-  // Restrooms
-  if (restrooms > 0 && restroomCost > 0) {
-    lineItems.push({
-      name: 'Restroom Cleaning',
-      description: `${restrooms} restroom${restrooms > 1 ? 's' : ''}`,
-      quantity: restrooms,
-      unit: 'flat',
-      unit_price: 25 * frequencyMultiplier,
-      category: 'Additional Services'
-    });
-  }
-
-  // Kitchens
-  if (kitchens > 0 && kitchenCost > 0) {
-    lineItems.push({
-      name: 'Kitchen Cleaning',
-      description: `${kitchens} kitchen${kitchens > 1 ? 's' : ''}`,
-      quantity: kitchens,
-      unit: 'flat',
-      unit_price: 50 * frequencyMultiplier,
-      category: 'Additional Services'
-    });
-  }
-
-  // Additional floors
-  if (floors > 1 && floorCost > 0) {
-    lineItems.push({
-      name: 'Additional Floor Cleaning',
-      description: `${floors - 1} additional floor${floors > 2 ? 's' : ''}`,
-      quantity: floors - 1,
-      unit: 'flat',
-      unit_price: 100 * frequencyMultiplier,
-      category: 'Additional Services'
-    });
-  }
-
-  // Selected services
-  selectedServices.forEach(service => {
-    const addOnPrice = serviceAddOns[service.name];
-    if (addOnPrice > 0) {
-      lineItems.push({
-        name: service.name,
-        description: 'Additional service',
-        quantity: 1,
-        unit: 'flat',
-        unit_price: addOnPrice * frequencyMultiplier,
-        category: 'Premium Services'
-      });
-    }
-  });
-
-  // Update wizardData with calculated line items
-  wizardData.line_items = lineItems;
-  
-  console.log('[Auto-Calculate] Generated line items:', lineItems);
-  console.log('[Auto-Calculate] Total line items:', lineItems.length);
-  
-  // Re-render line items (only if we're on step 3 and binding section is visible)
-  const bindingSection = document.getElementById('binding-line-items-section');
-  if (bindingSection && !bindingSection.classList.contains('hidden')) {
-    renderLineItems();
-    // Update totals
-    updateLineItemsTotals();
-    console.log('[Auto-Calculate] Line items rendered and totals updated');
-  } else {
-    console.log('[Auto-Calculate] Binding section not visible - line items saved to wizardData only');
   }
 }
 
 // Setup line items handlers
 function setupLineItemsHandlers() {
-  const addBtn = document.getElementById('add-line-item-btn');
-  if (addBtn) {
-    addBtn.addEventListener('click', addLineItem);
+  const addLineItemBtn = document.getElementById('add-line-item-btn');
+  if (addLineItemBtn) {
+    addLineItemBtn.addEventListener('click', addLineItem);
   }
+
+  // Handle line item changes
+  document.addEventListener('change', (e) => {
+    if (e.target.classList.contains('line-item-quantity') || 
+        e.target.classList.contains('line-item-price') ||
+        e.target.classList.contains('line-item-unit')) {
+      updateLineItemsTotals();
+    }
+  });
+
+  // Handle line item removal
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('remove-line-item')) {
+      const itemId = e.target.dataset.itemId;
+      removeLineItem(itemId);
+    }
+  });
 }
 
 // Add line item
 function addLineItem() {
-  wizardData.line_items.push({
-    name: '',
-    description: '',
-    quantity: 1,
-    unit: 'flat',
-    unit_price: 0,
-    category: ''
-  });
-  renderLineItems();
+  const itemId = Date.now();
+  const lineItemsList = document.getElementById('quote-line-items-list');
+  
+  if (!lineItemsList) return;
+
+  const itemHTML = `
+    <div class="line-item flex items-center space-x-4 p-3 border border-nfgray dark:border-gray-700 rounded-lg" data-item-id="${itemId}">
+      <input type="text" class="line-item-name flex-1 px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Item name" data-item-id="${itemId}">
+      <input type="number" class="line-item-quantity w-20 px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Qty" value="1" min="1" data-item-id="${itemId}">
+      <select class="line-item-unit w-32 px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" data-item-id="${itemId}">
+        <option value="each">Each</option>
+        <option value="hour">Per Hour</option>
+        <option value="month">Per Month</option>
+        <option value="range">Range</option>
+      </select>
+      <input type="number" class="line-item-price w-32 px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Price" step="0.01" min="0" data-item-id="${itemId}">
+      <button type="button" class="remove-line-item text-red-500 hover:text-red-700" data-item-id="${itemId}">
+        <i data-lucide="trash-2" class="w-4 h-4"></i>
+      </button>
+    </div>
+  `;
+
+  lineItemsList.insertAdjacentHTML('beforeend', itemHTML);
+  
+  if (window.lucide) lucide.createIcons();
+  updateLineItemsTotals();
 }
 
 // Remove line item
-function removeLineItem(index) {
-  wizardData.line_items.splice(index, 1);
-  renderLineItems();
-}
-
-// Render line items
-function renderLineItems() {
-  const container = document.getElementById('quote-line-items-list');
-  if (!container) return;
-
-  if (wizardData.line_items.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 text-center py-4">No line items. Click "Add Line Item" to add one.</p>';
-    return;
+function removeLineItem(itemId) {
+  const item = document.querySelector(`.line-item[data-item-id="${itemId}"]`);
+  if (item) {
+    item.remove();
+    updateLineItemsTotals();
   }
-
-  container.innerHTML = wizardData.line_items.map((item, index) => `
-    <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
-        <div>
-          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Name</label>
-          <input type="text" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
-            data-index="${index}" data-field="name" value="${(item.name || '').replace(/"/g, '&quot;')}" placeholder="Item name">
-        </div>
-        <div>
-          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Category</label>
-          <input type="text" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
-            data-index="${index}" data-field="category" value="${(item.category || '').replace(/"/g, '&quot;')}" placeholder="Category">
-        </div>
-      </div>
-      <div class="mb-3">
-        <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Description</label>
-        <textarea class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
-          data-index="${index}" data-field="description" rows="2" placeholder="Description">${item.description || ''}</textarea>
-      </div>
-      <div class="grid grid-cols-4 gap-3">
-        <div>
-          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Quantity</label>
-          <input type="number" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
-            data-index="${index}" data-field="quantity" value="${item.quantity || 1}" min="0" step="0.01">
-        </div>
-        <div>
-          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Unit</label>
-          <select class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
-            data-index="${index}" data-field="unit">
-            <option value="flat" ${item.unit === 'flat' ? 'selected' : ''}>Flat</option>
-            <option value="sqft" ${item.unit === 'sqft' ? 'selected' : ''}>Sq Ft</option>
-            <option value="unit" ${item.unit === 'unit' ? 'selected' : ''}>Unit</option>
-            <option value="visit" ${item.unit === 'visit' ? 'selected' : ''}>Visit</option>
-            <option value="hour" ${item.unit === 'hour' ? 'selected' : ''}>Hour</option>
-          </select>
-        </div>
-        <div>
-          <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Unit Price</label>
-          <input type="number" class="line-item-field w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded bg-white dark:bg-gray-800 text-sm" 
-            data-index="${index}" data-field="unit_price" value="${item.unit_price || 0}" min="0" step="0.01">
-        </div>
-        <div class="flex items-end">
-          <button type="button" class="remove-line-item w-full px-3 py-2 bg-red-500 hover:bg-red-600 text-white rounded text-sm" data-index="${index}">
-            Remove
-          </button>
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  // Attach event listeners
-  container.querySelectorAll('.line-item-field').forEach(field => {
-    field.addEventListener('input', (e) => {
-      const index = parseInt(e.target.dataset.index);
-      const fieldName = e.target.dataset.field;
-      const value = fieldName === 'quantity' || fieldName === 'unit_price' 
-        ? parseFloat(e.target.value) || 0 
-        : e.target.value;
-      wizardData.line_items[index][fieldName] = value;
-      updateLineItemsTotals();
-    });
-  });
-
-  container.querySelectorAll('.remove-line-item').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      const index = parseInt(e.target.dataset.index);
-      removeLineItem(index);
-    });
-  });
-
-  updateLineItemsTotals();
 }
 
 // Update line items totals
 function updateLineItemsTotals() {
   let subtotal = 0;
-  wizardData.line_items.forEach(item => {
-    const qty = parseFloat(item.quantity || 1);
-    const price = parseFloat(item.unit_price || 0);
-    subtotal += qty * price;
-  });
+  let tax = 0;
+  let total = 0;
 
-  const tax = subtotal * 0.13; // 13% HST
-  const total = subtotal + tax;
+  // Check if we have quote engine calculation results
+  if (wizardData.quote_calculation && wizardData.quote_calculation.result) {
+    const calc = wizardData.quote_calculation.result;
+    subtotal = calc.monthly_price_ex_hst || 0;
+    tax = calc.hst_amount || 0;
+    total = calc.monthly_price_inc_hst || 0;
+  } else {
+    // Calculate from line items in DOM or wizardData
+    const lineItems = wizardData.line_items || [];
+    lineItems.forEach(item => {
+      const qty = parseFloat(item.quantity || 1);
+      const price = parseFloat(item.unit_price || 0);
+      if (item.unit !== 'range') {
+        subtotal += qty * price;
+      }
+    });
 
+    // Also check DOM for manual line items
+    const lineItemRows = document.querySelectorAll('.line-item');
+    lineItemRows.forEach(row => {
+      const qty = parseFloat(row.querySelector('.line-item-quantity')?.value || 1);
+      const price = parseFloat(row.querySelector('.line-item-price')?.value || 0);
+      const unit = row.querySelector('.line-item-unit')?.value || 'each';
+      if (unit !== 'range') {
+        subtotal += qty * price;
+      }
+    });
+    
+    tax = subtotal * 0.13; // 13% HST
+    total = subtotal + tax;
+  }
+
+  // Update UI
   const subtotalEl = document.getElementById('quote-subtotal');
   const taxEl = document.getElementById('quote-tax');
   const totalEl = document.getElementById('quote-total');
 
-  if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  if (taxEl) taxEl.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
-  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+  if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (taxEl) taxEl.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 // Handle save draft
@@ -1099,6 +818,9 @@ async function handleSaveDraft() {
     if (typeof loadQuotes === 'function') {
       await loadQuotes();
     }
+    
+    // Reload deals if on deals tab (since quote auto-creates a deal)
+    await refreshDealsIfOnDealsTab();
   } catch (error) {
     console.error('[Quote Wizard] Error saving draft:', error);
     toast.error('Failed to save draft', 'Error');
@@ -1113,60 +835,49 @@ function showQuoteSendConfirmation() {
   // Update line items totals first to ensure wizardData is synced with DOM
   updateLineItemsTotals();
   
-  // Try to read from the displayed totals first (most reliable)
-  const displayedSubtotalEl = document.getElementById('quote-subtotal');
-  const displayedTaxEl = document.getElementById('quote-tax');
-  const displayedTotalEl = document.getElementById('quote-total');
-  
   let subtotal = 0;
   let tax = 0;
   let total = 0;
-  
-  // If totals are displayed on the page, use those values
-  if (displayedSubtotalEl && displayedTaxEl && displayedTotalEl) {
-    const subtotalText = displayedSubtotalEl.textContent.replace(/[^0-9.]/g, '');
-    const taxText = displayedTaxEl.textContent.replace(/[^0-9.]/g, '');
-    const totalText = displayedTotalEl.textContent.replace(/[^0-9.]/g, '');
+
+  // Try to read from displayed totals first (more accurate if quote engine was used)
+  const subtotalEl = document.getElementById('quote-subtotal');
+  const taxEl = document.getElementById('quote-tax');
+  const totalEl = document.getElementById('quote-total');
+
+  if (subtotalEl && taxEl && totalEl) {
+    const subtotalText = subtotalEl.textContent.replace(/[^0-9.]/g, '');
+    const taxText = taxEl.textContent.replace(/[^0-9.]/g, '');
+    const totalText = totalEl.textContent.replace(/[^0-9.]/g, '');
     
     subtotal = parseFloat(subtotalText) || 0;
     tax = parseFloat(taxText) || 0;
     total = parseFloat(totalText) || 0;
-    
+
     console.log('[Quote Confirmation] Read from displayed totals:', { subtotal, tax, total });
   }
-  
-  // If displayed totals are 0 or not available, use quote engine results or calculate from wizardData
-  if (subtotal === 0 && total === 0) {
-    // Try quote engine results first
-    if (wizardData.quote_calculation?.result) {
-      const result = wizardData.quote_calculation.result;
-      subtotal = result.monthly_price_ex_hst || 0;
-      tax = result.hst_amount || 0;
-      total = result.monthly_price_inc_hst || 0;
-      console.log('[Quote Confirmation] Using quote engine results:', { subtotal, tax, total });
-    } else {
-      // Fallback to calculating from line items
-      console.log('[Quote Confirmation] Calculating from wizardData line items');
-      wizardData.line_items.forEach((item, index) => {
-        const qty = parseFloat(item.quantity || 1);
-        const price = parseFloat(item.unit_price || 0);
-        subtotal += qty * price;
-        console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
-      });
-      
-      tax = subtotal * 0.13; // 13% HST
-      total = subtotal + tax;
-    }
+
+  // Fallback to calculating from wizardData line items
+  if (subtotal === 0 && wizardData.line_items && wizardData.line_items.length > 0) {
+    console.log('[Quote Confirmation] Calculating from wizardData line items');
+    wizardData.line_items.forEach((item, index) => {
+      const qty = parseFloat(item.quantity || 1);
+      const price = parseFloat(item.unit_price || 0);
+      subtotal += qty * price;
+      console.log(`[Quote Confirmation] Item ${index}: ${item.name || 'Unnamed'}, qty=${qty}, price=${price}, subtotal=${qty * price}`);
+    });
+    
+    tax = subtotal * 0.13; // 13% HST
+    total = subtotal + tax;
   }
 
   // Update confirmation modal with totals
-  const subtotalEl = document.getElementById('confirmation-subtotal');
-  const taxEl = document.getElementById('confirmation-tax');
-  const totalEl = document.getElementById('confirmation-total');
+  const subtotalElConfirmation = document.getElementById('confirmation-subtotal');
+  const taxElConfirmation = document.getElementById('confirmation-tax');
+  const totalElConfirmation = document.getElementById('confirmation-total');
 
-  if (subtotalEl) subtotalEl.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (taxEl) taxEl.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (subtotalElConfirmation) subtotalElConfirmation.textContent = `$${subtotal.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (taxElConfirmation) taxElConfirmation.textContent = `$${tax.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  if (totalElConfirmation) totalElConfirmation.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   console.log('[Quote Confirmation] Final confirmation totals:', { 
     subtotal, 
@@ -1308,8 +1019,37 @@ async function confirmAndSendQuote() {
     if (typeof loadQuotes === 'function') {
       await loadQuotes();
     }
+    
+    // Reload deals if on deals tab (since quote auto-creates a deal)
+    await refreshDealsIfOnDealsTab();
   } catch (error) {
     console.error('[Quote Wizard] Error sending quote:', error);
     toast.error('Failed to send quote', 'Error');
+  }
+}
+
+// Refresh deals on Kanban board if currently on deals tab
+async function refreshDealsIfOnDealsTab() {
+  try {
+    // Check if we're on the deals tab by looking for the deals-kanban element
+    const dealsKanban = document.getElementById('deals-kanban');
+    const dealsTab = document.querySelector('[data-tab="deals"]');
+    const isDealsTabActive = dealsTab && dealsTab.classList.contains('active');
+    
+    if (dealsKanban || isDealsTabActive) {
+      // Check if loadDealsForDashboard and renderDealsKanban are available (from sales.html)
+      if (typeof window.loadDealsForDashboard === 'function' && typeof window.renderDealsKanban === 'function') {
+        const dealsData = await window.loadDealsForDashboard();
+        window.renderDealsKanban(dealsData);
+        console.log('[Quote Wizard] Refreshed deals Kanban board');
+      } else if (window.sales && typeof window.sales.loadDeals === 'function') {
+        // Fallback to sales module
+        await window.sales.loadDeals();
+        console.log('[Quote Wizard] Refreshed deals via sales module');
+      }
+    }
+  } catch (error) {
+    console.warn('[Quote Wizard] Could not refresh deals:', error);
+    // Don't throw - this is a nice-to-have refresh
   }
 }
