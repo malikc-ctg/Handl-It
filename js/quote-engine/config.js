@@ -13,7 +13,8 @@ export const QUOTE_CONFIG = {
     dental: 529,
     optical: 499,
     industrial: 699,
-    residential_common_area: 499
+    residential_common_area: 499,
+    restaurant: 599
   },
 
   // Sqft bands with multipliers
@@ -74,7 +75,8 @@ export const QUOTE_CONFIG = {
     dental: 529,
     optical: 499,
     industrial: 699,
-    residential_common_area: 499
+    residential_common_area: 499,
+    restaurant: 599
   },
 
   // HST rate (Ontario default)
@@ -278,6 +280,49 @@ export const QUOTE_CONFIG = {
         { maxVisits: 12, multiplier: 2.00 },
         { maxVisits: 16, multiplier: 2.45 },
         { maxVisits: 20, multiplier: 2.85 }
+      ]
+    },
+
+    restaurant: {
+      // Kitchen is critical for restaurants - higher weighting
+      touchpointScores: {
+        washroom: 0.08,  // Higher - customer-facing and staff washrooms
+        treatment_room: 0.00,  // Not applicable
+        reception: 0.03,  // Host stand
+        kitchen: 0.08,  // Critical - grease, food prep areas
+        high_touch_disinfection: 0.08  // Critical - tables, chairs, menus, POS systems
+      },
+      touchpointMax: 0.40,
+      // Restaurants often need frequent cleaning (daily or multiple times per week)
+      frequencyMultipliers: [
+        { maxVisits: 4, multiplier: 1.00 },
+        { maxVisits: 8, multiplier: 1.62 },
+        { maxVisits: 12, multiplier: 2.18 },
+        { maxVisits: 16, multiplier: 2.68 },
+        { maxVisits: 20, multiplier: 3.15 }
+      ],
+      // Higher complexity for grease, food residue, and after-hours cleaning
+      complexityFactors: {
+        flooring: {
+          mostly_hard: 0.00,
+          mixed: 0.06,  // Higher - grease on mixed surfaces
+          mostly_carpet: 0.10  // Carpet in restaurants is problematic
+        },
+        after_hours: 0.08,  // Higher - after-hours cleaning is common
+        supplies_included: 0.05,
+        urgency: {
+          '0-2': 0.08,
+          '3-7': 0.04,
+          '8+': 0.00
+        }
+      },
+      complexityMax: 0.25,
+      // Restaurants may need walkthroughs earlier due to kitchen complexity
+      sqftBands: [
+        { min: 0, max: 1200, multiplier: 0.92, walkthroughRequired: false },
+        { min: 1201, max: 1600, multiplier: 1.00, walkthroughRequired: false },
+        { min: 1601, max: 2200, multiplier: 1.10, walkthroughRequired: true },
+        { min: 2201, max: 3000, multiplier: 1.20, walkthroughRequired: true }
       ]
     }
   }
