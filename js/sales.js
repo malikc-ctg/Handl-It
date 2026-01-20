@@ -744,11 +744,12 @@ export async function createDeal(formData) {
 
       if (existingContact) {
         contactId = existingContact.id;
-      } else {
-        // Create new contact
+      } else if (siteId) {
+        // Create new contact - requires account_id for RLS policy
         const { data: newContact, error: contactError } = await supabase
           .from('account_contacts')
           .insert({
+            account_id: siteId, // Link contact to the site/account
             full_name: fullName,
             email: formData.contactEmail || null,
             phone: formData.contactPhone || null,
@@ -762,6 +763,8 @@ export async function createDeal(formData) {
         } else {
           contactId = newContact.id;
         }
+      } else {
+        console.warn('[Sales] Cannot create contact without site/account. Company name is required.');
       }
     }
 
@@ -776,7 +779,7 @@ export async function createDeal(formData) {
         stage: formData.stage || 'prospecting',
         assigned_to: currentUser.id,
         priority: formData.priority || 'medium',
-        deal_value: formData.value ? parseFloat(formData.value) : null,
+        estimated_value: formData.value ? parseFloat(formData.value) : null,
         expected_close_date: formData.closeDate || null,
         notes: formData.notes || null,
         owner_user_id: currentUser.id
