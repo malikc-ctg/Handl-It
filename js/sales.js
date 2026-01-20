@@ -676,6 +676,9 @@ export async function openDealDetail(dealId) {
 
 export async function createDeal(formData) {
   try {
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:676',message:'createDeal called',data:{hasCompanyName:!!formData.companyName,hasContactInfo:!!(formData.contactFirstName||formData.contactEmail),formDataKeys:Object.keys(formData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     let siteId = null;
     let contactId = null;
 
@@ -712,9 +715,20 @@ export async function createDeal(formData) {
 
         if (siteError) {
           console.warn('[Sales] Error creating site:', siteError);
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:714',message:'Site creation error',data:{error:siteError.message,code:siteError.code},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
         } else {
           siteId = newSite.id;
+          // #region agent log
+          fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:716',message:'Site created',data:{siteId,siteIdType:typeof siteId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+          // #endregion
         }
+      } else {
+        siteId = existingSite.id;
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:699',message:'Existing site found',data:{siteId,siteIdType:typeof siteId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
       }
     }
 
@@ -744,50 +758,58 @@ export async function createDeal(formData) {
 
       if (existingContact) {
         contactId = existingContact.id;
-      } else if (siteId) {
-        // Create new contact - requires account_id for RLS policy
-        const { data: newContact, error: contactError } = await supabase
-          .from('account_contacts')
-          .insert({
-            account_id: siteId, // Link contact to the site/account
-            full_name: fullName,
-            email: formData.contactEmail || null,
-            phone: formData.contactPhone || null,
-            title: formData.contactTitle || null
-          })
-          .select('id')
-          .single();
-
-        if (contactError) {
-          console.warn('[Sales] Error creating contact:', contactError);
-        } else {
-          contactId = newContact.id;
-        }
       } else {
-        console.warn('[Sales] Cannot create contact without site/account. Company name is required.');
+        // Note: account_contacts requires account_id (UUID from accounts table)
+        // Since we're creating a site (BIGINT), not an account (UUID), we skip contact creation
+        // The contact info will still be stored in the deal's notes or can be added later
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:747',message:'Skipping contact creation - siteId is BIGINT but account_contacts requires UUID account_id',data:{siteId,siteIdType:typeof siteId,fullName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+        // #endregion
+        console.warn('[Sales] Contact info provided but cannot create account_contact without account UUID. Contact info will be stored in deal notes.');
       }
     }
 
     // Create deal
     const dealTitle = formData.dealTitle || formData.companyName || 'New Deal';
+    // Build notes with contact info if contact wasn't created
+    let dealNotes = formData.notes || '';
+    if (!contactId && (formData.contactFirstName || formData.contactEmail || formData.contactPhone)) {
+      const contactInfo = [
+        formData.contactFirstName && formData.contactLastName ? `${formData.contactFirstName} ${formData.contactLastName}` : formData.contactFirstName || formData.contactLastName,
+        formData.contactEmail,
+        formData.contactPhone,
+        formData.contactTitle
+      ].filter(Boolean).join(' | ');
+      dealNotes = dealNotes ? `${dealNotes}\n\nContact: ${contactInfo}` : `Contact: ${contactInfo}`;
+    }
+    
+    const dealInsertData = {
+      site_id: siteId,
+      primary_contact_id: contactId,
+      title: dealTitle,
+      stage: formData.stage || 'prospecting',
+      assigned_to: currentUser.id,
+      priority: formData.priority || 'medium',
+      deal_value: formData.value ? parseFloat(formData.value) : null,
+      expected_close_date: formData.closeDate || null,
+      notes: dealNotes || null,
+      owner_user_id: currentUser.id
+    };
+    // #region agent log
+    fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:772',message:'Attempting deal creation',data:{dealInsertData,hasDealValue:dealInsertData.hasOwnProperty('deal_value'),insertKeys:Object.keys(dealInsertData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     const { data, error } = await supabase
       .from('deals')
-      .insert({
-        site_id: siteId,
-        primary_contact_id: contactId,
-        title: dealTitle,
-        stage: formData.stage || 'prospecting',
-        assigned_to: currentUser.id,
-        priority: formData.priority || 'medium',
-        estimated_value: formData.value ? parseFloat(formData.value) : null,
-        expected_close_date: formData.closeDate || null,
-        notes: formData.notes || null,
-        owner_user_id: currentUser.id
-      })
+      .insert(dealInsertData)
       .select()
       .single();
 
-    if (error) throw error;
+    if (error) {
+      // #region agent log
+      fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:788',message:'Deal creation error',data:{error:error.message,code:error.code,details:error.details,hint:error.hint,insertKeys:Object.keys(dealInsertData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+      // #endregion
+      throw error;
+    }
 
     await loadDeals();
     toast.success('Lead/Deal created successfully', 'Success');
