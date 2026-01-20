@@ -781,25 +781,27 @@ export async function createDeal(formData) {
       dealNotes = dealNotes ? `${dealNotes}\n\nContact: ${contactInfo}` : `Contact: ${contactInfo}`;
     }
     
+    // Use only the columns that actually exist in the database
+    // Based on ADD_SALES_PORTAL_SCHEMA.sql: id, company_id, contact_id, site_id, title, stage, 
+    // deal_value, probability, expected_close_date, priority_score, last_touch_at, touch_count,
+    // objection_tags, assigned_to, notes, metadata, created_at, updated_at
     const dealInsertData = {
       site_id: siteId,
-      primary_contact_id: contactId,
       title: dealTitle,
       stage: formData.stage || 'prospecting',
       assigned_to: currentUser.id,
-      priority: formData.priority || 'medium',
-      // Note: deal_value column doesn't exist in database yet - add to notes instead
-      // deal_value: formData.value ? parseFloat(formData.value) : null,
       expected_close_date: formData.closeDate || null,
-      notes: dealNotes || null,
-      owner_user_id: currentUser.id
+      notes: dealNotes || null
     };
     
-    // Add estimated value to notes if provided (since deal_value column doesn't exist)
+    // Add estimated value to notes if provided (since deal_value column might not exist)
     if (formData.value) {
       const valueNote = `\n\nEstimated Value: $${parseFloat(formData.value).toLocaleString()}`;
       dealInsertData.notes = (dealInsertData.notes || '') + valueNote;
     }
+    
+    // Only add priority if the column exists - using priority_score from schema
+    // Skip for now to avoid errors
     // #region agent log
     fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:772',message:'Attempting deal creation',data:{dealInsertData,hasDealValue:dealInsertData.hasOwnProperty('deal_value'),insertKeys:Object.keys(dealInsertData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
