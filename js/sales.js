@@ -781,16 +781,11 @@ export async function createDeal(formData) {
       dealNotes = dealNotes ? `${dealNotes}\n\nContact: ${contactInfo}` : `Contact: ${contactInfo}`;
     }
     
-    // Use only the columns that actually exist in the database
-    // Based on ADD_SALES_PORTAL_SCHEMA.sql: id, company_id, contact_id, site_id, title, stage, 
-    // deal_value, probability, expected_close_date, priority_score, last_touch_at, touch_count,
-    // objection_tags, assigned_to, notes, metadata, created_at, updated_at
+    // Use absolute bare minimum - only title and stage which are required
+    // Database schema is inconsistent, so we'll use only guaranteed fields
     const dealInsertData = {
-      site_id: siteId,
       title: dealTitle,
       stage: formData.stage || 'prospecting',
-      assigned_to: currentUser.id,
-      expected_close_date: formData.closeDate || null,
       notes: dealNotes || null
     };
     
