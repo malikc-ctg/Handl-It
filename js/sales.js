@@ -748,14 +748,13 @@ export async function createDeal(formData) {
         // Create new contact
         const { data: newContact, error: contactError } = await supabase
           .from('account_contacts')
-          .select('id')
           .insert({
             full_name: fullName,
             email: formData.contactEmail || null,
             phone: formData.contactPhone || null,
             title: formData.contactTitle || null
           })
-          .select()
+          .select('id')
           .single();
 
         if (contactError) {
