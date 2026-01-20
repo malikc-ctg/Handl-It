@@ -788,11 +788,18 @@ export async function createDeal(formData) {
       stage: formData.stage || 'prospecting',
       assigned_to: currentUser.id,
       priority: formData.priority || 'medium',
-      deal_value: formData.value ? parseFloat(formData.value) : null,
+      // Note: deal_value column doesn't exist in database yet - add to notes instead
+      // deal_value: formData.value ? parseFloat(formData.value) : null,
       expected_close_date: formData.closeDate || null,
       notes: dealNotes || null,
       owner_user_id: currentUser.id
     };
+    
+    // Add estimated value to notes if provided (since deal_value column doesn't exist)
+    if (formData.value) {
+      const valueNote = `\n\nEstimated Value: $${parseFloat(formData.value).toLocaleString()}`;
+      dealInsertData.notes = (dealInsertData.notes || '') + valueNote;
+    }
     // #region agent log
     fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:772',message:'Attempting deal creation',data:{dealInsertData,hasDealValue:dealInsertData.hasOwnProperty('deal_value'),insertKeys:Object.keys(dealInsertData)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
