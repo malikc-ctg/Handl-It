@@ -782,12 +782,10 @@ export async function createDeal(formData) {
     }
     
     // Use absolute bare minimum - only title and stage which are required
-    // Include priority_score as null to satisfy database triggers
     const dealInsertData = {
       title: dealTitle,
       stage: formData.stage || 'prospecting',
-      notes: dealNotes || null,
-      priority_score: null  // May be required by trigger even if column doesn't exist in base schema
+      notes: dealNotes || null
     };
     
     // Add estimated value to notes if provided (since deal_value column might not exist)
