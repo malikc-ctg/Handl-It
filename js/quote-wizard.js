@@ -4,8 +4,7 @@
 import * as quotesModule from './quotes.js';
 import { toast } from './notifications.js';
 import { calculateQuote } from './quote-engine/calculator.js';
-import { generateQuoteEmail, generateWalkthroughWelcomeEmail } from './quote-engine/email-template.js';
-import { createWalkthroughRequest, sendWalkthroughWelcomeEmail } from './services/walkthrough-service.js';
+import { createWalkthroughRequest } from './services/walkthrough-service.js';
 import { supabase } from './supabase.js';
 
 let currentWizardStep = 1;
@@ -381,7 +380,6 @@ function saveCurrentStepData() {
     }
   } else if (currentWizardStep === 4) {
     wizardData.revision_data.billing_frequency = document.getElementById('quote-billing-frequency')?.value || 'monthly';
-    wizardData.revision_data.contract_term_months = parseInt(document.getElementById('quote-contract-term')?.value || 12);
     const startDate = document.getElementById('quote-start-date')?.value;
     if (startDate) {
       wizardData.revision_data.start_date_proposed = startDate;
@@ -1007,7 +1005,7 @@ function closeQuoteSendConfirmation() {
   }
 }
 
-// Handle send quote - shows confirmation first
+// Handle create quote - shows confirmation first
 async function handleSendQuote() {
   if (!validateCurrentStep()) {
     return;
@@ -1019,7 +1017,7 @@ async function handleSendQuote() {
   showQuoteSendConfirmation();
 }
 
-// Actually send the quote (called after confirmation)
+// Actually create the quote (called after confirmation)
 async function confirmAndSendQuote() {
   closeQuoteSendConfirmation();
 
@@ -1070,7 +1068,7 @@ async function confirmAndSendQuote() {
       currentQuoteId = quote.id;
     }
 
-    // Extract booking date/time from revision_data (they're only needed for email, not DB storage)
+    // Extract booking date/time from revision_data (they're stored in DB for walkthrough quotes)
     const { booking_date, booking_time, ...revisionDataForDB } = wizardData.revision_data || {};
 
     // Save revision
@@ -1089,82 +1087,7 @@ async function confirmAndSendQuote() {
 
     await quotesModule.saveRevision(currentQuoteId, 1, revisionData, lineItemsToSave);
 
-    // For walkthrough quotes, send welcome email instead of regular quote email
-    if (wizardData.quote_type === 'walkthrough_required') {
-      // Get business and contact data
-      let businessData = {};
-      let contactData = {};
-
-      // Get account/site data
-      if (wizardData.account_id) {
-        // Query from sites table (where account_id references sites.id)
-        const { data: site } = await supabase
-          .from('sites')
-          .select('name, address, contact_email, contact_phone')
-          .eq('id', wizardData.account_id)
-          .single();
-        if (site) {
-          businessData = {
-            name: site.name,
-            company_name: site.name,
-            address: site.address,
-            contact_email: site.contact_email,
-            contact_phone: site.contact_phone
-          };
-        }
-      } else if (wizardData.new_account_data) {
-        businessData = wizardData.new_account_data;
-      }
-
-      // Get contact data
-      if (wizardData.primary_contact_id) {
-        const { data: contact } = await supabase
-          .from('account_contacts')
-          .select('full_name, name, email, contact_email')
-          .eq('id', wizardData.primary_contact_id)
-          .single();
-        if (contact) {
-          contactData = contact;
-        }
-      }
-
-      // Use booking date and time that we extracted earlier
-      const bookingDate = booking_date || '';
-      const bookingTime = booking_time || '';
-
-      // Send welcome email
-      const emailsInput = document.getElementById('quote-send-emails')?.value || '';
-      const emails = emailsInput.split(',').map(e => e.trim()).filter(e => e);
-      
-      if (emails.length > 0) {
-        // Send to each email address
-        try {
-          for (const email of emails) {
-            await sendWalkthroughWelcomeEmail(
-              businessData,
-              { ...contactData, email },
-              { bookingDate, bookingTime }
-            );
-          }
-          toast.success('Welcome email sent successfully', 'Success');
-        } catch (emailError) {
-          console.error('[Quote Wizard] Error sending walkthrough welcome email:', emailError);
-          toast.error(`Failed to send email: ${emailError.message || 'Unknown error'}`, 'Email Error');
-          throw emailError; // Re-throw to stop the flow
-        }
-      } else {
-        toast.warning('No email addresses provided', 'Warning');
-      }
-    } else {
-      // Standard quote - send revision
-      const emailsInput = document.getElementById('quote-send-emails')?.value || '';
-      const emails = emailsInput.split(',').map(e => e.trim()).filter(e => e);
-      const expiryDays = parseInt(document.getElementById('quote-expiry-days')?.value || 7);
-
-      await quotesModule.sendRevision(currentQuoteId, 1, emails, expiryDays);
-
-      toast.success('Quote sent successfully', 'Success');
-    }
+    toast.success('Quote created successfully', 'Success');
 
     closeWizard();
     
@@ -1185,8 +1108,8 @@ async function confirmAndSendQuote() {
       await refreshDealsIfOnDealsTab();
     }
   } catch (error) {
-    console.error('[Quote Wizard] Error sending quote:', error);
-    toast.error('Failed to send quote', 'Error');
+    console.error('[Quote Wizard] Error creating quote:', error);
+    toast.error('Failed to create quote', 'Error');
   }
 }
 
