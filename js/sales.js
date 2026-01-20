@@ -700,6 +700,9 @@ export async function createDeal(formData) {
 
       if (existingSite) {
         siteId = existingSite.id;
+        // #region agent log
+        fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:699',message:'Existing site found',data:{siteId,siteIdType:typeof siteId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+        // #endregion
       } else {
         // Create new site
         const { data: newSite, error: siteError } = await supabase
@@ -724,11 +727,6 @@ export async function createDeal(formData) {
           fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:716',message:'Site created',data:{siteId,siteIdType:typeof siteId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
           // #endregion
         }
-      } else {
-        siteId = existingSite.id;
-        // #region agent log
-        fetch('http://127.0.0.1:7244/ingest/1bafbe09-017f-4fe1-86be-5b3d73662238',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'sales.js:699',message:'Existing site found',data:{siteId,siteIdType:typeof siteId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-        // #endregion
       }
     }
 
