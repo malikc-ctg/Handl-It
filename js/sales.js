@@ -226,16 +226,9 @@ async function loadSites() {
     
     if (error) throw error;
     sites = data || [];
-    
-    // Populate site select in create deal modal
-    const siteSelect = document.getElementById('deal-site-select');
-    if (siteSelect) {
-      siteSelect.innerHTML = '<option value="">Select a site...</option>' +
-        sites.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
-    }
   } catch (error) {
     console.error('[Sales] Error loading sites:', error);
-    toast.error('Failed to load sites', 'Error');
+    // Don't show error toast for sites loading - it's not critical for deal creation
   }
 }
 
@@ -683,15 +676,111 @@ export async function openDealDetail(dealId) {
 
 export async function createDeal(formData) {
   try {
+    let siteId = null;
+    let contactId = null;
+
+    // Create or find site if company name is provided
+    if (formData.companyName) {
+      const fullAddress = [
+        formData.address,
+        formData.city,
+        formData.province,
+        formData.postalCode
+      ].filter(Boolean).join(', ');
+
+      // Check if site already exists
+      const { data: existingSite } = await supabase
+        .from('sites')
+        .select('id')
+        .eq('name', formData.companyName)
+        .single();
+
+      if (existingSite) {
+        siteId = existingSite.id;
+      } else {
+        // Create new site
+        const { data: newSite, error: siteError } = await supabase
+          .from('sites')
+          .insert({
+            name: formData.companyName,
+            address: fullAddress || null,
+            status: 'Active',
+            created_by: currentUser.id
+          })
+          .select()
+          .single();
+
+        if (siteError) {
+          console.warn('[Sales] Error creating site:', siteError);
+        } else {
+          siteId = newSite.id;
+        }
+      }
+    }
+
+    // Create or find contact if contact info is provided
+    if (formData.contactFirstName || formData.contactLastName || formData.contactEmail || formData.contactPhone) {
+      const fullName = [formData.contactFirstName, formData.contactLastName].filter(Boolean).join(' ').trim() || 'Unknown';
+
+      // Check if contact already exists by email or phone
+      let existingContact = null;
+      if (formData.contactEmail) {
+        const { data } = await supabase
+          .from('account_contacts')
+          .select('id')
+          .eq('email', formData.contactEmail)
+          .single();
+        existingContact = data;
+      }
+
+      if (!existingContact && formData.contactPhone) {
+        const { data } = await supabase
+          .from('account_contacts')
+          .select('id')
+          .eq('phone', formData.contactPhone)
+          .single();
+        existingContact = data;
+      }
+
+      if (existingContact) {
+        contactId = existingContact.id;
+      } else {
+        // Create new contact
+        const { data: newContact, error: contactError } = await supabase
+          .from('account_contacts')
+          .select('id')
+          .insert({
+            full_name: fullName,
+            email: formData.contactEmail || null,
+            phone: formData.contactPhone || null,
+            title: formData.contactTitle || null
+          })
+          .select()
+          .single();
+
+        if (contactError) {
+          console.warn('[Sales] Error creating contact:', contactError);
+        } else {
+          contactId = newContact.id;
+        }
+      }
+    }
+
+    // Create deal
+    const dealTitle = formData.dealTitle || formData.companyName || 'New Deal';
     const { data, error } = await supabase
       .from('deals')
       .insert({
-        site_id: parseInt(formData.siteId),
+        site_id: siteId,
+        primary_contact_id: contactId,
+        title: dealTitle,
+        stage: formData.stage || 'prospecting',
         assigned_to: currentUser.id,
-        priority: formData.priority,
-        estimated_value: formData.value ? parseFloat(formData.value) : null,
-        notes: formData.notes,
-        created_by: currentUser.id
+        priority: formData.priority || 'medium',
+        deal_value: formData.value ? parseFloat(formData.value) : null,
+        expected_close_date: formData.closeDate || null,
+        notes: formData.notes || null,
+        owner_user_id: currentUser.id
       })
       .select()
       .single();
@@ -699,7 +788,7 @@ export async function createDeal(formData) {
     if (error) throw error;
 
     await loadDeals();
-    toast.success('Deal created successfully', 'Success');
+    toast.success('Lead/Deal created successfully', 'Success');
     closeCreateDealModal();
   } catch (error) {
     console.error('[Sales] Error creating deal:', error);
@@ -1115,10 +1204,23 @@ async function setupEventListeners() {
   document.getElementById('create-deal-form')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const formData = {
-      siteId: document.getElementById('deal-site-select').value,
-      priority: document.getElementById('deal-priority-select').value,
-      value: document.getElementById('deal-value-input').value,
-      notes: document.getElementById('deal-notes-input').value
+      companyName: document.getElementById('deal-company-name')?.value || '',
+      industry: document.getElementById('deal-industry')?.value || '',
+      address: document.getElementById('deal-address')?.value || '',
+      city: document.getElementById('deal-city')?.value || '',
+      province: document.getElementById('deal-province')?.value || '',
+      postalCode: document.getElementById('deal-postal')?.value || '',
+      contactFirstName: document.getElementById('deal-contact-first')?.value || '',
+      contactLastName: document.getElementById('deal-contact-last')?.value || '',
+      contactEmail: document.getElementById('deal-contact-email')?.value || '',
+      contactPhone: document.getElementById('deal-contact-phone')?.value || '',
+      contactTitle: document.getElementById('deal-contact-title')?.value || '',
+      dealTitle: document.getElementById('deal-title')?.value || '',
+      stage: document.getElementById('deal-stage-select')?.value || 'prospecting',
+      priority: document.getElementById('deal-priority-select')?.value || 'medium',
+      value: document.getElementById('deal-value-input')?.value || '',
+      closeDate: document.getElementById('deal-close-date')?.value || '',
+      notes: document.getElementById('deal-notes-input')?.value || ''
     };
     await createDeal(formData);
   });
