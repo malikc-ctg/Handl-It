@@ -563,14 +563,21 @@ export async function renderUsersList(searchTerm = '', roleFilter = 'all', statu
       ? `<img src="${user.profile_picture}" alt="${displayName}" class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full object-cover border-2 border-nfgray" />`
       : `<div class="w-10 h-10 md:w-12 md:h-12 flex-shrink-0 rounded-full bg-gradient-to-br from-nfgblue to-nfgdark text-white flex items-center justify-center font-semibold text-base md:text-lg">${initials}</div>`;
     
-    // Show View button for all users (they can view their own details at least)
-    // Admin/client/super_admin can manage others
-    const viewButton = `
+    // Show View button - users can only view their own details unless they're admin/super_admin/client
+    // Check if current user can view this user
+    const canView = currentUserProfile && (
+      user.id === currentUserProfile.id || 
+      currentUserProfile.role === 'admin' || 
+      currentUserProfile.role === 'super_admin' ||
+      currentUserProfile.role === 'client'
+    );
+    
+    const viewButton = canView ? `
       <button onclick="openUserDetails('${user.id}')" class="px-3 py-2 md:px-4 rounded-xl border border-nfgblue text-nfgblue hover:bg-nfglight transition flex items-center gap-2 flex-shrink-0 text-sm">
         <i data-lucide="eye" class="w-4 h-4"></i>
         <span class="hidden sm:inline">View</span>
       </button>
-    `;
+    ` : '';
     
     return `
       <div class="flex items-center gap-3 p-3 md:p-4 bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl hover:shadow-md transition-shadow">
@@ -594,7 +601,7 @@ export async function renderUsersList(searchTerm = '', roleFilter = 'all', statu
 }
 
 // Clear user filters and refresh
-window.clearUserFilters = function() {
+window.clearUserFilters = async function() {
   const searchInput = document.getElementById('user-search-input');
   const roleFilter = document.getElementById('user-role-filter');
   const statusFilter = document.getElementById('user-status-filter');
@@ -603,7 +610,7 @@ window.clearUserFilters = function() {
   if (roleFilter) roleFilter.value = 'all';
   if (statusFilter) statusFilter.value = 'all';
   
-  renderUsersList('', 'all', 'all');
+  await renderUsersList('', 'all', 'all');
 };
 
 // Render pending invitations
@@ -674,6 +681,20 @@ export async function renderPendingInvitations() {
 
 // Open user details modal
 window.openUserDetails = async function(userId) {
+  // Ensure current user profile is loaded
+  if (!currentUserProfile) {
+    await getCurrentUser();
+  }
+  
+  // Security check: users can only view their own details unless they're admin/super_admin/client
+  if (currentUserProfile && userId !== currentUserProfile.id) {
+    const userRole = currentUserProfile.role;
+    if (userRole !== 'admin' && userRole !== 'super_admin' && userRole !== 'client') {
+      toast.error('You can only view your own user details', 'Access Denied');
+      return;
+    }
+  }
+  
   selectedUserId = userId;
   
   const users = await fetchUsers();

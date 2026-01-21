@@ -330,7 +330,7 @@ function saveCurrentStepData() {
     }
     wizardData.primary_contact_id = document.getElementById('quote-contact-select')?.value || null;
     wizardData.deal_id = document.getElementById('quote-deal-select')?.value || null;
-    wizardData.quote_type = document.getElementById('quote-type-select')?.value || 'walkthrough_required';
+    wizardData.quote_type = document.getElementById('quote-type-select')?.value || 'standard';
   } else if (currentWizardStep === 3) {
     const quoteType = wizardData.quote_type;
     
