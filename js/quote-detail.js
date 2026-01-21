@@ -426,9 +426,8 @@ function renderActionButtons(quote) {
   if (!container) return;
 
   const buttons = [];
-
-  // Edit Draft (if latest revision is draft)
   const latestRevision = quote.revisions?.[0];
+
   if (quote.status === 'draft' && latestRevision && !latestRevision.sent_at) {
     buttons.push(`
       <button id="edit-draft-quote-btn" class="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition text-gray-700 dark:text-gray-300">
@@ -461,6 +460,14 @@ function renderActionButtons(quote) {
     `);
   }
 
+  // Delete quote (always available)
+  buttons.push(`
+    <button id="delete-quote-btn" class="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-red-300 text-red-600 dark:border-red-700 dark:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg font-medium transition">
+      <i data-lucide="trash" class="w-4 h-4"></i>
+      Delete Quote
+    </button>
+  `);
+
   container.innerHTML = buttons.join('');
 
   // Attach event listeners
@@ -481,5 +488,28 @@ function renderActionButtons(quote) {
   document.getElementById('send-final-quote-btn')?.addEventListener('click', async () => {
     // TODO: Open send modal with email input
     toast.info('Send quote modal coming soon', 'Notice');
+  });
+
+  document.getElementById('delete-quote-btn')?.addEventListener('click', async () => {
+    try {
+      const confirmed = confirm('Are you sure you want to delete this quote and all its revisions? This cannot be undone.');
+      if (!confirmed) return;
+
+      const { data, error } = await quotesModule.deleteQuote(quote.id);
+      if (error) throw error;
+
+      toast.success('Quote deleted', 'Success');
+      const modal = document.getElementById('quote-detail-modal');
+      if (modal) modal.classList.add('hidden');
+      // Reload quotes list if available
+      if (window.quotes && typeof window.quotes.loadQuotes === 'function') {
+        await window.quotes.loadQuotes();
+      } else if (typeof quotesModule.loadQuotes === 'function') {
+        await quotesModule.loadQuotes();
+      }
+    } catch (error) {
+      console.error('[Quote Detail] Error deleting quote:', error);
+      toast.error('Failed to delete quote', 'Error');
+    }
   });
 }

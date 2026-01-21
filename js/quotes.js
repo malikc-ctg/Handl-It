@@ -219,6 +219,67 @@ export async function loadQuoteDetail(quoteId) {
 }
 
 // ==========================================
+// DELETE QUOTE
+// ==========================================
+export async function deleteQuote(quoteId) {
+  try {
+    // Delete quote revisions first to satisfy FK constraints, if any
+    const { error: revError } = await supabase
+      .from('quote_revisions')
+      .delete()
+      .eq('quote_id', quoteId);
+
+    if (revError) {
+      console.warn('[Quotes] Error deleting quote revisions (continuing):', revError);
+    }
+
+    // Delete quote line items
+    const { error: itemsError } = await supabase
+      .from('quote_line_items')
+      .delete()
+      .eq('quote_id', quoteId);
+
+    if (itemsError) {
+      console.warn('[Quotes] Error deleting quote line items (continuing):', itemsError);
+    }
+
+    // Delete quote events
+    const { error: eventsError } = await supabase
+      .from('quote_events')
+      .delete()
+      .eq('quote_id', quoteId);
+
+    if (eventsError) {
+      console.warn('[Quotes] Error deleting quote events (continuing):', eventsError);
+    }
+
+    // Delete walkthrough (if exists)
+    const { error: walkthroughError } = await supabase
+      .from('quote_walkthroughs')
+      .delete()
+      .eq('quote_id', quoteId);
+
+    if (walkthroughError) {
+      console.warn('[Quotes] Error deleting quote walkthrough (continuing):', walkthroughError);
+    }
+
+    // Finally delete quote
+    const { data, error } = await supabase
+      .from('quotes')
+      .delete()
+      .eq('id', quoteId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('[Quotes] Error deleting quote:', error);
+    return { data: null, error };
+  }
+}
+
+// ==========================================
 // CREATE QUOTE
 // ==========================================
 export async function createQuote(formData) {
