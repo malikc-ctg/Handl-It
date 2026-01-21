@@ -125,7 +125,7 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
     try {
       const { data: sites, error: sitesError } = await supabase
         .from('sites')
-        .select('id, name, address, status, created_by, updated_at, contact_email, contact_phone')
+        .select('id, name, address, status, created_by, created_at, updated_at')
         .order('updated_at', { ascending: false })
         .range(offset, offset + limit - 1);
       
@@ -168,8 +168,8 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
         owner: site.created_by ? ownerMap.get(site.created_by) || null : null,
         dm_contact: null,
         dm_contact_id: null,
-        contact_email: site.contact_email || null,
-        contact_phone: site.contact_phone || null,
+        contact_email: null,
+        contact_phone: null,
         last_touch_at: site.updated_at || site.created_at || null,
       }));
 
