@@ -10,50 +10,46 @@ JOIN pg_namespace n ON p.pronamespace = n.oid
 WHERE p.proname = 'update_deal_priority_score'
 AND n.nspname = 'public';
 
--- Option 1: Drop the trigger temporarily (if priority_score column doesn't exist)
--- RECOMMENDED: Simply disable the trigger if you don't need priority_score
--- Uncomment the line below to disable the trigger:
+-- Option 1: RECOMMENDED - Disable triggers that reference missing columns/tables
+-- The priority_score trigger tries to set NEW.priority_score but the column doesn't exist
 DROP TRIGGER IF EXISTS trigger_update_deal_priority_score ON deals;
 
+-- The create_deal_event trigger tries to insert into deal_events table which doesn't exist
+DROP TRIGGER IF EXISTS trigger_create_deal_event ON deals;
+
 -- Option 2: Fix the trigger function to handle missing priority_score field
--- The trigger tries to set NEW.priority_score but the column doesn't exist
 -- This recreates the function to check if the column exists first
+-- Uncomment below if you want to keep the trigger but make it handle missing column:
+
+/*
 CREATE OR REPLACE FUNCTION update_deal_priority_score()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Check if priority_score column exists before trying to set it
-  -- Use a DO block to check column existence dynamically
-  -- Since we can't directly check in a trigger, we'll use exception handling
-  BEGIN
-    -- Try to set priority_score - will fail if column doesn't exist
-    -- Use a subquery to check column existence first
-    IF EXISTS (
-      SELECT 1 
-      FROM information_schema.columns 
-      WHERE table_schema = 'public'
-      AND table_name = 'deals' 
-      AND column_name = 'priority_score'
-    ) THEN
-      -- Column exists, calculate and set priority_score
+  IF EXISTS (
+    SELECT 1 
+    FROM information_schema.columns 
+    WHERE table_schema = 'public'
+    AND table_name = 'deals' 
+    AND column_name = 'priority_score'
+  ) THEN
+    -- Column exists, calculate and set priority_score
+    BEGIN
       NEW.priority_score := calculate_deal_priority_score(NEW);
-    END IF;
-  EXCEPTION WHEN OTHERS THEN
-    -- Column doesn't exist or other error - just continue
-    -- Don't set priority_score
-    NULL;
-  END;
+    EXCEPTION WHEN OTHERS THEN
+      -- If calculation fails, just continue without setting it
+      NULL;
+    END;
+  END IF;
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Alternative: Simply disable the trigger if you don't need priority_score
--- Uncomment this if you want to disable the trigger entirely:
--- DROP TRIGGER IF EXISTS trigger_update_deal_priority_score ON deals;
-
--- Or recreate the trigger with the fixed function:
+-- Recreate the trigger with the fixed function
 DROP TRIGGER IF EXISTS trigger_update_deal_priority_score ON deals;
 CREATE TRIGGER trigger_update_deal_priority_score
   BEFORE INSERT OR UPDATE ON deals
   FOR EACH ROW
   EXECUTE FUNCTION update_deal_priority_score();
+*/
