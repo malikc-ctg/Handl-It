@@ -704,6 +704,14 @@ function calculateQuoteFromEngine() {
 
 // Display quote calculation results
 function displayQuoteCalculation(result) {
+  if (!result) return;
+
+  // Normalize numeric fields with safe defaults to avoid undefined errors
+  const monthlyExHst = Number(result.monthly_price_ex_hst) || 0;
+  const hstAmount = Number(result.hst_amount) || 0;
+  const monthlyIncHst = Number(result.monthly_price_inc_hst) || 0;
+  const perVisitPrice = Number(result.per_visit_price) || 0;
+
   const resultDiv = document.getElementById('quote-calculation-result');
   if (!resultDiv) return;
 
@@ -713,25 +721,25 @@ function displayQuoteCalculation(result) {
   // Display monthly price (ex-HST)
   const monthlyExHstEl = document.getElementById('calc-monthly-ex-hst');
   if (monthlyExHstEl) {
-    monthlyExHstEl.textContent = `$${result.monthly_price_ex_hst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    monthlyExHstEl.textContent = `$${monthlyExHst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Display HST amount
   const hstEl = document.getElementById('calc-hst');
   if (hstEl) {
-    hstEl.textContent = `$${result.hst_amount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    hstEl.textContent = `$${hstAmount.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Display total (inc-HST)
   const totalEl = document.getElementById('calc-total');
   if (totalEl) {
-    totalEl.textContent = `$${result.monthly_price_inc_hst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    totalEl.textContent = `$${monthlyIncHst.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Display per-visit price
   const perVisitPriceEl = document.getElementById('calc-per-visit');
   if (perVisitPriceEl) {
-    perVisitPriceEl.textContent = `$${result.per_visit_price.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    perVisitPriceEl.textContent = `$${perVisitPrice.toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   }
 
   // Display assumptions
