@@ -482,6 +482,9 @@ async function renderDealDetail(deal) {
 }
 
 async function renderTimeline(dealId) {
+  const timelineContainer = document.getElementById('timeline-container');
+  if (!timelineContainer) return;
+
   try {
     // Use deal_events table instead of timeline_events
     const { data, error } = await supabase
@@ -490,10 +493,16 @@ async function renderTimeline(dealId) {
       .eq('deal_id', dealId)
       .order('timestamp', { ascending: false });
 
-    if (error) throw error;
-
-    const timelineContainer = document.getElementById('timeline-container');
-    if (!timelineContainer) return;
+    // Handle table doesn't exist or permission errors gracefully
+    if (error) {
+      // Table doesn't exist (PGRST205) or permission denied - show empty state
+      if (error.code === 'PGRST205' || error.code === '42501' || error.message?.includes('permission denied')) {
+        console.warn('[Sales] Timeline events table not available:', error.message);
+        timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
+        return;
+      }
+      throw error;
+    }
 
     if (!data || data.length === 0) {
       timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No timeline events yet.</p>';
@@ -544,6 +553,10 @@ async function renderTimeline(dealId) {
     if (window.lucide) lucide.createIcons();
   } catch (error) {
     console.error('[Sales] Error rendering timeline:', error);
+    // Show empty state on any other error
+    if (timelineContainer) {
+      timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Unable to load timeline events.</p>';
+    }
   }
 }
 
@@ -600,6 +613,9 @@ async function renderQuotes(dealId) {
 }
 
 async function renderFollowUpSequences(dealId) {
+  const sequencesContainer = document.getElementById('sequences-container');
+  if (!sequencesContainer) return;
+
   try {
     // Query sequence_executions which links sequences to deals
     // Try to join with follow_up_sequences or sequences table
@@ -622,6 +638,13 @@ async function renderFollowUpSequences(dealId) {
       .order('created_at', { ascending: false });
 
     if (error) {
+      // Handle permission denied or table doesn't exist
+      if (error.code === '42501' || error.code === 'PGRST205' || error.message?.includes('permission denied')) {
+        console.warn('[Sales] Sequences table not available:', error.message);
+        sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
+        return;
+      }
+
       // If join fails, try without join
       console.warn('[Sales] Error with join, trying without:', error);
       const { data: simpleData, error: simpleError } = await supabase
@@ -630,12 +653,17 @@ async function renderFollowUpSequences(dealId) {
         .eq('deal_id', dealId)
         .order('created_at', { ascending: false });
       
-      if (simpleError) throw simpleError;
+      // Handle permission errors on simple query too
+      if (simpleError) {
+        if (simpleError.code === '42501' || simpleError.code === 'PGRST205' || simpleError.message?.includes('permission denied')) {
+          console.warn('[Sales] Sequence executions table not available:', simpleError.message);
+          sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
+          return;
+        }
+        throw simpleError;
+      }
       
       // Use simple data without sequence details
-      const sequencesContainer = document.getElementById('sequences-container');
-      if (!sequencesContainer) return;
-      
       if (!simpleData || simpleData.length === 0) {
         sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No follow-up sequences assigned.</p>';
         return;
@@ -734,6 +762,11 @@ async function renderFollowUpSequences(dealId) {
     });
   } catch (error) {
     console.error('[Sales] Error rendering follow-up sequences:', error);
+    // Show empty state on any other error
+    const sequencesContainer = document.getElementById('sequences-container');
+    if (sequencesContainer) {
+      sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Unable to load follow-up sequences.</p>';
+    }
   }
 }
 
