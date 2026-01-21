@@ -2069,8 +2069,12 @@
       console.log('[Sales Dashboard] ✅ quote detail module loaded');
       
       // Load accounts directory module
-      window.accountsDirectory = await import('./js/accounts-directory.js');
-      console.log('[Sales Dashboard] ✅ accounts directory module loaded');
+      const accountsDirModule = await import('./js/accounts-directory.js');
+      // Module sets window.accountsDirectory itself, but ensure it's available
+      if (!window.accountsDirectory && accountsDirModule.default) {
+        window.accountsDirectory = accountsDirModule.default;
+      }
+      console.log('[Sales Dashboard] ✅ accounts directory module loaded', window.accountsDirectory ? '✓' : '✗');
       
       // Load leads directory module
       window.leadsDirectory = await import('./js/leads-directory.js');
@@ -2254,10 +2258,27 @@
             break;
           case 'contacts':
             // Initialize accounts directory on first load
+            console.log('[Sales] Loading contacts tab, accountsDirectory available:', !!window.accountsDirectory);
             if (window.accountsDirectory && typeof window.accountsDirectory.init === 'function') {
+              console.log('[Sales] Calling accountsDirectory.init()...');
               await window.accountsDirectory.init();
             } else {
-              await loadContacts();
+              console.warn('[Sales] accountsDirectory not available, trying to load module...');
+              // Try to load module if not available
+              try {
+                const accountsDirModule = await import('./js/accounts-directory.js');
+                if (accountsDirModule.default) {
+                  window.accountsDirectory = accountsDirModule.default;
+                  await window.accountsDirectory.init();
+                } else if (accountsDirModule.initAccountsDirectory) {
+                  await accountsDirModule.initAccountsDirectory();
+                } else {
+                  await loadContacts();
+                }
+              } catch (importError) {
+                console.error('[Sales] Failed to import accounts directory:', importError);
+                await loadContacts();
+              }
             }
             break;
           case 'calls':

@@ -552,9 +552,16 @@ function openSetDMModal(account) {
 }
 
 // Export for use in sales.html
-window.accountsDirectory = {
+const accountsDirectoryModule = {
   init: initAccountsDirectory,
   loadAccounts,
   openAccountDrawer,
   closeAccountDrawer
 };
+
+// Set on window for backward compatibility
+window.accountsDirectory = accountsDirectoryModule;
+
+// Also export as default and named exports
+export default accountsDirectoryModule;
+export { initAccountsDirectory, loadAccounts, openAccountDrawer, closeAccountDrawer };
