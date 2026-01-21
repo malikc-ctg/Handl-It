@@ -2584,10 +2584,31 @@
           column.querySelectorAll('.deal-card').forEach(card => {
             card.addEventListener('dragstart', handleDragStart);
             card.addEventListener('dragend', handleDragEnd);
-            card.addEventListener('click', (e) => {
-              if (!e.target.closest('.deal-card')) return;
+            card.addEventListener('click', async (e) => {
+              // Don't trigger if clicking on a button or interactive element
+              if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+                return;
+              }
+              
+              e.preventDefault();
+              e.stopPropagation();
+              
               const dealId = card.dataset.dealId;
-              if (window.openDeal) window.openDeal(dealId);
+              console.log('[Sales] Deal card clicked, dealId:', dealId);
+              console.log('[Sales] window.sales available:', !!window.sales);
+              console.log('[Sales] openDealDetail function available:', !!(window.sales && typeof window.sales.openDealDetail === 'function'));
+              
+              if (window.sales && typeof window.sales.openDealDetail === 'function') {
+                console.log('[Sales] Calling window.sales.openDealDetail');
+                await window.sales.openDealDetail(dealId);
+              } else if (window.openDeal) {
+                console.log('[Sales] Falling back to window.openDeal');
+                await window.openDeal(dealId);
+              } else {
+                console.error('[Sales] Deal detail function not available');
+                console.error('[Sales] window.sales:', window.sales);
+                toast.error('Unable to open deal details. Check console for details.', 'Error');
+              }
             });
           });
 
@@ -3135,8 +3156,13 @@
     }
 
     // Make functions available globally
-    window.openDeal = (dealId) => {
-      window.location.href = `deal-detail.html?id=${dealId}`;
+    window.openDeal = async (dealId) => {
+      if (window.sales && typeof window.sales.openDealDetail === 'function') {
+        await window.sales.openDealDetail(dealId);
+      } else {
+        console.error('[Sales] openDealDetail function not available');
+        toast.error('Unable to open deal details', 'Error');
+      }
     };
 
     window.openLead = (leadId) => {

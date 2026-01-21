@@ -432,17 +432,28 @@ async function renderDealDetail(deal) {
   const site = deal.sites || {};
   
   // Update header
-  document.getElementById('deal-detail-name').textContent = site.name || 'Unknown Site';
-  document.getElementById('deal-detail-site').textContent = site.address || '';
-  document.getElementById('deal-detail-status').textContent = deal.status;
-  document.getElementById('deal-detail-priority').textContent = deal.priority;
+  const nameEl = document.getElementById('deal-detail-name');
+  if (nameEl) nameEl.textContent = site.name || deal.title || 'Unknown Site';
+  
+  const siteEl = document.getElementById('deal-detail-site');
+  if (siteEl) siteEl.textContent = site.address || '';
+  
+  const statusEl = document.getElementById('deal-detail-status');
+  if (statusEl) statusEl.textContent = deal.stage || deal.status || 'Unknown';
+  
+  const priorityEl = document.getElementById('deal-detail-priority');
+  if (priorityEl) priorityEl.textContent = deal.priority || 'N/A';
   
   // Update health
   const healthScore = deal.health_score || 50;
-  document.getElementById('deal-health-score').textContent = `${healthScore}%`;
+  const healthScoreEl = document.getElementById('deal-health-score');
+  if (healthScoreEl) healthScoreEl.textContent = `${healthScore}%`;
+  
   const healthBar = document.getElementById('deal-health-bar');
-  healthBar.className = `health-bar ${getHealthClass(healthScore)} h-2 rounded-full`;
-  healthBar.style.width = `${healthScore}%`;
+  if (healthBar) {
+    healthBar.className = `health-bar ${getHealthClass(healthScore)} h-2 rounded-full`;
+    healthBar.style.width = `${healthScore}%`;
+  }
 
   // Load and render timeline
   await renderTimeline(deal.id);
@@ -454,9 +465,14 @@ async function renderDealDetail(deal) {
   await renderFollowUpSequences(deal.id);
 
   // Show detail view
-  document.getElementById('deal-queue-view').classList.add('hidden');
-  document.getElementById('deal-detail-view').classList.remove('hidden');
-  document.getElementById('back-to-queue-btn').classList.remove('hidden');
+  const queueView = document.getElementById('deal-queue-view');
+  if (queueView) queueView.classList.add('hidden');
+  
+  const detailView = document.getElementById('deal-detail-view');
+  if (detailView) detailView.classList.remove('hidden');
+  
+  const backBtn = document.getElementById('back-to-queue-btn');
+  if (backBtn) backBtn.classList.remove('hidden');
 }
 
 async function renderTimeline(dealId) {
@@ -640,15 +656,33 @@ async function renderFollowUpSequences(dealId) {
 // DEAL ACTIONS
 // ==========================================
 export async function openDealDetail(dealId) {
+  console.log('[Sales] openDealDetail called with dealId:', dealId);
+  
   try {
+    // Check if modal element exists
+    const modal = document.getElementById('deal-detail-view');
+    if (!modal) {
+      console.error('[Sales] Deal detail modal not found in DOM');
+      toast.error('Deal detail modal not found', 'Error');
+      return;
+    }
+    
+    // Show modal immediately with loading state
+    modal.classList.remove('hidden');
+    console.log('[Sales] Modal shown');
+    
     const { data, error } = await supabase
       .from('deals')
       .select('*')
       .eq('id', dealId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error('[Sales] Error fetching deal:', error);
+      throw error;
+    }
     
+    console.log('[Sales] Deal data fetched:', data);
     currentDeal = data;
     
     // Optionally load site data if site_id exists
@@ -661,16 +695,22 @@ export async function openDealDetail(dealId) {
           .single();
         if (siteData) {
           currentDeal.sites = siteData;
+          console.log('[Sales] Site data loaded:', siteData);
         }
       } catch (siteError) {
         console.warn('[Sales] Could not load site data for deal:', siteError);
         // Continue without site data
       }
     }
+    
     await renderDealDetail(data);
+    console.log('[Sales] Deal detail rendered successfully');
   } catch (error) {
     console.error('[Sales] Error opening deal detail:', error);
-    toast.error('Failed to load deal details', 'Error');
+    toast.error(`Failed to load deal details: ${error.message}`, 'Error');
+    // Hide modal on error
+    const modal = document.getElementById('deal-detail-view');
+    if (modal) modal.classList.add('hidden');
   }
 }
 
