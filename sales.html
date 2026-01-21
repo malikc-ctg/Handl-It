@@ -2244,7 +2244,7 @@
         if (!user) return [];
 
         // Load all deals including closed ones for kanban board
-        // Don't use relationship syntax to avoid FK errors - load contact data separately if needed
+        // Try to load site and contact data - fallback to separate queries if relationship fails
         let query = supabase
           .from('deals')
           .select('*')
@@ -2263,7 +2263,63 @@
 
         const { data, error } = await query;
         if (error) throw error;
-        return data || [];
+        
+        // Load site and contact data separately for each deal
+        const dealsWithDetails = await Promise.all((data || []).map(async (deal) => {
+          // Load site data if site_id exists
+          if (deal.site_id) {
+            try {
+              const { data: siteData } = await supabase
+                .from('sites')
+                .select('id, name, address')
+                .eq('id', deal.site_id)
+                .single();
+              if (siteData) {
+                deal.sites = siteData;
+              }
+            } catch (siteError) {
+              console.warn('[Dashboard] Could not load site for deal:', deal.id, siteError);
+            }
+          }
+          
+          // Load primary contact data if primary_contact_id exists
+          if (deal.primary_contact_id) {
+            try {
+              // Try account_contacts first
+              const { data: contactData } = await supabase
+                .from('account_contacts')
+                .select('id, full_name, email, phone')
+                .eq('id', deal.primary_contact_id)
+                .single();
+              if (contactData) {
+                deal.primary_contact = contactData;
+              }
+            } catch (contactError) {
+              // Try contacts table as fallback
+              try {
+                const { data: contactData } = await supabase
+                  .from('contacts')
+                  .select('id, first_name, last_name, email, phone')
+                  .eq('id', deal.primary_contact_id)
+                  .single();
+                if (contactData) {
+                  deal.primary_contact = {
+                    id: contactData.id,
+                    full_name: `${contactData.first_name || ''} ${contactData.last_name || ''}`.trim(),
+                    email: contactData.email,
+                    phone: contactData.phone
+                  };
+                }
+              } catch (fallbackError) {
+                console.warn('[Dashboard] Could not load contact for deal:', deal.id, fallbackError);
+              }
+            }
+          }
+          
+          return deal;
+        }));
+        
+        return dealsWithDetails;
       } catch (error) {
         console.error('[Dashboard] Error loading deals:', error);
         return [];
@@ -2547,8 +2603,15 @@
             const lastContact = deal.last_contacted_at ? new Date(deal.last_contacted_at) : null;
             const daysIdle = lastContact ? Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24)) : null;
             const isIdle = daysIdle && daysIdle > 7;
-            const contactName = deal.contact?.full_name || deal.contact?.email || 'No contact';
-            const dealValue = Number(deal.deal_value || 0);
+            
+            // Get company name from site or deal title
+            const companyName = deal.sites?.name || deal.title || 'Unnamed Deal';
+            
+            // Get primary contact name
+            const contactName = deal.primary_contact?.full_name || deal.primary_contact?.email || 'No contact';
+            
+            // Get deal value - check multiple possible fields
+            const dealValue = Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
             
             // Determine status and priority
             let statusTag = '';
@@ -2633,11 +2696,11 @@
                   </div>
                 </div>
                 
-                <!-- Deal Title -->
-                <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-2 line-clamp-2">${deal.name || deal.company_name || deal.title || 'Unnamed Deal'}</h4>
+                <!-- Company Name -->
+                <h4 class="font-semibold text-gray-900 dark:text-white text-sm mb-1 line-clamp-2">${companyName}</h4>
                 
-                <!-- Description -->
-                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-2">${contactName}</p>
+                <!-- Primary Contact Name -->
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-3 line-clamp-1">${contactName}</p>
                 
                 <!-- Assignees and Due Date -->
                 <div class="flex items-center justify-between mb-3">
