@@ -79,12 +79,14 @@ function renderQuoteDetail(quote) {
   // Get latest revision for use in multiple places
   const latestRevision = quote.revisions?.[0];
   
+  // Calculate values that will be used in multiple places
+  const createdDate = quote.created_at ? new Date(quote.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+  const revisionCount = quote.revisions?.length || 0;
+  const totalAmount = latestRevision?.total ? `$${Number(latestRevision.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'N/A';
+  const lineItemsCount = latestRevision ? (quote.lineItems?.filter(item => item.revision_number === latestRevision.revision_number).length || 0) : 0;
+  
   // Meta information
   if (metaEl) {
-    const createdDate = quote.created_at ? new Date(quote.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
-    const revisionCount = quote.revisions?.length || 0;
-    const totalAmount = latestRevision?.total ? `$${Number(latestRevision.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'N/A';
-    
     metaEl.innerHTML = `
       <div class="flex items-center gap-2">
         <i data-lucide="calendar" class="w-4 h-4"></i>
@@ -102,17 +104,17 @@ function renderQuoteDetail(quote) {
   }
   
   // Summary card
-  if (summaryEl && latestRevision) {
-    const lineItemsCount = quote.lineItems?.filter(item => item.revision_number === latestRevision.revision_number).length || 0;
-    const sentDate = latestRevision.sent_at ? new Date(latestRevision.sent_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
-    const expiresDate = latestRevision.expires_at ? new Date(latestRevision.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
-    
-    summaryEl.innerHTML = `
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Amount</div>
-          <div class="text-2xl font-bold text-nfgblue dark:text-blue-400">${totalAmount}</div>
-        </div>
+  if (summaryEl) {
+    if (latestRevision) {
+      const sentDate = latestRevision.sent_at ? new Date(latestRevision.sent_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+      const expiresDate = latestRevision.expires_at ? new Date(latestRevision.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+      
+      summaryEl.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+            <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Amount</div>
+            <div class="text-2xl font-bold text-nfgblue dark:text-blue-400">${totalAmount}</div>
+          </div>
         <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
           <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Line Items</div>
           <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">${lineItemsCount}</div>
@@ -137,6 +139,15 @@ function renderQuoteDetail(quote) {
         </div>
       ` : ''}
     `;
+    } else {
+      // No revisions yet
+      summaryEl.innerHTML = `
+        <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+          <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+          <p>No revisions available yet</p>
+        </div>
+      `;
+    }
   }
 
   // Walkthrough block (if walkthrough_required)
