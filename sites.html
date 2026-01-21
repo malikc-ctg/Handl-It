@@ -207,6 +207,9 @@
         <button id="bulk-archive-sites" class="px-4 py-2 rounded-xl border border-red-200 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
           Archive
         </button>
+        <button id="bulk-delete-sites" class="px-4 py-2 rounded-xl border border-red-400 text-red-700 hover:bg-red-50 dark:hover:bg-red-900/30 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
+          Delete
+        </button>
         <button id="bulk-cancel-sites" class="px-4 py-2 rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium transition whitespace-nowrap flex-shrink-0">
           Cancel
         </button>
@@ -1622,6 +1625,43 @@
         if (!confirmed) return;
         
         await bulkArchiveSites();
+      });
+
+      // Bulk delete (hard delete)
+      document.getElementById('bulk-delete-sites')?.addEventListener('click', async () => {
+        if (selectedSites.size === 0) {
+          toast.error('Please select at least one site');
+          return;
+        }
+
+        const confirmed = await showConfirm(
+          `Delete ${selectedSites.size} site(s)? This cannot be undone.`,
+          'Bulk Delete Sites',
+          'danger'
+        );
+        if (!confirmed) return;
+
+        try {
+          const siteIds = Array.from(selectedSites);
+          // Delete in small batches to avoid timeouts
+          const chunkSize = 10;
+          for (let i = 0; i < siteIds.length; i += chunkSize) {
+            const chunk = siteIds.slice(i, i + chunkSize);
+            const { error } = await supabase
+              .from('sites')
+              .delete()
+              .in('id', chunk);
+            if (error) throw error;
+          }
+          toast.success('Selected sites deleted', 'Success');
+          deselectAllSites();
+          // Reload sites
+          await fetchSites();
+          renderSites(allSites, { currentUserProfile });
+        } catch (err) {
+          console.error('Error bulk deleting sites:', err);
+          toast.error('Failed to delete selected sites', 'Error');
+        }
       });
     }
 
