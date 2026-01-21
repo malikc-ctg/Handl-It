@@ -339,7 +339,7 @@ function setupEventListeners() {
   });
 
   // Create account button
-  document.querySelectorAll('#create-account-btn, #create-account-btn-empty').forEach(btn => {
+  document.querySelectorAll('#create-account-btn, #create-account-btn-empty, #new-account-btn-tab').forEach(btn => {
     btn?.addEventListener('click', () => {
       document.getElementById('create-account-modal')?.classList.remove('hidden');
     });
