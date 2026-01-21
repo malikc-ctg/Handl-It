@@ -121,15 +121,34 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
     return data || [];
   } catch (error) {
     console.error('[Accounts] Error listing accounts:', error);
+    
+    // Check if error is due to missing table or permission denied
+    const isTableError = error.code === '42P01' || error.code === '42501' || 
+                         error.message?.includes('relation') || 
+                         error.message?.includes('permission denied') ||
+                         error.message?.includes('schema cache');
+    
+    if (isTableError) {
+      console.warn('[Accounts] Accounts table not available, falling back to sites table');
+    }
+    
     // Fallback: if accounts table not available, use sites as lightweight accounts directory
     try {
       const { data: sites, error: sitesError } = await supabase
         .from('sites')
         .select('id, name, address, status, created_by, created_at, updated_at')
         .order('updated_at', { ascending: false })
-        .range(offset, offset + limit - 1);
+        .limit(limit);
       
-      if (sitesError) throw sitesError;
+      if (sitesError) {
+        console.error('[Accounts] Sites fallback query failed:', sitesError);
+        // If sites also fails, return empty array instead of throwing
+        if (isTableError) {
+          console.warn('[Accounts] Both accounts and sites tables unavailable, returning empty array');
+          return [];
+        }
+        throw sitesError;
+      }
 
       let siteAccounts = sites || [];
 
@@ -173,10 +192,16 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
         last_touch_at: site.updated_at || site.created_at || null,
       }));
 
+      console.log('[Accounts] Fallback: returning', mapped.length, 'sites as accounts');
       return mapped;
     } catch (fallbackError) {
       console.error('[Accounts] Fallback using sites failed:', fallbackError);
-      throw error; // rethrow original
+      // If it's a table/permission error, return empty array instead of throwing
+      if (isTableError || fallbackError.code === '42P01' || fallbackError.code === '42501') {
+        console.warn('[Accounts] Both tables unavailable, returning empty array');
+        return [];
+      }
+      throw error; // rethrow original for non-table errors
     }
   }
 }

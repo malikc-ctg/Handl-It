@@ -53,7 +53,14 @@ async function loadReps() {
 
 // Load accounts
 async function loadAccounts() {
+  const tbody = document.getElementById('accounts-table-body');
+  if (!tbody) {
+    console.warn('[Accounts] Table body not found');
+    return;
+  }
+
   try {
+    console.log('[Accounts] Loading accounts...');
     const search = document.getElementById('accounts-search')?.value || '';
     const statusFilter = document.getElementById('accounts-status-filter')?.value || '';
     const ownerFilter = document.getElementById('accounts-owner-filter')?.value || '';
@@ -71,10 +78,28 @@ async function loadAccounts() {
       sort: sortBy
     });
 
+    console.log('[Accounts] Accounts loaded:', accounts?.length || 0);
     renderAccounts();
   } catch (error) {
     console.error('[Accounts] Error loading accounts:', error);
-    toast.error('Failed to load accounts', 'Error');
+    // Clear loading state and show error
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="px-4 py-12 text-center">
+            <i data-lucide="alert-circle" class="w-16 h-16 mx-auto text-red-300 mb-4"></i>
+            <p class="text-red-600 dark:text-red-400 font-medium mb-2">Failed to load accounts</p>
+            <p class="text-sm text-gray-500 mb-4">${error.message || 'Unknown error occurred'}</p>
+            <button onclick="window.accountsDirectory?.loadAccounts()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Retry
+            </button>
+          </td>
+        </tr>
+      `;
+      if (window.lucide) lucide.createIcons();
+    }
+    toast.error(`Failed to load accounts: ${error.message}`, 'Error');
+    accounts = []; // Set to empty array so renderAccounts doesn't break
   }
 }
 
