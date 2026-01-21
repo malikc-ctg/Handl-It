@@ -850,7 +850,7 @@
                   <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Client Accounts</h2>
                   <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your client accounts directory</p>
                 </div>
-              <button id="create-account-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <button id="create-account-btn" onclick="document.getElementById('create-account-modal')?.classList.remove('hidden'); if(window.lucide) lucide.createIcons();" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
                   <i data-lucide="plus" class="w-4 h-4"></i> New Account
                 </button>
               </div>

@@ -338,11 +338,22 @@ function setupEventListeners() {
     el.addEventListener('change', loadAccounts);
   });
 
-  // Create account button
-  document.querySelectorAll('#create-account-btn, #create-account-btn-empty, #new-account-btn-tab').forEach(btn => {
-    btn?.addEventListener('click', () => {
-      document.getElementById('create-account-modal')?.classList.remove('hidden');
-    });
+  // Create account button - use event delegation for reliability
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('#create-account-btn, #create-account-btn-empty, #new-account-btn-tab')) {
+      e.preventDefault();
+      e.stopPropagation();
+      const modal = document.getElementById('create-account-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        // Re-initialize lucide icons in case they weren't loaded
+        if (window.lucide) {
+          lucide.createIcons();
+        }
+      } else {
+        console.error('[Accounts] Create account modal not found');
+      }
+    }
   });
 
   // Close create account modal
