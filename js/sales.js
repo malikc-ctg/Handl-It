@@ -701,9 +701,7 @@ async function renderFollowUpSequences(dealId) {
       return;
     }
 
-    const sequencesContainer = document.getElementById('sequences-container');
-    if (!sequencesContainer) return;
-
+    // sequencesContainer is already declared at the top of the function
     if (!data || data.length === 0) {
       sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No follow-up sequences assigned.</p>';
       return;
