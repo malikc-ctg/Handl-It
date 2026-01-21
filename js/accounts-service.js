@@ -13,13 +13,10 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // Query accounts without foreign key joins (fetch related data separately to avoid FK relationship errors)
     let query = supabase
       .from('accounts')
-      .select(`
-        *,
-        owner:user_profiles!accounts_owner_user_id_fkey(id, full_name, email),
-        dm_contact:account_contacts!accounts_dm_contact_id_fkey(id, full_name, title, phone, email)
-      `);
+      .select('*');
 
     // Apply owner filter (reps see their own, managers see all)
     const { data: profile } = await supabase
@@ -122,11 +119,13 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
   } catch (error) {
     console.error('[Accounts] Error listing accounts:', error);
     
-    // Check if error is due to missing table or permission denied
-    const isTableError = error.code === '42P01' || error.code === '42501' || 
+    // Check if error is due to missing table, permission denied, or relationship errors
+    const isTableError = error.code === '42P01' || error.code === '42501' || error.code === 'PGRST200' ||
                          error.message?.includes('relation') || 
                          error.message?.includes('permission denied') ||
-                         error.message?.includes('schema cache');
+                         error.message?.includes('schema cache') ||
+                         error.message?.includes('relationship') ||
+                         error.message?.includes('foreign key');
     
     if (isTableError) {
       console.warn('[Accounts] Accounts table not available, falling back to sites table');
@@ -136,8 +135,8 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
     try {
       const { data: sites, error: sitesError } = await supabase
         .from('sites')
-        .select('id, name, address, status, created_by, created_at, updated_at')
-        .order('updated_at', { ascending: false })
+        .select('id, name, address, status, created_by, created_at')
+        .order('created_at', { ascending: false })
         .limit(limit);
       
       if (sitesError) {
@@ -189,7 +188,7 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
         dm_contact_id: null,
         contact_email: null,
         contact_phone: null,
-        last_touch_at: site.updated_at || site.created_at || null,
+        last_touch_at: site.created_at || null,
       }));
 
       console.log('[Accounts] Fallback: returning', mapped.length, 'sites as accounts');
