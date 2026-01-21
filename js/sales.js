@@ -1043,8 +1043,11 @@ export async function createDeal(formData) {
     let siteId = null;
     let contactId = null;
 
-    // Create or find site if company name is provided
-    if (formData.companyName) {
+    // Create or find site only when deal is Closed Won
+    const dealStage = formData.stage || 'prospecting';
+
+    // Only auto-create site if stage is closed_won
+    if (dealStage === 'closed_won' && formData.companyName) {
       const fullAddress = [
         formData.address,
         formData.city,
@@ -1145,7 +1148,7 @@ export async function createDeal(formData) {
     // Use absolute bare minimum - only title and stage which are required
     const dealInsertData = {
       title: dealTitle,
-      stage: formData.stage || 'prospecting',
+      stage: dealStage,
       notes: dealNotes || null
     };
     
