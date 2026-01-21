@@ -43,21 +43,99 @@ function renderQuoteDetail(quote) {
   const site = quote.account_id;
   const titleEl = document.getElementById('quote-detail-title');
   const subtitleEl = document.getElementById('quote-detail-subtitle');
+  const metaEl = document.getElementById('quote-detail-meta');
+  const summaryEl = document.getElementById('quote-summary-card');
   
   if (titleEl) titleEl.textContent = `Quote - ${site?.name || 'Unknown Account'}`;
+  
   if (subtitleEl) {
-    const statusColors = {
-      draft: 'text-gray-600',
-      sent: 'text-blue-600',
-      viewed: 'text-yellow-600',
-      accepted: 'text-green-600',
-      declined: 'text-red-600',
-      expired: 'text-gray-600',
-      withdrawn: 'text-gray-600'
+    const statusConfig = {
+      draft: { bg: 'bg-gray-500', text: 'Draft', icon: 'file-text' },
+      sent: { bg: 'bg-blue-500', text: 'Sent', icon: 'send' },
+      viewed: { bg: 'bg-yellow-500', text: 'Viewed', icon: 'eye' },
+      accepted: { bg: 'bg-green-500', text: 'Accepted', icon: 'check-circle' },
+      declined: { bg: 'bg-red-500', text: 'Declined', icon: 'x-circle' },
+      expired: { bg: 'bg-gray-500', text: 'Expired', icon: 'clock' },
+      withdrawn: { bg: 'bg-gray-500', text: 'Withdrawn', icon: 'ban' }
     };
+    
+    const status = quote.status || 'draft';
+    const statusInfo = statusConfig[status] || statusConfig.draft;
+    const quoteTypeLabel = quote.quote_type === 'walkthrough_required' ? 'Walkthrough Required' : 'Standard';
+    const quoteTypeBg = quote.quote_type === 'walkthrough_required' ? 'bg-indigo-500' : 'bg-purple-500';
+    
     subtitleEl.innerHTML = `
-      <span class="${statusColors[quote.status] || 'text-gray-600'} font-medium">${quote.status || 'draft'}</span> • 
-      ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough Required' : 'Standard'}
+      <span class="inline-flex items-center gap-2 px-3 py-1.5 ${statusInfo.bg} text-white rounded-full text-sm font-semibold shadow-md">
+        <i data-lucide="${statusInfo.icon}" class="w-4 h-4"></i>
+        ${statusInfo.text}
+      </span>
+      <span class="inline-flex items-center gap-2 px-3 py-1.5 ${quoteTypeBg} text-white rounded-full text-sm font-semibold shadow-md">
+        <i data-lucide="${quote.quote_type === 'walkthrough_required' ? 'calendar' : 'file-check'}" class="w-4 h-4"></i>
+        ${quoteTypeLabel}
+      </span>
+    `;
+  }
+  
+  // Get latest revision for use in multiple places
+  const latestRevision = quote.revisions?.[0];
+  
+  // Meta information
+  if (metaEl) {
+    const createdDate = quote.created_at ? new Date(quote.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
+    const revisionCount = quote.revisions?.length || 0;
+    const totalAmount = latestRevision?.total ? `$${Number(latestRevision.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'N/A';
+    
+    metaEl.innerHTML = `
+      <div class="flex items-center gap-2">
+        <i data-lucide="calendar" class="w-4 h-4"></i>
+        <span>Created: ${createdDate}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="file-text" class="w-4 h-4"></i>
+        <span>${revisionCount} Revision${revisionCount !== 1 ? 's' : ''}</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+        <span class="font-semibold">${totalAmount}</span>
+      </div>
+    `;
+  }
+  
+  // Summary card
+  if (summaryEl && latestRevision) {
+    const lineItemsCount = quote.lineItems?.filter(item => item.revision_number === latestRevision.revision_number).length || 0;
+    const sentDate = latestRevision.sent_at ? new Date(latestRevision.sent_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+    const expiresDate = latestRevision.expires_at ? new Date(latestRevision.expires_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+    
+    summaryEl.innerHTML = `
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Total Amount</div>
+          <div class="text-2xl font-bold text-nfgblue dark:text-blue-400">${totalAmount}</div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Line Items</div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">${lineItemsCount}</div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <div class="text-sm text-gray-500 dark:text-gray-400 mb-1">Revision #</div>
+          <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">${latestRevision.revision_number}</div>
+        </div>
+      </div>
+      ${sentDate ? `
+        <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div class="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+            <i data-lucide="send" class="w-4 h-4"></i>
+            <span>Sent: ${sentDate}</span>
+          </div>
+        </div>
+      ` : ''}
+      ${expiresDate ? `
+        <div class="mt-2 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+          <i data-lucide="clock" class="w-4 h-4"></i>
+          <span>Expires: ${expiresDate}</span>
+        </div>
+      ` : ''}
     `;
   }
 
@@ -92,10 +170,16 @@ function renderWalkthroughBlock(quote) {
   const walkthrough = quote.walkthrough;
   
   if (!walkthrough) {
-    content.innerHTML = '<p class="text-blue-800 dark:text-blue-200">No walkthrough scheduled yet.</p>';
+    content.innerHTML = `
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
+        <p class="text-blue-900 dark:text-blue-100 font-medium">No walkthrough scheduled yet.</p>
+        <p class="text-sm text-blue-700 dark:text-blue-300 mt-1">Schedule a walkthrough to proceed with the quote.</p>
+      </div>
+    `;
     if (actions) {
       actions.innerHTML = `
-        <button id="schedule-walkthrough-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium transition">
+        <button id="schedule-walkthrough-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition shadow-md hover:shadow-lg">
+          <i data-lucide="calendar-plus" class="w-4 h-4"></i>
           Schedule Walkthrough
         </button>
       `;
@@ -105,34 +189,49 @@ function renderWalkthroughBlock(quote) {
       });
     }
   } else {
-    const statusColors = {
-      scheduled: 'bg-blue-100 text-blue-800',
-      completed: 'bg-green-100 text-green-800',
-      no_show: 'bg-red-100 text-red-800',
-      rescheduled: 'bg-yellow-100 text-yellow-800',
-      cancelled: 'bg-gray-100 text-gray-800'
+    const statusConfig = {
+      scheduled: { bg: 'bg-blue-500', text: 'Scheduled', icon: 'calendar' },
+      completed: { bg: 'bg-green-500', text: 'Completed', icon: 'check-circle' },
+      no_show: { bg: 'bg-red-500', text: 'No Show', icon: 'x-circle' },
+      rescheduled: { bg: 'bg-yellow-500', text: 'Rescheduled', icon: 'calendar-clock' },
+      cancelled: { bg: 'bg-gray-500', text: 'Cancelled', icon: 'ban' }
     };
+    
+    const statusInfo = statusConfig[walkthrough.status] || statusConfig.scheduled;
+    const scheduledDate = walkthrough.scheduled_at ? new Date(walkthrough.scheduled_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : null;
+    const scheduledTime = walkthrough.scheduled_at ? new Date(walkthrough.scheduled_at).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : null;
 
     content.innerHTML = `
-      <div class="space-y-2">
-        <div class="flex items-center justify-between">
-          <span class="font-medium text-blue-900 dark:text-blue-100">Status:</span>
-          <span class="px-2 py-1 rounded text-sm font-medium ${statusColors[walkthrough.status] || 'bg-gray-100 text-gray-800'}">
-            ${walkthrough.status || 'scheduled'}
-          </span>
+      <div class="bg-white dark:bg-gray-800 rounded-lg p-5 border border-blue-200 dark:border-blue-800">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-12 h-12 ${statusInfo.bg} rounded-lg flex items-center justify-center shadow-md">
+            <i data-lucide="${statusInfo.icon}" class="w-6 h-6 text-white"></i>
+          </div>
+          <div>
+            <div class="font-semibold text-gray-900 dark:text-gray-100">Status</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400">${statusInfo.text}</div>
+          </div>
         </div>
-        ${walkthrough.scheduled_at ? `
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-blue-700 dark:text-blue-300">Scheduled:</span>
-            <span class="text-sm text-blue-900 dark:text-blue-100">${new Date(walkthrough.scheduled_at).toLocaleString()}</span>
-          </div>
-        ` : ''}
-        ${walkthrough.location_address ? `
-          <div class="flex items-center justify-between">
-            <span class="text-sm text-blue-700 dark:text-blue-300">Location:</span>
-            <span class="text-sm text-blue-900 dark:text-blue-100">${walkthrough.location_address}</span>
-          </div>
-        ` : ''}
+        <div class="space-y-3">
+          ${scheduledDate ? `
+            <div class="flex items-center gap-3">
+              <i data-lucide="calendar" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              <div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">Scheduled Date</div>
+                <div class="font-medium text-gray-900 dark:text-gray-100">${scheduledDate}${scheduledTime ? ` at ${scheduledTime}` : ''}</div>
+              </div>
+            </div>
+          ` : ''}
+          ${walkthrough.location_address ? `
+            <div class="flex items-center gap-3">
+              <i data-lucide="map-pin" class="w-5 h-5 text-blue-600 dark:text-blue-400"></i>
+              <div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">Location</div>
+                <div class="font-medium text-gray-900 dark:text-gray-100">${walkthrough.location_address}</div>
+              </div>
+            </div>
+          ` : ''}
+        </div>
       </div>
     `;
 
@@ -140,7 +239,8 @@ function renderWalkthroughBlock(quote) {
       actions.innerHTML = '';
       if (walkthrough.status === 'scheduled') {
         actions.innerHTML = `
-          <button id="mark-walkthrough-completed-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+          <button id="mark-walkthrough-completed-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-md hover:shadow-lg">
+            <i data-lucide="check-circle" class="w-4 h-4"></i>
             Mark Completed
           </button>
         `;
@@ -163,52 +263,86 @@ function renderRevisions(quote) {
   if (!container) return;
 
   if (!quote.revisions || quote.revisions.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 text-center py-4">No revisions yet</p>';
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+        <p>No revisions yet</p>
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = quote.revisions.map(rev => {
-    const sentDate = rev.sent_at ? new Date(rev.sent_at).toLocaleDateString() : 'Not sent';
+  container.innerHTML = quote.revisions.map((rev, index) => {
+    const sentDate = rev.sent_at ? new Date(rev.sent_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Not sent';
     const typeLabel = rev.revision_type === 'walkthrough_proposal' ? 'Walkthrough Proposal' : 'Final Quote';
-    const typeColor = rev.revision_type === 'walkthrough_proposal' ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+    const typeBg = rev.revision_type === 'walkthrough_proposal' ? 'bg-blue-500' : 'bg-green-500';
+    const typeIcon = rev.revision_type === 'walkthrough_proposal' ? 'calendar' : 'file-check';
+    const isLatest = index === 0;
+    const total = rev.total ? Number(rev.total).toLocaleString('en-US', { minimumFractionDigits: 2 }) : null;
     
     return `
-      <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
-        <div class="flex items-start justify-between mb-3">
-          <div>
-            <div class="flex items-center gap-2 mb-1">
-              <span class="px-2 py-1 rounded text-xs font-medium ${typeColor}">${typeLabel}</span>
-              <span class="text-sm text-gray-600 dark:text-gray-400">Revision ${rev.revision_number}</span>
-            </div>
-            <div class="text-sm text-gray-500 dark:text-gray-400">
-              Sent: ${sentDate}
-              ${rev.expires_at ? ` • Expires: ${new Date(rev.expires_at).toLocaleDateString()}` : ''}
-            </div>
+      <div class="relative bg-white dark:bg-gray-800 rounded-xl border-2 ${isLatest ? 'border-nfgblue dark:border-blue-500 shadow-lg' : 'border-gray-200 dark:border-gray-700'} p-5 hover:shadow-md transition-all">
+        ${isLatest ? `
+          <div class="absolute -top-3 left-4 px-3 py-1 bg-nfgblue text-white text-xs font-bold rounded-full shadow-md">
+            Latest
           </div>
-          ${rev.total ? `
-            <div class="text-right">
-              <div class="text-lg font-semibold text-nfgblue dark:text-blue-400">
-                $${Number(rev.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+        ` : ''}
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-10 h-10 ${typeBg} rounded-lg flex items-center justify-center shadow-md">
+                <i data-lucide="${typeIcon}" class="w-5 h-5 text-white"></i>
               </div>
+              <div>
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-semibold text-gray-900 dark:text-gray-100">${typeLabel}</span>
+                  <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded text-xs font-medium">
+                    Revision ${rev.revision_number}
+                  </span>
+                </div>
+                <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                  <span class="flex items-center gap-1">
+                    <i data-lucide="send" class="w-3 h-3"></i>
+                    ${sentDate}
+                  </span>
+                  ${rev.expires_at ? `
+                    <span class="flex items-center gap-1">
+                      <i data-lucide="clock" class="w-3 h-3"></i>
+                      Expires: ${new Date(rev.expires_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+            </div>
+            ${rev.accepted_at ? `
+              <div class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg text-sm font-medium">
+                <i data-lucide="check-circle" class="w-4 h-4"></i>
+                Accepted on ${new Date(rev.accepted_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+            ` : rev.declined_at ? `
+              <div class="mt-3 inline-flex items-center gap-2 px-3 py-1.5 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg text-sm font-medium">
+                <i data-lucide="x-circle" class="w-4 h-4"></i>
+                Declined on ${new Date(rev.declined_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </div>
+            ` : ''}
+            ${rev.public_token ? `
+              <div class="mt-3">
+                <a href="quote.html?token=${rev.public_token}" target="_blank" class="inline-flex items-center gap-2 text-sm text-nfgblue hover:text-nfgdark dark:text-blue-400 dark:hover:text-blue-300 font-medium">
+                  <i data-lucide="external-link" class="w-4 h-4"></i>
+                  View Public Link
+                </a>
+              </div>
+            ` : ''}
+          </div>
+          ${total ? `
+            <div class="text-right">
+              <div class="text-2xl font-bold text-nfgblue dark:text-blue-400">
+                $${total}
+              </div>
+              <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">Total</div>
             </div>
           ` : ''}
         </div>
-        ${rev.accepted_at ? `
-          <div class="mt-2 text-sm text-green-600 dark:text-green-400">
-            ✅ Accepted on ${new Date(rev.accepted_at).toLocaleDateString()}
-          </div>
-        ` : rev.declined_at ? `
-          <div class="mt-2 text-sm text-red-600 dark:text-red-400">
-            ❌ Declined on ${new Date(rev.declined_at).toLocaleDateString()}
-          </div>
-        ` : ''}
-        ${rev.public_token ? `
-          <div class="mt-2">
-            <a href="quote.html?token=${rev.public_token}" target="_blank" class="text-sm text-nfgblue hover:text-nfgdark">
-              View Public Link →
-            </a>
-          </div>
-        ` : ''}
       </div>
     `;
   }).join('');
@@ -220,34 +354,55 @@ function renderEvents(quote) {
   if (!container) return;
 
   if (!quote.events || quote.events.length === 0) {
-    container.innerHTML = '<p class="text-gray-500 text-center py-4">No events yet</p>';
+    container.innerHTML = `
+      <div class="text-center py-8 text-gray-500 dark:text-gray-400">
+        <i data-lucide="activity" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+        <p>No events yet</p>
+      </div>
+    `;
     return;
   }
 
-  container.innerHTML = quote.events.map(event => {
-    const date = new Date(event.timestamp).toLocaleString();
-    const eventLabels = {
-      sent: '📤 Sent',
-      viewed: '👁️ Viewed',
-      pdf_downloaded: '📄 PDF Downloaded',
-      accepted: '✅ Accepted',
-      declined: '❌ Declined',
-      expired: '⏰ Expired',
-      withdrawn: '🚫 Withdrawn',
-      walkthrough_scheduled: '📅 Walkthrough Scheduled',
-      walkthrough_completed: '✅ Walkthrough Completed',
-      walkthrough_no_show: '❌ Walkthrough No-Show',
-      revision_created: '📝 Revision Created'
-    };
+  const eventConfig = {
+    sent: { icon: 'send', color: 'bg-blue-500', text: 'Sent' },
+    viewed: { icon: 'eye', color: 'bg-yellow-500', text: 'Viewed' },
+    pdf_downloaded: { icon: 'file-down', color: 'bg-purple-500', text: 'PDF Downloaded' },
+    accepted: { icon: 'check-circle', color: 'bg-green-500', text: 'Accepted' },
+    declined: { icon: 'x-circle', color: 'bg-red-500', text: 'Declined' },
+    expired: { icon: 'clock', color: 'bg-gray-500', text: 'Expired' },
+    withdrawn: { icon: 'ban', color: 'bg-gray-500', text: 'Withdrawn' },
+    walkthrough_scheduled: { icon: 'calendar', color: 'bg-indigo-500', text: 'Walkthrough Scheduled' },
+    walkthrough_completed: { icon: 'check-circle', color: 'bg-green-500', text: 'Walkthrough Completed' },
+    walkthrough_no_show: { icon: 'x-circle', color: 'bg-red-500', text: 'Walkthrough No-Show' },
+    revision_created: { icon: 'file-text', color: 'bg-nfgblue', text: 'Revision Created' }
+  };
 
+  container.innerHTML = quote.events.map((event, index) => {
+    const config = eventConfig[event.event_type] || { icon: 'circle', color: 'bg-gray-500', text: event.event_type };
+    const date = new Date(event.timestamp);
+    const dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    
     return `
-      <div class="flex items-start gap-3 pb-3 border-b border-nfgray dark:border-gray-700 last:border-0">
-        <div class="flex-shrink-0 w-2 h-2 rounded-full bg-nfgblue dark:bg-blue-400 mt-2"></div>
-        <div class="flex-1">
-          <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-            ${eventLabels[event.event_type] || event.event_type}
+      <div class="relative flex items-start gap-4 pb-6 last:pb-0">
+        <div class="relative flex-shrink-0">
+          <div class="w-10 h-10 ${config.color} rounded-full flex items-center justify-center shadow-md border-2 border-white dark:border-gray-800">
+            <i data-lucide="${config.icon}" class="w-5 h-5 text-white"></i>
           </div>
-          <div class="text-xs text-gray-500 dark:text-gray-400">${date}</div>
+          ${index < quote.events.length - 1 ? '<div class="absolute top-10 left-1/2 transform -translate-x-1/2 w-0.5 h-6 bg-gray-200 dark:bg-gray-700"></div>' : ''}
+        </div>
+        <div class="flex-1 pt-1">
+          <div class="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+            ${config.text}
+          </div>
+          <div class="text-sm text-gray-500 dark:text-gray-400">
+            ${dateStr} at ${timeStr}
+          </div>
+          ${event.metadata?.note ? `
+            <div class="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
+              ${event.metadata.note}
+            </div>
+          ` : ''}
         </div>
       </div>
     `;
@@ -265,7 +420,8 @@ function renderActionButtons(quote) {
   const latestRevision = quote.revisions?.[0];
   if (quote.status === 'draft' && latestRevision && !latestRevision.sent_at) {
     buttons.push(`
-      <button id="edit-draft-quote-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition">
+      <button id="edit-draft-quote-btn" class="inline-flex items-center gap-2 px-5 py-2.5 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition text-gray-700 dark:text-gray-300">
+        <i data-lucide="edit" class="w-4 h-4"></i>
         Edit Draft
       </button>
     `);
@@ -276,7 +432,8 @@ function renderActionButtons(quote) {
     const hasFinalQuote = quote.revisions?.some(r => r.revision_type === 'final_quote');
     if (!hasFinalQuote) {
       buttons.push(`
-        <button id="create-final-quote-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition">
+        <button id="create-final-quote-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition shadow-md hover:shadow-lg">
+          <i data-lucide="file-plus" class="w-4 h-4"></i>
           Create Final Quote
         </button>
       `);
@@ -286,7 +443,8 @@ function renderActionButtons(quote) {
   // Send Final Quote (if final quote exists and not sent)
   if (latestRevision && latestRevision.revision_type === 'final_quote' && !latestRevision.sent_at) {
     buttons.push(`
-      <button id="send-final-quote-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium transition">
+      <button id="send-final-quote-btn" class="inline-flex items-center gap-2 px-5 py-2.5 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition shadow-md hover:shadow-lg">
+        <i data-lucide="send" class="w-4 h-4"></i>
         Send Final Quote
       </button>
     `);

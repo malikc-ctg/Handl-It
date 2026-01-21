@@ -1892,49 +1892,74 @@
 
   <!-- Quote Detail Modal -->
   <div id="quote-detail-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
       <!-- Header -->
-      <div class="p-6 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
-        <div class="flex justify-between items-center">
-          <div>
-            <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400" id="quote-detail-title">Quote Details</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400 mt-1" id="quote-detail-subtitle">Loading...</p>
+      <div class="bg-gradient-to-r from-nfgblue to-nfgdark p-6 flex-shrink-0">
+        <div class="flex justify-between items-start">
+          <div class="flex-1">
+            <h3 class="text-2xl font-bold text-white mb-2" id="quote-detail-title">Quote Details</h3>
+            <div id="quote-detail-subtitle" class="flex items-center gap-3 flex-wrap">
+              <!-- Status and type badges will be rendered here -->
+            </div>
+            <div id="quote-detail-meta" class="mt-3 flex items-center gap-4 text-sm text-blue-100">
+              <!-- Meta information will be rendered here -->
+            </div>
           </div>
-          <button id="close-quote-detail-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
-            <i data-lucide="x" class="w-5 h-5"></i>
+          <button id="close-quote-detail-modal" class="text-white/80 hover:text-white transition p-2 hover:bg-white/10 rounded-lg">
+            <i data-lucide="x" class="w-6 h-6"></i>
           </button>
         </div>
       </div>
 
       <!-- Content (scrollable) -->
-      <div class="flex-1 overflow-y-auto p-6">
-        <!-- Walkthrough Status Block (if walkthrough_required) -->
-        <div id="quote-walkthrough-block" class="hidden mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
-          <h4 class="font-semibold text-blue-900 dark:text-blue-100 mb-2">Walkthrough Status</h4>
-          <div id="walkthrough-status-content"></div>
-          <div id="walkthrough-actions" class="mt-4 flex gap-2"></div>
-        </div>
-
-        <!-- Revisions List -->
-        <div class="mb-6">
-          <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Revisions</h4>
-          <div id="quote-revisions-list" class="space-y-4">
-            <!-- Revisions will be rendered here -->
+      <div class="flex-1 overflow-y-auto">
+        <div class="p-6">
+          <!-- Quote Summary Card -->
+          <div id="quote-summary-card" class="mb-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700/50 dark:to-gray-800/50 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <!-- Summary content will be rendered here -->
           </div>
-        </div>
 
-        <!-- Events Timeline -->
-        <div class="mb-6">
-          <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Timeline</h4>
-          <div id="quote-events-timeline" class="space-y-3">
-            <!-- Events will be rendered here -->
+          <!-- Walkthrough Status Block (if walkthrough_required) -->
+          <div id="quote-walkthrough-block" class="hidden mb-6 p-5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/30 dark:to-indigo-900/30 border-2 border-blue-200 dark:border-blue-800 rounded-xl shadow-sm">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center">
+                <i data-lucide="calendar" class="w-5 h-5 text-white"></i>
+              </div>
+              <h4 class="text-lg font-bold text-blue-900 dark:text-blue-100">Walkthrough Status</h4>
+            </div>
+            <div id="walkthrough-status-content"></div>
+            <div id="walkthrough-actions" class="mt-4 flex gap-2"></div>
+          </div>
+
+          <!-- Revisions List -->
+          <div class="mb-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-1 h-6 bg-gradient-to-b from-nfgblue to-nfgdark rounded-full"></div>
+              <h4 class="text-xl font-bold text-gray-900 dark:text-gray-100">Revisions</h4>
+            </div>
+            <div id="quote-revisions-list" class="space-y-3">
+              <!-- Revisions will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Events Timeline -->
+          <div class="mb-6">
+            <div class="flex items-center gap-3 mb-4">
+              <div class="w-1 h-6 bg-gradient-to-b from-nfgblue to-nfgdark rounded-full"></div>
+              <h4 class="text-xl font-bold text-gray-900 dark:text-gray-100">Timeline</h4>
+            </div>
+            <div id="quote-events-timeline" class="relative pl-8">
+              <!-- Timeline line -->
+              <div class="absolute left-3 top-0 bottom-0 w-0.5 bg-gradient-to-b from-nfgblue via-blue-300 to-transparent dark:from-blue-500 dark:via-blue-700"></div>
+              <!-- Events will be rendered here -->
+            </div>
           </div>
         </div>
       </div>
 
       <!-- Footer Actions -->
-      <div class="p-6 border-t border-nfgray dark:border-gray-700 flex-shrink-0 flex justify-between items-center">
-        <button type="button" id="quote-detail-close-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
+      <div class="p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex-shrink-0 flex justify-between items-center">
+        <button type="button" id="quote-detail-close-btn" class="px-5 py-2.5 border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg font-medium transition text-gray-700 dark:text-gray-300">
           Close
         </button>
         <div id="quote-detail-actions" class="flex gap-3">
