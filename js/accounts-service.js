@@ -121,7 +121,63 @@ export async function listAccounts({ search, filters = {}, sort = 'last_touch_at
     return data || [];
   } catch (error) {
     console.error('[Accounts] Error listing accounts:', error);
-    throw error;
+    // Fallback: if accounts table not available, use sites as lightweight accounts directory
+    try {
+      const { data: sites, error: sitesError } = await supabase
+        .from('sites')
+        .select('id, name, address, status, created_by, updated_at, contact_email, contact_phone')
+        .order('updated_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      
+      if (sitesError) throw sitesError;
+
+      let siteAccounts = sites || [];
+
+      // Apply search/filter manually
+      if (search && search.trim()) {
+        const term = search.trim().toLowerCase();
+        siteAccounts = siteAccounts.filter(s =>
+          (s.name || '').toLowerCase().includes(term) ||
+          (s.address || '').toLowerCase().includes(term)
+        );
+      }
+
+      if (filters.status && filters.status.length > 0) {
+        siteAccounts = siteAccounts.filter(s => filters.status.includes(s.status));
+      }
+
+      // Fetch owners
+      const ownerIds = [...new Set(siteAccounts.map(s => s.created_by).filter(Boolean))];
+      let ownerMap = new Map();
+      if (ownerIds.length > 0) {
+        const { data: owners } = await supabase
+          .from('user_profiles')
+          .select('id, full_name, email')
+          .in('id', ownerIds);
+        if (owners) ownerMap = new Map(owners.map(o => [o.id, o]));
+      }
+
+      // Map sites to account-like objects expected by UI
+      const mapped = siteAccounts.map(site => ({
+        id: site.id,
+        name: site.name,
+        city: '',
+        status: site.status || 'active',
+        site_count: 1,
+        owner_user_id: site.created_by || null,
+        owner: site.created_by ? ownerMap.get(site.created_by) || null : null,
+        dm_contact: null,
+        dm_contact_id: null,
+        contact_email: site.contact_email || null,
+        contact_phone: site.contact_phone || null,
+        last_touch_at: site.updated_at || site.created_at || null,
+      }));
+
+      return mapped;
+    } catch (fallbackError) {
+      console.error('[Accounts] Fallback using sites failed:', fallbackError);
+      throw error; // rethrow original
+    }
   }
 }
 
