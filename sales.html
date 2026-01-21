@@ -729,6 +729,9 @@
               <table class="w-full">
                 <thead class="bg-nfglight dark:bg-gray-700">
                   <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                      <input id="quotes-select-all" type="checkbox" class="h-4 w-4 text-nfgblue border-gray-300 rounded focus:ring-nfgblue">
+                    </th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Company</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Quote Type</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-700 dark:text-gray-300 uppercase tracking-wider">Status</th>
@@ -3498,6 +3501,18 @@
       await updateDealStageAndConvert(dealId, newStage);
     };
     
+    // Quote selection state
+    window.selectedQuoteIds = new Set();
+
+    function updateSelectAllCheckbox() {
+      const selectAll = document.getElementById('quotes-select-all');
+      if (!selectAll) return;
+      const totalRows = document.querySelectorAll('#quotes-table-body .quote-select-checkbox').length;
+      const selectedCount = window.selectedQuoteIds.size;
+      selectAll.checked = totalRows > 0 && selectedCount === totalRows;
+      selectAll.indeterminate = selectedCount > 0 && selectedCount < totalRows;
+    }
+
     async function loadQuotes() {
       const tableBody = document.getElementById('quotes-table-body');
       const emptyState = document.getElementById('quotes-empty-state');
@@ -3557,7 +3572,10 @@
           const expiryDate = '-'; // Would fetch from latest revision
           
           return `
-            <tr class="hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer quote-row" data-quote-id="${quote.id}">
+            <tr class="hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer quote-row ${window.selectedQuoteIds?.has(quote.id) ? 'bg-nfglight/60 dark:bg-gray-700/60' : ''}" data-quote-id="${quote.id}">
+              <td class="px-4 py-4 whitespace-nowrap">
+                <input type="checkbox" class="quote-select-checkbox h-4 w-4 text-nfgblue border-gray-300 rounded focus:ring-nfgblue" data-quote-id="${quote.id}" ${window.selectedQuoteIds?.has(quote.id) ? 'checked' : ''}>
+              </td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">${siteName}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                 ${quote.quote_type === 'walkthrough_required' ? 'Walkthrough' : 'Standard'}
@@ -3577,6 +3595,7 @@
           `;
         }).join('');
         
+        updateSelectAllCheckbox();
         // Click handlers are set up via event delegation in the initialization section
         
         if (window.lucide) lucide.createIcons();
@@ -4057,6 +4076,8 @@
       const quotesTableBody = document.getElementById('quotes-table-body');
       if (quotesTableBody) {
         quotesTableBody.addEventListener('click', (e) => {
+          // Ignore clicks on checkboxes
+          if (e.target.closest('.quote-select-checkbox')) return;
           const row = e.target.closest('.quote-row');
           const viewBtn = e.target.closest('.view-quote-btn');
           if (row || viewBtn) {
@@ -4065,6 +4086,42 @@
               window.quoteDetail.openQuoteDetail(quoteId);
             }
           }
+        });
+
+        // Handle checkbox selection
+        quotesTableBody.addEventListener('change', (e) => {
+          const checkbox = e.target.closest('.quote-select-checkbox');
+          if (!checkbox) return;
+          const quoteId = checkbox.dataset.quoteId;
+          if (!quoteId) return;
+          if (checkbox.checked) {
+            window.selectedQuoteIds.add(quoteId);
+            checkbox.closest('tr')?.classList.add('bg-nfglight/60', 'dark:bg-gray-700/60');
+          } else {
+            window.selectedQuoteIds.delete(quoteId);
+            checkbox.closest('tr')?.classList.remove('bg-nfglight/60', 'dark:bg-gray-700/60');
+          }
+          updateSelectAllCheckbox();
+        });
+      }
+
+      // Select all checkbox
+      const selectAll = document.getElementById('quotes-select-all');
+      if (selectAll) {
+        selectAll.addEventListener('change', () => {
+          const checkboxes = document.querySelectorAll('#quotes-table-body .quote-select-checkbox');
+          checkboxes.forEach(cb => {
+            cb.checked = selectAll.checked;
+            const id = cb.dataset.quoteId;
+            if (selectAll.checked && id) {
+              window.selectedQuoteIds.add(id);
+              cb.closest('tr')?.classList.add('bg-nfglight/60', 'dark:bg-gray-700/60');
+            } else if (id) {
+              window.selectedQuoteIds.delete(id);
+              cb.closest('tr')?.classList.remove('bg-nfglight/60', 'dark:bg-gray-700/60');
+            }
+          });
+          updateSelectAllCheckbox();
         });
       }
     }, 1000);
