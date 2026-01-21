@@ -819,6 +819,42 @@ export async function openDealDetail(dealId) {
       }
     }
     
+    // Load primary contact data if primary_contact_id exists
+    if (currentDeal && currentDeal.primary_contact_id) {
+      try {
+        // Try account_contacts first
+        const { data: contactData, error: contactError } = await supabase
+          .from('account_contacts')
+          .select('id, full_name, email, phone')
+          .eq('id', currentDeal.primary_contact_id)
+          .single();
+        if (contactError) {
+          // Try contacts table as fallback
+          try {
+            const { data: fallbackContactData } = await supabase
+              .from('contacts')
+              .select('id, first_name, last_name, email, phone')
+              .eq('id', currentDeal.primary_contact_id)
+              .single();
+            if (fallbackContactData) {
+              currentDeal.primary_contact = {
+                id: fallbackContactData.id,
+                full_name: `${fallbackContactData.first_name || ''} ${fallbackContactData.last_name || ''}`.trim(),
+                email: fallbackContactData.email,
+                phone: fallbackContactData.phone
+              };
+            }
+          } catch (fallbackError) {
+            console.warn('[Sales] Could not load contact data for deal:', fallbackError);
+          }
+        } else if (contactData) {
+          currentDeal.primary_contact = contactData;
+        }
+      } catch (contactError) {
+        console.warn('[Sales] Could not load contact data for deal:', contactError);
+      }
+    }
+    
     await renderDealDetail(data);
     setupDealActions(dealId);
     console.log('[Sales] Deal detail rendered successfully');
@@ -1417,11 +1453,47 @@ export async function handleCall() {
     return;
   }
 
+  // Try multiple sources for phone number
+  let phoneNumber = null;
+  
+  // 1. Check site contact phone
   const site = currentDeal.sites || {};
-  const phoneNumber = site.contact_phone;
+  if (site.contact_phone) {
+    phoneNumber = site.contact_phone;
+  }
+  
+  // 2. Check primary contact phone
+  if (!phoneNumber && currentDeal.primary_contact?.phone) {
+    phoneNumber = currentDeal.primary_contact.phone;
+  }
+  
+  // 3. Parse from deal notes (format: "Contact: Name | email | phone | title")
+  if (!phoneNumber && currentDeal.notes) {
+    // Try to match phone in format: "Contact: ... | ... | (905) 878-8760 | ..."
+    // Match the third field after "Contact:" which should be the phone
+    const phoneMatch = currentDeal.notes.match(/Contact:[^|]*\|[^|]*\|\s*([^|]+?)(?:\s*\||$)/);
+    if (phoneMatch) {
+      // Extract and clean the phone number
+      let rawPhone = phoneMatch[1].trim();
+      // Remove all non-digit characters except +
+      rawPhone = rawPhone.replace(/[^\d+]/g, '');
+      
+      // If it's a 10-digit number, add +1
+      if (rawPhone.length === 10) {
+        phoneNumber = '+1' + rawPhone;
+      } else if (rawPhone.length === 11 && rawPhone.startsWith('1')) {
+        phoneNumber = '+' + rawPhone;
+      } else if (rawPhone.startsWith('+')) {
+        phoneNumber = rawPhone;
+      } else if (rawPhone.length > 0) {
+        // Try to format it
+        phoneNumber = '+1' + rawPhone.replace(/^1/, '');
+      }
+    }
+  }
 
   if (!phoneNumber) {
-    toast.error('No phone number available for this site', 'Error');
+    toast.error('No phone number available for this deal', 'Error');
     return;
   }
 
@@ -1441,11 +1513,47 @@ export async function handleText() {
     return;
   }
 
+  // Try multiple sources for phone number
+  let phoneNumber = null;
+  
+  // 1. Check site contact phone
   const site = currentDeal.sites || {};
-  const phoneNumber = site.contact_phone;
+  if (site.contact_phone) {
+    phoneNumber = site.contact_phone;
+  }
+  
+  // 2. Check primary contact phone
+  if (!phoneNumber && currentDeal.primary_contact?.phone) {
+    phoneNumber = currentDeal.primary_contact.phone;
+  }
+  
+  // 3. Parse from deal notes (format: "Contact: Name | email | phone | title")
+  if (!phoneNumber && currentDeal.notes) {
+    // Try to match phone in format: "Contact: ... | ... | (905) 878-8760 | ..."
+    // Match the third field after "Contact:" which should be the phone
+    const phoneMatch = currentDeal.notes.match(/Contact:[^|]*\|[^|]*\|\s*([^|]+?)(?:\s*\||$)/);
+    if (phoneMatch) {
+      // Extract and clean the phone number
+      let rawPhone = phoneMatch[1].trim();
+      // Remove all non-digit characters except +
+      rawPhone = rawPhone.replace(/[^\d+]/g, '');
+      
+      // If it's a 10-digit number, add +1
+      if (rawPhone.length === 10) {
+        phoneNumber = '+1' + rawPhone;
+      } else if (rawPhone.length === 11 && rawPhone.startsWith('1')) {
+        phoneNumber = '+' + rawPhone;
+      } else if (rawPhone.startsWith('+')) {
+        phoneNumber = rawPhone;
+      } else if (rawPhone.length > 0) {
+        // Try to format it
+        phoneNumber = '+1' + rawPhone.replace(/^1/, '');
+      }
+    }
+  }
 
   if (!phoneNumber) {
-    toast.error('No phone number available for this site', 'Error');
+    toast.error('No phone number available for this deal', 'Error');
     return;
   }
 
