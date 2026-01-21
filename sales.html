@@ -1154,6 +1154,49 @@
     </main>
   </div>
 
+  <!-- Create Account Modal -->
+  <div id="create-account-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Create Account</h3>
+        <button id="create-account-close" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="create-account-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
+          <input name="name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+          <select name="status" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            <option value="prospect">Prospect</option>
+            <option value="in_progress">In Progress</option>
+            <option value="active">Active Client</option>
+            <option value="dormant">Dormant</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HQ Address</label>
+          <input name="hq_address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+          <input name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="create-account-cancel" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+            Cancel
+          </button>
+          <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">
+            Create
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Create Deal Modal -->
   <div id="create-deal-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">

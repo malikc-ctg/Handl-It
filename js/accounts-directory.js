@@ -345,6 +345,14 @@ function setupEventListeners() {
     });
   });
 
+  // Close create account modal
+  document.getElementById('create-account-close')?.addEventListener('click', () => {
+    document.getElementById('create-account-modal')?.classList.add('hidden');
+  });
+  document.getElementById('create-account-cancel')?.addEventListener('click', () => {
+    document.getElementById('create-account-modal')?.classList.add('hidden');
+  });
+
   // Account row click
   document.getElementById('accounts-table-body')?.addEventListener('click', (e) => {
     const row = e.target.closest('.account-row');
