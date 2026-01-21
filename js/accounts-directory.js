@@ -333,38 +333,75 @@ function renderAccountDrawer() {
 // Initialize accounts directory
 export async function initAccountsDirectory() {
   try {
-    console.log('[Accounts] Initializing accounts directory...');
+    console.log('[Accounts] ===== Initializing accounts directory =====');
+    console.log('[Accounts] Step 1: Checking DOM elements...');
     
     // Check if table body exists
     const tbody = document.getElementById('accounts-table-body');
     if (!tbody) {
       console.warn('[Accounts] Table body not found, waiting for DOM...');
       // Wait a bit and try again
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 200));
       const retryTbody = document.getElementById('accounts-table-body');
       if (!retryTbody) {
-        console.error('[Accounts] Table body still not found after retry');
+        console.error('[Accounts] ❌ Table body still not found after retry');
+        console.error('[Accounts] Available elements:', {
+          contactsTab: !!document.getElementById('tab-contacts'),
+          searchInput: !!document.getElementById('accounts-search'),
+          tableBody: !!document.getElementById('accounts-table-body')
+        });
         return;
       }
+      console.log('[Accounts] ✓ Table body found on retry');
+    } else {
+      console.log('[Accounts] ✓ Table body found');
     }
     
+    console.log('[Accounts] Step 2: Getting current user...');
     await getCurrentUser();
+    console.log('[Accounts] ✓ Current user:', currentUser?.email || 'not found');
     
     // Load reps if manager/admin
     if (currentUserProfile && ['admin', 'manager', 'client'].includes(currentUserProfile.role)) {
+      console.log('[Accounts] Step 3: Loading reps...');
       await loadReps();
+      console.log('[Accounts] ✓ Reps loaded:', allReps.length);
+    } else {
+      console.log('[Accounts] Step 3: Skipping reps (not manager/admin)');
     }
 
+    console.log('[Accounts] Step 4: Setting up event listeners...');
     // Setup event listeners (idempotent - safe to call multiple times)
     setupEventListeners();
+    console.log('[Accounts] ✓ Event listeners set up');
     
+    console.log('[Accounts] Step 5: Loading accounts...');
     // Load accounts
     await loadAccounts();
     
-    console.log('[Accounts] Accounts directory initialized successfully');
+    console.log('[Accounts] ===== Accounts directory initialized successfully =====');
   } catch (error) {
-    console.error('[Accounts] Error initializing accounts directory:', error);
-    toast.error('Failed to initialize accounts directory', 'Error');
+    console.error('[Accounts] ❌ Error initializing accounts directory:', error);
+    console.error('[Accounts] Error stack:', error.stack);
+    toast.error(`Failed to initialize accounts directory: ${error.message}`, 'Error');
+    
+    // Try to show error in table
+    const tbody = document.getElementById('accounts-table-body');
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="px-4 py-12 text-center">
+            <i data-lucide="alert-circle" class="w-16 h-16 mx-auto text-red-300 mb-4"></i>
+            <p class="text-red-600 dark:text-red-400 font-medium mb-2">Initialization Error</p>
+            <p class="text-sm text-gray-500 mb-4">${error.message || 'Unknown error'}</p>
+            <button onclick="window.accountsDirectory?.init()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> Retry
+            </button>
+          </td>
+        </tr>
+      `;
+      if (window.lucide) lucide.createIcons();
+    }
   }
 }
 
