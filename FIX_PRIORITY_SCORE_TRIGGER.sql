@@ -17,6 +17,12 @@ DROP TRIGGER IF EXISTS trigger_update_deal_priority_score ON deals;
 -- The create_deal_event trigger tries to insert into deal_events table which doesn't exist
 DROP TRIGGER IF EXISTS trigger_create_deal_event ON deals;
 
+-- The audit_deal_stage_change trigger tries to access old.win_reason which doesn't exist
+DROP TRIGGER IF EXISTS trigger_audit_deal_stage_change ON deals;
+
+-- The emit_deal_events trigger may also reference missing fields - disable it too
+DROP TRIGGER IF EXISTS trg_emit_deal_events ON deals;
+
 -- Option 2: Fix the trigger function to handle missing priority_score field
 -- This recreates the function to check if the column exists first
 -- Uncomment below if you want to keep the trigger but make it handle missing column:
