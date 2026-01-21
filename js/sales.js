@@ -464,6 +464,12 @@ async function renderDealDetail(deal) {
   // Load and render follow-up sequences
   await renderFollowUpSequences(deal.id);
 
+  // Display notes
+  const notesEl = document.getElementById('deal-detail-notes');
+  if (notesEl) {
+    notesEl.textContent = deal.notes || 'No notes';
+  }
+
   // Show detail view
   const queueView = document.getElementById('deal-queue-view');
   if (queueView) queueView.classList.add('hidden');
@@ -477,11 +483,12 @@ async function renderDealDetail(deal) {
 
 async function renderTimeline(dealId) {
   try {
+    // Use deal_events table instead of timeline_events
     const { data, error } = await supabase
-      .from('timeline_events')
+      .from('deal_events')
       .select('*, created_by_user:created_by (id, email)')
       .eq('deal_id', dealId)
-      .order('created_at', { ascending: false });
+      .order('timestamp', { ascending: false });
 
     if (error) throw error;
 
@@ -506,7 +513,14 @@ async function renderTimeline(dealId) {
     timelineContainer.innerHTML = data.map(event => {
       const icon = eventIcons[event.event_type] || 'circle';
       const user = event.created_by_user || {};
-      const date = new Date(event.created_at).toLocaleString();
+      // Use timestamp instead of created_at
+      const date = new Date(event.timestamp || event.created_at).toLocaleString();
+      
+      // Format event type as title
+      const title = event.event_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Event';
+      
+      // Get description from metadata if available
+      const description = event.metadata?.description || event.metadata?.message || '';
 
       return `
         <div class="timeline-item">
@@ -516,11 +530,11 @@ async function renderTimeline(dealId) {
             </div>
             <div class="flex-1">
               <div class="flex justify-between items-start mb-1">
-                <h4 class="font-semibold text-nftext dark:text-gray-200">${event.title}</h4>
+                <h4 class="font-semibold text-nftext dark:text-gray-200">${title}</h4>
                 <span class="text-xs text-gray-500 dark:text-gray-400">${date}</span>
               </div>
-              ${event.description ? `<p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${event.description}</p>` : ''}
-              <p class="text-xs text-gray-500 dark:text-gray-400">by ${user.email || 'Unknown'}</p>
+              ${description ? `<p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${description}</p>` : ''}
+              ${user.email ? `<p class="text-xs text-gray-500 dark:text-gray-400">by ${user.email}</p>` : ''}
             </div>
           </div>
         </div>
@@ -587,13 +601,77 @@ async function renderQuotes(dealId) {
 
 async function renderFollowUpSequences(dealId) {
   try {
+    // Query sequence_executions which links sequences to deals
+    // Try to join with follow_up_sequences or sequences table
     const { data, error } = await supabase
-      .from('follow_up_sequences')
-      .select('*')
+      .from('sequence_executions')
+      .select(`
+        *,
+        follow_up_sequence:sequence_id (
+          id,
+          name,
+          description
+        ),
+        sequence:sequence_id (
+          id,
+          name,
+          description
+        )
+      `)
       .eq('deal_id', dealId)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      // If join fails, try without join
+      console.warn('[Sales] Error with join, trying without:', error);
+      const { data: simpleData, error: simpleError } = await supabase
+        .from('sequence_executions')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('created_at', { ascending: false });
+      
+      if (simpleError) throw simpleError;
+      
+      // Use simple data without sequence details
+      const sequencesContainer = document.getElementById('sequences-container');
+      if (!sequencesContainer) return;
+      
+      if (!simpleData || simpleData.length === 0) {
+        sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No follow-up sequences assigned.</p>';
+        return;
+      }
+      
+      // Render with limited info
+      const statusColors = {
+        active: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
+        paused: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
+        stopped: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
+        completed: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
+      };
+      
+      sequencesContainer.innerHTML = simpleData.map(execution => {
+        const status = execution.status || 'active';
+        return `
+          <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
+            <div class="flex justify-between items-start mb-2">
+              <div>
+                <h4 class="font-semibold text-nftext dark:text-gray-200">Sequence Execution</h4>
+                <p class="text-sm text-gray-500 dark:text-gray-400">
+                  Step ${execution.current_step || 0}
+                  ${execution.attempt_count ? ` • ${execution.attempt_count} attempts` : ''}
+                </p>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[status] || statusColors.active}">
+                  ${status}
+                </span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      return;
+    }
 
     const sequencesContainer = document.getElementById('sequences-container');
     if (!sequencesContainer) return;
@@ -610,25 +688,32 @@ async function renderFollowUpSequences(dealId) {
       completed: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
     };
 
-    sequencesContainer.innerHTML = data.map(seq => {
+    sequencesContainer.innerHTML = data.map(execution => {
+      // Try both possible relationship names
+      const sequence = execution.follow_up_sequence || execution.sequence || {};
+      const sequenceName = sequence.name || 'Unknown Sequence';
+      const currentStep = execution.current_step || 0;
+      const status = execution.status || 'active';
+      
       return `
         <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
           <div class="flex justify-between items-start mb-2">
             <div>
-              <h4 class="font-semibold text-nftext dark:text-gray-200">${seq.name}</h4>
+              <h4 class="font-semibold text-nftext dark:text-gray-200">${sequenceName}</h4>
               <p class="text-sm text-gray-500 dark:text-gray-400">
-                Step ${seq.current_step} of ${seq.total_steps}
+                Step ${currentStep}
+                ${execution.attempt_count ? ` • ${execution.attempt_count} attempts` : ''}
               </p>
             </div>
             <div class="flex items-center gap-2">
-              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[seq.status] || statusColors.active}">
-                ${seq.status}
+              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[status] || statusColors.active}">
+                ${status}
               </span>
-              ${seq.status === 'active' ? `
-                <button data-sequence-id="${seq.id}" data-action="pause-sequence" class="px-2 py-1 text-xs border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded transition">
+              ${status === 'active' ? `
+                <button data-sequence-id="${execution.id}" data-action="pause-sequence" class="px-2 py-1 text-xs border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded transition">
                   Pause
                 </button>
-                <button data-sequence-id="${seq.id}" data-action="stop-sequence" class="px-2 py-1 text-xs border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 rounded transition">
+                <button data-sequence-id="${execution.id}" data-action="stop-sequence" class="px-2 py-1 text-xs border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 rounded transition">
                   Stop
                 </button>
               ` : ''}
@@ -704,6 +789,7 @@ export async function openDealDetail(dealId) {
     }
     
     await renderDealDetail(data);
+    setupDealActions(dealId);
     console.log('[Sales] Deal detail rendered successfully');
   } catch (error) {
     console.error('[Sales] Error opening deal detail:', error);
@@ -711,6 +797,174 @@ export async function openDealDetail(dealId) {
     // Hide modal on error
     const modal = document.getElementById('deal-detail-view');
     if (modal) modal.classList.add('hidden');
+  }
+}
+
+// Setup event handlers for edit and delete buttons
+function setupDealActions(dealId) {
+  // Edit button
+  const editBtn = document.getElementById('edit-deal-btn');
+  if (editBtn) {
+    editBtn.onclick = () => openEditDealModal(dealId);
+  }
+
+  // Delete button
+  const deleteBtn = document.getElementById('delete-deal-btn');
+  if (deleteBtn) {
+    deleteBtn.onclick = () => openDeleteDealModal(dealId);
+  }
+}
+
+// Open edit deal modal
+function openEditDealModal(dealId) {
+  if (!currentDeal || currentDeal.id !== dealId) {
+    toast.error('Deal data not loaded', 'Error');
+    return;
+  }
+
+  const modal = document.getElementById('edit-deal-modal');
+  const titleInput = document.getElementById('edit-deal-title');
+  const stageSelect = document.getElementById('edit-deal-stage');
+  const notesTextarea = document.getElementById('edit-deal-notes');
+
+  if (!modal || !titleInput || !stageSelect || !notesTextarea) {
+    toast.error('Edit modal elements not found', 'Error');
+    return;
+  }
+
+  // Populate form fields
+  titleInput.value = currentDeal.title || '';
+  stageSelect.value = currentDeal.stage || 'prospecting';
+  notesTextarea.value = currentDeal.notes || '';
+
+  // Show modal
+  modal.classList.remove('hidden');
+
+  // Setup close handlers
+  const closeBtn = document.getElementById('close-edit-deal-modal');
+  const cancelBtn = document.getElementById('cancel-edit-deal');
+  const form = document.getElementById('edit-deal-form');
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+  };
+
+  if (closeBtn) closeBtn.onclick = closeModal;
+  if (cancelBtn) cancelBtn.onclick = closeModal;
+
+  // Setup form submit
+  if (form) {
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      await updateDeal(dealId, {
+        title: titleInput.value.trim(),
+        stage: stageSelect.value,
+        notes: notesTextarea.value.trim() || null
+      });
+      closeModal();
+    };
+  }
+
+  // Re-initialize icons
+  if (window.lucide) lucide.createIcons();
+}
+
+// Open delete deal confirmation modal
+function openDeleteDealModal(dealId) {
+  if (!currentDeal || currentDeal.id !== dealId) {
+    toast.error('Deal data not loaded', 'Error');
+    return;
+  }
+
+  const modal = document.getElementById('delete-deal-modal');
+  if (!modal) {
+    toast.error('Delete modal not found', 'Error');
+    return;
+  }
+
+  // Show modal
+  modal.classList.remove('hidden');
+
+  // Setup handlers
+  const cancelBtn = document.getElementById('cancel-delete-deal');
+  const confirmBtn = document.getElementById('confirm-delete-deal');
+
+  const closeModal = () => {
+    modal.classList.add('hidden');
+  };
+
+  if (cancelBtn) cancelBtn.onclick = closeModal;
+
+  if (confirmBtn) {
+    confirmBtn.onclick = async () => {
+      await deleteDeal(dealId);
+      closeModal();
+    };
+  }
+
+  // Re-initialize icons
+  if (window.lucide) lucide.createIcons();
+}
+
+// Update deal
+export async function updateDeal(dealId, updates) {
+  try {
+    const { data, error } = await supabase
+      .from('deals')
+      .update(updates)
+      .eq('id', dealId)
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    // Update current deal
+    currentDeal = data;
+
+    // Reload deal detail view
+    await renderDealDetail(data);
+    
+    // Refresh deals list/kanban
+    if (window.loadDealsForDashboard) {
+      await window.loadDealsForDashboard();
+    }
+
+    toast.success('Deal updated successfully', 'Success');
+    return data;
+  } catch (error) {
+    console.error('[Sales] Error updating deal:', error);
+    toast.error(`Failed to update deal: ${error.message}`, 'Error');
+    throw error;
+  }
+}
+
+// Delete deal
+export async function deleteDeal(dealId) {
+  try {
+    const { error } = await supabase
+      .from('deals')
+      .delete()
+      .eq('id', dealId);
+
+    if (error) throw error;
+
+    // Close deal detail modal
+    const detailModal = document.getElementById('deal-detail-view');
+    if (detailModal) detailModal.classList.add('hidden');
+
+    // Refresh deals list/kanban
+    if (window.loadDealsForDashboard) {
+      await window.loadDealsForDashboard();
+    }
+
+    // Clear current deal
+    currentDeal = null;
+
+    toast.success('Deal deleted successfully', 'Success');
+  } catch (error) {
+    console.error('[Sales] Error deleting deal:', error);
+    toast.error(`Failed to delete deal: ${error.message}`, 'Error');
+    throw error;
   }
 }
 
@@ -1051,15 +1305,19 @@ export async function saveQuote(isDraft = false) {
 // ==========================================
 async function createTimelineEvent(dealId, eventType, title, description, metadata = {}) {
   try {
+    // Use deal_events table instead of timeline_events
+    // Store title and description in metadata since deal_events doesn't have those columns
     const { error } = await supabase
-      .from('timeline_events')
+      .from('deal_events')
       .insert({
         deal_id: dealId,
         event_type: eventType,
-        title,
-        description,
-        metadata,
-        created_by: currentUser.id
+        created_by: currentUser?.id || null,
+        metadata: {
+          ...metadata,
+          title,
+          description
+        }
       });
 
     if (error) throw error;
@@ -1078,11 +1336,12 @@ async function createTimelineEvent(dealId, eventType, title, description, metada
 // ==========================================
 export async function pauseSequence(sequenceId) {
   try {
+    // Update sequence_executions instead of follow_up_sequences
     const { error } = await supabase
-      .from('follow_up_sequences')
+      .from('sequence_executions')
       .update({
         status: 'paused',
-        paused_at: new Date().toISOString()
+        updated_at: new Date().toISOString()
       })
       .eq('id', sequenceId);
 
@@ -1098,11 +1357,13 @@ export async function pauseSequence(sequenceId) {
 
 export async function stopSequence(sequenceId) {
   try {
+    // Update sequence_executions instead of follow_up_sequences
     const { error } = await supabase
-      .from('follow_up_sequences')
+      .from('sequence_executions')
       .update({
         status: 'stopped',
-        stopped_at: new Date().toISOString()
+        stopped_reason: 'Manually stopped',
+        updated_at: new Date().toISOString()
       })
       .eq('id', sequenceId);
 
