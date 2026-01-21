@@ -763,7 +763,7 @@ async function renderFollowUpSequences(dealId) {
   } catch (error) {
     console.error('[Sales] Error rendering follow-up sequences:', error);
     // Show empty state on any other error
-    const sequencesContainer = document.getElementById('sequences-container');
+    // sequencesContainer is already declared at the top of the function
     if (sequencesContainer) {
       sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Unable to load follow-up sequences.</p>';
     }
