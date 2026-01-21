@@ -331,7 +331,7 @@ function renderAccountDrawer() {
 }
 
 // Initialize accounts directory
-export async function initAccountsDirectory() {
+async function initAccountsDirectory() {
   try {
     console.log('[Accounts] ===== Initializing accounts directory =====');
     console.log('[Accounts] Step 1: Checking DOM elements...');
