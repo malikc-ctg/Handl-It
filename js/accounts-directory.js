@@ -332,18 +332,40 @@ function renderAccountDrawer() {
 
 // Initialize accounts directory
 export async function initAccountsDirectory() {
-  await getCurrentUser();
-  
-  // Load reps if manager/admin
-  if (currentUserProfile && ['admin', 'manager', 'client'].includes(currentUserProfile.role)) {
-    await loadReps();
-  }
+  try {
+    console.log('[Accounts] Initializing accounts directory...');
+    
+    // Check if table body exists
+    const tbody = document.getElementById('accounts-table-body');
+    if (!tbody) {
+      console.warn('[Accounts] Table body not found, waiting for DOM...');
+      // Wait a bit and try again
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const retryTbody = document.getElementById('accounts-table-body');
+      if (!retryTbody) {
+        console.error('[Accounts] Table body still not found after retry');
+        return;
+      }
+    }
+    
+    await getCurrentUser();
+    
+    // Load reps if manager/admin
+    if (currentUserProfile && ['admin', 'manager', 'client'].includes(currentUserProfile.role)) {
+      await loadReps();
+    }
 
-  // Setup event listeners
-  setupEventListeners();
-  
-  // Load accounts
-  await loadAccounts();
+    // Setup event listeners (idempotent - safe to call multiple times)
+    setupEventListeners();
+    
+    // Load accounts
+    await loadAccounts();
+    
+    console.log('[Accounts] Accounts directory initialized successfully');
+  } catch (error) {
+    console.error('[Accounts] Error initializing accounts directory:', error);
+    toast.error('Failed to initialize accounts directory', 'Error');
+  }
 }
 
 // Setup event listeners
