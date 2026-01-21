@@ -3445,15 +3445,41 @@
 
         const wasClosedWon = currentDeal.stage === 'closed_won';
         const isMovingToClosedWon = newStage === 'closed_won';
+        const isMovingToClosedLost = newStage === 'closed_lost';
+        const isMovingAwayFromClosed = (currentDeal.stage === 'closed_won' || currentDeal.stage === 'closed_lost') && 
+                                        newStage !== 'closed_won' && newStage !== 'closed_lost';
 
-        // Update deal stage (fix: use 'stage' not 'status')
+        // Prepare update object based on stage to satisfy deals_won_lost_check constraint
+        const updateData = {
+          stage: newStage,
+          updated_at: new Date().toISOString(),
+          last_touch_at: new Date().toISOString()
+        };
+
+        // Handle closed_won: requires won_at, lost_at must be NULL, lost_reason must be NULL
+        if (isMovingToClosedWon) {
+          updateData.won_at = new Date().toISOString();
+          updateData.lost_at = null;
+          updateData.lost_reason = null;
+        }
+        // Handle closed_lost: requires lost_at, lost_reason, won_at must be NULL
+        else if (isMovingToClosedLost) {
+          updateData.lost_at = new Date().toISOString();
+          updateData.won_at = null;
+          // Default to 'other' if lost_reason is not already set
+          updateData.lost_reason = currentDeal.lost_reason || 'other';
+        }
+        // Handle moving away from closed stages: clear all closed-related fields
+        else if (isMovingAwayFromClosed) {
+          updateData.won_at = null;
+          updateData.lost_at = null;
+          updateData.lost_reason = null;
+        }
+
+        // Update deal stage
         const { error: updateError } = await supabase
           .from('deals')
-          .update({ 
-            stage: newStage, 
-            updated_at: new Date().toISOString(),
-            last_touch_at: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', dealId);
         
         if (updateError) throw updateError;
