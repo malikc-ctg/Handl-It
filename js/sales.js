@@ -1498,12 +1498,36 @@ export async function handleCall() {
   }
 
   try {
-    await QuoAPI.launchCall(phoneNumber, currentDeal.id);
+    // Format phone number for tel: link (remove + and keep digits only, or use as-is)
+    // tel: links work with digits, spaces, dashes, and + prefix
+    const telLink = `tel:${phoneNumber}`;
     
-    // Show post-call panel
-    document.getElementById('post-call-panel').classList.remove('hidden');
+    // Create timeline event if possible (don't fail if table doesn't exist)
+    try {
+      await createTimelineEvent(currentDeal.id, 'call', 'Call Initiated', `Calling ${phoneNumber}`, {
+        phoneNumber,
+        method: 'native'
+      });
+    } catch (timelineError) {
+      console.warn('[Sales] Could not create timeline event:', timelineError);
+      // Continue anyway - timeline event is optional
+    }
+    
+    // Open native calling app using tel: link
+    window.location.href = telLink;
+    
+    // Show post-call panel after a short delay
+    setTimeout(() => {
+      const postCallPanel = document.getElementById('post-call-panel');
+      if (postCallPanel) {
+        postCallPanel.classList.remove('hidden');
+      }
+    }, 500);
+    
+    toast.success('Opening calling app...', 'Call');
   } catch (error) {
     console.error('[Sales] Error handling call:', error);
+    toast.error('Failed to initiate call', 'Error');
   }
 }
 
@@ -1557,13 +1581,29 @@ export async function handleText() {
     return;
   }
 
-  const message = prompt('Enter message:');
-  if (!message) return;
-
+  // Use native SMS link - opens default messaging app
   try {
-    await QuoAPI.sendText(phoneNumber, message, currentDeal.id);
+    // Format phone number for sms: link
+    const smsLink = `sms:${phoneNumber}`;
+    
+    // Create timeline event if possible (don't fail if table doesn't exist)
+    try {
+      await createTimelineEvent(currentDeal.id, 'message', 'Text Initiated', `Opening messaging app for ${phoneNumber}`, {
+        phoneNumber,
+        method: 'native'
+      });
+    } catch (timelineError) {
+      console.warn('[Sales] Could not create timeline event:', timelineError);
+      // Continue anyway - timeline event is optional
+    }
+    
+    // Open native messaging app using sms: link
+    window.location.href = smsLink;
+    
+    toast.success('Opening messaging app...', 'Message');
   } catch (error) {
     console.error('[Sales] Error handling text:', error);
+    toast.error('Failed to open messaging app', 'Error');
   }
 }
 
