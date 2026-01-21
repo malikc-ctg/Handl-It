@@ -155,9 +155,13 @@ export async function loadQuoteDetail(quoteId) {
         deal_id:deals(id, stage)
       `)
       .eq('id', quoteId)
-      .single();
+      .maybeSingle();
 
     if (quoteError) throw quoteError;
+    if (!quote) {
+      toast.error('Quote not found', 'Error');
+      return null;
+    }
 
     // Load all revisions
     const { data: revisions, error: revError } = await supabase
