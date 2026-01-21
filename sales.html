@@ -2269,12 +2269,14 @@
           // Load site data if site_id exists
           if (deal.site_id) {
             try {
-              const { data: siteData } = await supabase
+              const { data: siteData, error: siteError } = await supabase
                 .from('sites')
                 .select('id, name, address')
                 .eq('id', deal.site_id)
                 .single();
-              if (siteData) {
+              if (siteError) {
+                console.warn('[Dashboard] Error loading site for deal:', deal.id, siteError);
+              } else if (siteData) {
                 deal.sites = siteData;
               }
             } catch (siteError) {
@@ -2286,33 +2288,37 @@
           if (deal.primary_contact_id) {
             try {
               // Try account_contacts first
-              const { data: contactData } = await supabase
+              const { data: contactData, error: contactError } = await supabase
                 .from('account_contacts')
                 .select('id, full_name, email, phone')
                 .eq('id', deal.primary_contact_id)
                 .single();
-              if (contactData) {
+              if (contactError) {
+                // Try contacts table as fallback
+                try {
+                  const { data: fallbackContactData, error: fallbackError } = await supabase
+                    .from('contacts')
+                    .select('id, first_name, last_name, email, phone')
+                    .eq('id', deal.primary_contact_id)
+                    .single();
+                  if (fallbackError) {
+                    console.warn('[Dashboard] Could not load contact for deal:', deal.id, fallbackError);
+                  } else if (fallbackContactData) {
+                    deal.primary_contact = {
+                      id: fallbackContactData.id,
+                      full_name: `${fallbackContactData.first_name || ''} ${fallbackContactData.last_name || ''}`.trim(),
+                      email: fallbackContactData.email,
+                      phone: fallbackContactData.phone
+                    };
+                  }
+                } catch (fallbackError) {
+                  console.warn('[Dashboard] Could not load contact for deal:', deal.id, fallbackError);
+                }
+              } else if (contactData) {
                 deal.primary_contact = contactData;
               }
             } catch (contactError) {
-              // Try contacts table as fallback
-              try {
-                const { data: contactData } = await supabase
-                  .from('contacts')
-                  .select('id, first_name, last_name, email, phone')
-                  .eq('id', deal.primary_contact_id)
-                  .single();
-                if (contactData) {
-                  deal.primary_contact = {
-                    id: contactData.id,
-                    full_name: `${contactData.first_name || ''} ${contactData.last_name || ''}`.trim(),
-                    email: contactData.email,
-                    phone: contactData.phone
-                  };
-                }
-              } catch (fallbackError) {
-                console.warn('[Dashboard] Could not load contact for deal:', deal.id, fallbackError);
-              }
+              console.warn('[Dashboard] Could not load contact for deal:', deal.id, contactError);
             }
           }
           
@@ -2605,10 +2611,33 @@
             const isIdle = daysIdle && daysIdle > 7;
             
             // Get company name from site or deal title
-            const companyName = deal.sites?.name || deal.title || 'Unnamed Deal';
+            // Check if sites data was loaded (it's an object, not an array)
+            let companyName = (deal.sites && typeof deal.sites === 'object' && deal.sites.name) 
+              ? deal.sites.name 
+              : (deal.title || 'Unnamed Deal');
             
             // Get primary contact name
-            const contactName = deal.primary_contact?.full_name || deal.primary_contact?.email || 'No contact';
+            // Check if primary_contact data was loaded (it's an object, not an array)
+            let contactName = (deal.primary_contact && typeof deal.primary_contact === 'object' && deal.primary_contact.full_name)
+              ? deal.primary_contact.full_name
+              : ((deal.primary_contact && typeof deal.primary_contact === 'object' && deal.primary_contact.email)
+                ? deal.primary_contact.email
+                : 'No contact');
+            
+            // Fallback: Try to parse from notes if site/contact data not available
+            // Notes format: "Contact: First Last | email | phone | title\n\nEstimated Value: $..."
+            if (contactName === 'No contact' && deal.notes) {
+              const contactMatch = deal.notes.match(/Contact:\s*([^|]+)/);
+              if (contactMatch) {
+                contactName = contactMatch[1].trim();
+              }
+            }
+            
+            // If still no company name and title looks generic, try to extract from notes
+            if ((companyName === deal.title || companyName === 'Unnamed Deal') && deal.notes) {
+              // Notes might have company info stored
+              // This is a fallback - ideally site_id should be set
+            }
             
             // Get deal value - check multiple possible fields
             const dealValue = Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
