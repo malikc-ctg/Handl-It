@@ -2169,7 +2169,7 @@
         calculateAndRenderKPIs(dealsData, quotesData);
 
         // Generate and render priority actions
-        generatePriorityActions(dealsData, quotesData, leadsData);
+        generatePriorityActions(dealsData, quotesData);
 
         // Render active deals table
         renderActiveDealsTable(dealsData);
@@ -2341,7 +2341,6 @@
       document.getElementById('kpi-at-risk').textContent = atRisk;
 
       // Urgent metrics
-      const uncontactedLeads = leads.filter(l => !l.last_contacted_at).length;
       const quotesExpiring = quotes.filter(q => {
         if (!q.expiry_date) return false;
         const expiry = new Date(q.expiry_date);
@@ -2356,13 +2355,15 @@
         return daysSinceContact > 7;
       }).length;
 
-      document.getElementById('kpi-uncontacted').textContent = uncontactedLeads;
+      // Set uncontacted to 0 since leads tab is removed
+      const uncontactedEl = document.getElementById('kpi-uncontacted');
+      if (uncontactedEl) uncontactedEl.textContent = '0';
       document.getElementById('kpi-quotes-expiring').textContent = quotesExpiring;
       document.getElementById('kpi-idle-deals').textContent = idleDeals;
     }
 
     // Generate priority actions
-    function generatePriorityActions(deals, quotes, leads) {
+    function generatePriorityActions(deals, quotes) {
       const actions = [];
 
       // Quotes expiring soon
@@ -2423,23 +2424,6 @@
         }
       });
 
-      // Uncontacted leads
-      leads.forEach(l => {
-        if (!l.last_contacted_at) {
-          const hoursSinceCreated = (new Date() - new Date(l.created_at)) / (1000 * 60 * 60);
-          if (hoursSinceCreated > 2) {
-            actions.push({
-              type: 'uncontacted_lead',
-              priority: hoursSinceCreated,
-              company: l.company_name || l.name || 'Unknown',
-              dealValue: 0,
-              reason: `New inbound lead untouched for ${Math.round(hoursSinceCreated)}h`,
-              lastActivity: l.created_at,
-              leadId: l.id
-            });
-          }
-        }
-      });
 
       // Sort by priority (lower number = higher priority)
       actions.sort((a, b) => a.priority - b.priority);
