@@ -274,17 +274,8 @@
           <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="quotes">
             <i data-lucide="file-text" class="w-4 h-4 inline mr-2"></i> Quotes
           </button>
-          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="leads">
-            <i data-lucide="user-plus" class="w-4 h-4 inline mr-2"></i> Leads
-          </button>
           <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="contacts">
             <i data-lucide="users" class="w-4 h-4 inline mr-2"></i> Contacts
-          </button>
-          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="calls">
-            <i data-lucide="phone" class="w-4 h-4 inline mr-2"></i> Calls
-          </button>
-          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="sequences">
-            <i data-lucide="repeat" class="w-4 h-4 inline mr-2"></i> Sequences
           </button>
         </div>
       </div>
@@ -317,10 +308,6 @@
                 <i data-lucide="calendar" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
               </div>
               <div class="space-y-1 text-sm">
-                <div class="flex justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Calls:</span>
-                  <span id="kpi-today-calls" class="font-semibold text-nfgblue dark:text-blue-400">0</span>
-                </div>
                 <div class="flex justify-between">
                   <span class="text-gray-600 dark:text-gray-400">Quotes:</span>
                   <span id="kpi-today-quotes" class="font-semibold text-nfgblue dark:text-blue-400">0</span>
@@ -761,85 +748,6 @@
           </div>
         </div>
 
-        <!-- Leads Tab -->
-        <div id="tab-leads" class="sales-tab-content hidden h-full flex flex-col">
-          <!-- Sticky top bar -->
-          <div class="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-nfgray p-4 md:p-6">
-            <div class="flex flex-col gap-4">
-              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                  <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Leads</h2>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Quo-style calling list for lead management</p>
-                </div>
-                <button id="create-lead-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-                  <i data-lucide="plus" class="w-4 h-4"></i> New Lead
-                </button>
-              </div>
-              
-              <!-- Search and Filters -->
-              <div class="flex flex-col md:flex-row gap-3">
-                <div class="flex-1">
-                  <input
-                    type="text"
-                    id="leads-search"
-                    placeholder="Search by company, person, phone, or email..."
-                    class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-4 py-2 focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800"
-                  />
-                </div>
-                <div class="flex gap-2 flex-wrap">
-                  <select id="leads-status-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
-                    <option value="">All Status</option>
-                    <option value="new">New</option>
-                    <option value="contacted">Contacted</option>
-                    <option value="dm_reached">DM Reached</option>
-                    <option value="walkthrough_booked">Walkthrough Booked</option>
-                    <option value="quote_pending">Quote Pending</option>
-                    <option value="unqualified">Unqualified</option>
-                    <option value="do_not_contact">Do Not Contact</option>
-                  </select>
-                  <select id="leads-source-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
-                    <option value="">All Sources</option>
-                    <option value="glsa">GLSA</option>
-                    <option value="coldlist">Cold List</option>
-                    <option value="referral">Referral</option>
-                    <option value="web">Web</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <select id="leads-owner-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800 hidden">
-                    <option value="">All Owners</option>
-                  </select>
-                  <select id="leads-priority-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
-                    <option value="">All Priorities</option>
-                    <option value="5">Priority 5 (Highest)</option>
-                    <option value="4">Priority 4</option>
-                    <option value="3">Priority 3</option>
-                    <option value="2">Priority 2</option>
-                    <option value="1">Priority 1 (Lowest)</option>
-                  </select>
-                  <select id="leads-has-phone-filter" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
-                    <option value="">All Leads</option>
-                    <option value="yes">Has Phone</option>
-                    <option value="no">No Phone</option>
-                  </select>
-                  <select id="leads-sort" class="border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800">
-                    <option value="next_action_at_asc">Next Action Due</option>
-                    <option value="last_touch_at_desc">Last Touched</option>
-                    <option value="priority_desc">Highest Priority</option>
-                    <option value="created_at_desc">Newest</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Leads List -->
-          <div class="flex-1 overflow-auto p-4 md:p-6">
-            <div id="leads-list" class="space-y-3">
-              <!-- Leads will be rendered here -->
-            </div>
-          </div>
-        </div>
-
         <!-- Contacts Tab (Accounts Directory) -->
         <div id="tab-contacts" class="sales-tab-content hidden h-full flex flex-col">
           <!-- Sticky top bar -->
@@ -920,37 +828,6 @@
           </div>
         </div>
 
-        <!-- Calls Tab -->
-        <div id="tab-calls" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Calls</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">View call history and recordings</p>
-            </div>
-            <button id="new-call-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-              <i data-lucide="phone" class="w-4 h-4"></i> New Call
-            </button>
-          </div>
-          <div id="calls-list" class="space-y-4">
-            <!-- Calls will be rendered here -->
-          </div>
-        </div>
-
-        <!-- Sequences Tab -->
-        <div id="tab-sequences" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-            <div>
-              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Follow-Up Sequences</h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Automate your follow-up workflows</p>
-            </div>
-            <button id="create-sequence-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-              <i data-lucide="plus" class="w-4 h-4"></i> New Sequence
-            </button>
-          </div>
-          <div id="sequences-list" class="space-y-4">
-            <!-- Sequences will be rendered here -->
-          </div>
-        </div>
       </div>
 
       <!-- Deal Detail View (Modal Overlay) -->
@@ -2076,9 +1953,6 @@
       }
       console.log('[Sales Dashboard] ✅ accounts directory module loaded', window.accountsDirectory ? '✓' : '✗');
       
-      // Load leads directory module
-      window.leadsDirectory = await import('./js/leads-directory.js');
-      console.log('[Sales Dashboard] ✅ leads directory module loaded');
       
       console.log('[Sales Dashboard] ✅ All modules loaded successfully');
     } catch (error) {
@@ -2248,14 +2122,6 @@
           case 'quotes':
             await loadQuotes();
             break;
-          case 'leads':
-            // Initialize leads directory on first load
-            if (window.leadsDirectory && typeof window.leadsDirectory.init === 'function') {
-              await window.leadsDirectory.init();
-            } else {
-              await loadLeads();
-            }
-            break;
           case 'contacts':
             // Initialize accounts directory on first load
             console.log('[Sales] Loading contacts tab, accountsDirectory available:', !!window.accountsDirectory);
@@ -2281,12 +2147,6 @@
               }
             }
             break;
-          case 'calls':
-            await loadCalls();
-            break;
-          case 'sequences':
-            await loadSequences();
-            break;
         }
       } catch (error) {
         console.error(`Error loading ${tabName} data:`, error);
@@ -2300,15 +2160,13 @@
         console.log('[Dashboard] Loading dashboard data...');
         
         // Load all data in parallel
-        const [dealsData, quotesData, callsData, leadsData] = await Promise.all([
+        const [dealsData, quotesData] = await Promise.all([
           loadDealsForDashboard(),
-          loadQuotesForDashboard(),
-          loadCallsForDashboard(),
-          loadLeadsForDashboard()
+          loadQuotesForDashboard()
         ]);
 
         // Calculate and render KPIs
-        calculateAndRenderKPIs(dealsData, quotesData, callsData, leadsData);
+        calculateAndRenderKPIs(dealsData, quotesData);
 
         // Generate and render priority actions
         generatePriorityActions(dealsData, quotesData, leadsData);
@@ -2444,39 +2302,8 @@
       }
     }
 
-    async function loadCallsForDashboard() {
-      try {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const { data, error } = await supabase
-          .from('calls')
-          .select('*')
-          .gte('created_at', today.toISOString());
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.error('[Dashboard] Error loading calls:', error);
-        return [];
-      }
-    }
-
-    async function loadLeadsForDashboard() {
-      try {
-        const { data, error } = await supabase
-          .from('leads')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(100);
-        if (error) throw error;
-        return data || [];
-      } catch (error) {
-        console.error('[Dashboard] Error loading leads:', error);
-        return [];
-      }
-    }
-
     // Calculate and render KPIs
-    function calculateAndRenderKPIs(deals, quotes, calls, leads) {
+    function calculateAndRenderKPIs(deals, quotes) {
       // Open Pipeline
       const openDeals = deals.filter(d => ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(d.stage));
       const totalOpen = openDeals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
@@ -2490,7 +2317,6 @@
 
       // Today metrics
       const today = new Date().toISOString().split('T')[0];
-      const todayCalls = calls.length;
       const todayQuotes = quotes.filter(q => q.created_at?.startsWith(today)).length;
       const todayClosed = deals.filter(d => d.stage === 'closed_won' && d.updated_at?.startsWith(today)).length;
       const todayWalkthroughs = deals.filter(d => {
@@ -2499,7 +2325,6 @@
         return false; // TODO: Implement based on actual walkthrough data
       }).length;
 
-      document.getElementById('kpi-today-calls').textContent = todayCalls;
       document.getElementById('kpi-today-quotes').textContent = todayQuotes;
       document.getElementById('kpi-today-closed').textContent = todayClosed;
       document.getElementById('kpi-today-walkthroughs').textContent = todayWalkthroughs;
@@ -3708,51 +3533,6 @@
       }
     }
     
-    async function loadLeads() {
-      const leadsList = document.getElementById('leads-list');
-      if (!leadsList) return;
-      
-      try {
-        const { data: leads, error } = await supabase
-          .from('leads')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(50);
-        
-        if (error) throw error;
-        
-        if (!leads || leads.length === 0) {
-          leadsList.innerHTML = `
-            <div class="text-center py-12">
-              <i data-lucide="user-plus" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-              <p class="text-gray-500">No leads yet</p>
-            </div>
-          `;
-          if (window.lucide) lucide.createIcons();
-          return;
-        }
-        
-        leadsList.innerHTML = leads.map(lead => `
-          <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <h3 class="font-semibold text-nfgblue dark:text-blue-400">${lead.name || 'Unnamed Lead'}</h3>
-                <p class="text-sm text-gray-500 mt-1">${lead.email || lead.phone || 'No contact info'}</p>
-                <p class="text-sm text-gray-600 mt-2">${lead.notes || 'No notes'}</p>
-              </div>
-              <span class="px-3 py-1 rounded-lg text-xs font-medium bg-nfglight dark:bg-gray-700">
-                ${lead.status || 'new'}
-              </span>
-            </div>
-          </div>
-        `).join('');
-        
-        if (window.lucide) lucide.createIcons();
-      } catch (error) {
-        console.error('Error loading leads:', error);
-        leadsList.innerHTML = `<div class="text-center py-12 text-red-500">Failed to load leads</div>`;
-      }
-    }
     
     async function loadContacts() {
       // Load accounts directory instead
@@ -4165,9 +3945,6 @@
             if (toast) toast.success('Lead created');
             document.getElementById('create-lead-modal')?.classList.add('hidden');
             e.target.reset();
-            if (window.leadsDirectory && typeof window.leadsDirectory.loadLeads === 'function') {
-              await window.leadsDirectory.loadLeads();
-            }
           } catch (error) {
             console.error('Error creating lead:', error);
             if (toast) toast.error('Failed to create lead', 'Error');
