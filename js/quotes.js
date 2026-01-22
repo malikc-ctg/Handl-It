@@ -276,6 +276,12 @@ export async function deleteQuote(quoteId) {
       .single();
 
     if (error) throw error;
+    
+    // Send notification
+    if (window.salesNotifications?.quote) {
+      await window.salesNotifications.quote.deleted(quoteId);
+    }
+    
     return { data, error: null };
   } catch (error) {
     console.error('[Quotes] Error deleting quote:', error);
@@ -401,6 +407,11 @@ export async function createQuote(formData) {
     }
 
     toast.success('Quote created successfully', 'Success');
+    
+    // Send notification
+    if (window.salesNotifications?.quote) {
+      await window.salesNotifications.quote.created(data);
+    }
     return data;
   } catch (error) {
     console.error('[Quotes] Error creating quote:', error);

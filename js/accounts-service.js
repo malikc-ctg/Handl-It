@@ -289,6 +289,12 @@ export async function createAccount(accountData) {
       .single();
 
     if (error) throw error;
+    
+    // Send notification
+    if (window.salesNotifications?.account) {
+      await window.salesNotifications.account.accountCreated(data);
+    }
+    
     return data;
   } catch (error) {
     console.error('[Accounts] Error creating account:', error);
@@ -383,6 +389,21 @@ export async function createContact(contactData) {
       .single();
 
     if (error) throw error;
+    
+    // Send notification (get account name if possible)
+    if (window.salesNotifications?.account) {
+      try {
+        const { data: account } = await supabase
+          .from('accounts')
+          .select('name')
+          .eq('id', contactData.account_id)
+          .single();
+        await window.salesNotifications.account.contactCreated(data, account?.name);
+      } catch {
+        await window.salesNotifications.account.contactCreated(data);
+      }
+    }
+    
     return data;
   } catch (error) {
     console.error('[Accounts] Error creating contact:', error);

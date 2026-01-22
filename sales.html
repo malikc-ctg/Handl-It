@@ -1922,6 +1922,10 @@
       showNotification = notificationsModule.showNotification;
       console.log('[Sales Dashboard] ✅ notifications module loaded');
       
+      const salesNotificationsModule = await import('./js/sales-notifications.js');
+      window.salesNotifications = salesNotificationsModule.default;
+      console.log('[Sales Dashboard] ✅ sales notifications module loaded');
+      
       const loaderModule = await import('./js/loader.js');
       hideLoader = loaderModule.hideLoader;
       console.log('[Sales Dashboard] ✅ loader module loaded');
@@ -3320,6 +3324,13 @@
         }
 
         toast.success('Deal stage updated', 'Success');
+        
+        // Send notification for stage change
+        if (window.salesNotifications?.deal) {
+          const oldStage = currentDeal.stage;
+          await window.salesNotifications.deal.stageChanged(currentDeal, oldStage, newStage);
+        }
+        
         await loadDashboardData();
       } catch (error) {
         console.error('Error updating deal stage:', error);

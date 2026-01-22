@@ -997,6 +997,12 @@ export async function updateDeal(dealId, updates) {
     }
 
     toast.success('Deal updated successfully', 'Success');
+    
+    // Send notification
+    if (window.salesNotifications?.deal) {
+      await window.salesNotifications.deal.updated(data);
+    }
+    
     return data;
   } catch (error) {
     console.error('[Sales] Error updating deal:', error);
@@ -1028,6 +1034,11 @@ export async function deleteDeal(dealId) {
     currentDeal = null;
 
     toast.success('Deal deleted successfully', 'Success');
+    
+    // Send notification
+    if (window.salesNotifications?.deal) {
+      await window.salesNotifications.deal.deleted('Deleted Deal');
+    }
   } catch (error) {
     console.error('[Sales] Error deleting deal:', error);
     toast.error(`Failed to delete deal: ${error.message}`, 'Error');
@@ -1178,6 +1189,12 @@ export async function createDeal(formData) {
 
     await loadDeals();
     toast.success('Lead/Deal created successfully', 'Success');
+    
+    // Send notification
+    if (window.salesNotifications?.deal) {
+      await window.salesNotifications.deal.created(data);
+    }
+    
     closeCreateDealModal();
   } catch (error) {
     console.error('[Sales] Error creating deal:', error);
