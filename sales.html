@@ -3402,6 +3402,11 @@
         if (siteError) throw siteError;
 
         toast.success(`Deal converted to site: ${newSite.name}`, 'Success');
+        
+        // Send notification
+        if (window.salesNotifications?.deal) {
+          await window.salesNotifications.deal.convertedToSite(deal, newSite);
+        }
         console.log('[Deal Conversion] Site created:', newSite);
 
         return newSite;
