@@ -892,9 +892,10 @@ function openEditDealModal(dealId) {
   const modal = document.getElementById('edit-deal-modal');
   const titleInput = document.getElementById('edit-deal-title');
   const stageSelect = document.getElementById('edit-deal-stage');
+  const valueInput = document.getElementById('edit-deal-value');
   const notesTextarea = document.getElementById('edit-deal-notes');
 
-  if (!modal || !titleInput || !stageSelect || !notesTextarea) {
+  if (!modal || !titleInput || !stageSelect || !valueInput || !notesTextarea) {
     toast.error('Edit modal elements not found', 'Error');
     return;
   }
@@ -902,6 +903,9 @@ function openEditDealModal(dealId) {
   // Populate form fields
   titleInput.value = currentDeal.title || '';
   stageSelect.value = currentDeal.stage || 'prospecting';
+  // Get deal value from multiple possible fields
+  const dealValue = currentDeal.deal_value || currentDeal.value_estimate || currentDeal.estimated_value || '';
+  valueInput.value = dealValue ? parseFloat(dealValue) : '';
   notesTextarea.value = currentDeal.notes || '';
 
   // Show modal
@@ -923,11 +927,25 @@ function openEditDealModal(dealId) {
   if (form) {
     form.onsubmit = async (e) => {
       e.preventDefault();
-      await updateDeal(dealId, {
+      const updates = {
         title: titleInput.value.trim(),
         stage: stageSelect.value,
         notes: notesTextarea.value.trim() || null
-      });
+      };
+      
+      // Add deal_value if provided
+      const dealValue = valueInput.value.trim();
+      if (dealValue !== '') {
+        const parsedValue = parseFloat(dealValue);
+        if (!isNaN(parsedValue) && parsedValue >= 0) {
+          updates.deal_value = parsedValue;
+        }
+      } else {
+        // Set to null if empty to clear the value
+        updates.deal_value = null;
+      }
+      
+      await updateDeal(dealId, updates);
       closeModal();
     };
   }
@@ -1163,10 +1181,12 @@ export async function createDeal(formData) {
       notes: dealNotes || null
     };
     
-    // Add estimated value to notes if provided (since deal_value column might not exist)
-    if (formData.value) {
-      const valueNote = `\n\nEstimated Value: $${parseFloat(formData.value).toLocaleString()}`;
-      dealInsertData.notes = (dealInsertData.notes || '') + valueNote;
+    // Add deal_value if provided
+    if (formData.value && formData.value.trim() !== '') {
+      const dealValue = parseFloat(formData.value);
+      if (!isNaN(dealValue) && dealValue > 0) {
+        dealInsertData.deal_value = dealValue;
+      }
     }
     
     // Only add priority if the column exists - using priority_score from schema

@@ -986,6 +986,11 @@
               </div>
 
               <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deal Value ($)</label>
+                <input type="number" id="edit-deal-value" step="0.01" min="0" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0.00">
+              </div>
+
+              <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
                 <textarea id="edit-deal-notes" rows="4" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"></textarea>
               </div>
@@ -2550,7 +2555,15 @@
             }
             
             // Get deal value - check multiple possible fields
-            const dealValue = Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
+            let dealValue = Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
+            
+            // Fallback: Parse from notes if value is 0 and notes contain "Estimated Value: $X"
+            if (dealValue === 0 && deal.notes) {
+              const valueMatch = deal.notes.match(/Estimated Value:\s*\$?([\d,]+\.?\d*)/i);
+              if (valueMatch) {
+                dealValue = Number(valueMatch[1].replace(/,/g, '')) || 0;
+              }
+            }
             
             // Determine status and priority
             let statusTag = '';
