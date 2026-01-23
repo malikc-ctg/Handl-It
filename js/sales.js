@@ -495,9 +495,17 @@ async function renderTimeline(dealId) {
 
     // Handle table doesn't exist or permission errors gracefully
     if (error) {
-      // Table doesn't exist (PGRST205) or permission denied - show empty state
-      if (error.code === 'PGRST205' || error.code === '42501' || error.message?.includes('permission denied')) {
-        console.warn('[Sales] Timeline events table not available:', error.message);
+      // Table doesn't exist (PGRST205, 404) or permission denied (42501, 403) - show empty state
+      const isTableError = error.code === 'PGRST205' || 
+                          error.code === '42501' || 
+                          error.status === 404 ||
+                          error.status === 403 ||
+                          error.message?.includes('permission denied') ||
+                          error.message?.includes('Could not find the table') ||
+                          error.message?.includes('schema cache');
+      
+      if (isTableError) {
+        // Silently handle expected errors - table may not exist or user may not have permission
         timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
         return;
       }
@@ -639,8 +647,16 @@ async function renderFollowUpSequences(dealId) {
 
     if (error) {
       // Handle permission denied or table doesn't exist
-      if (error.code === '42501' || error.code === 'PGRST205' || error.message?.includes('permission denied')) {
-        console.warn('[Sales] Sequences table not available:', error.message);
+      const isTableError = error.code === 'PGRST205' || 
+                          error.code === '42501' || 
+                          error.status === 404 ||
+                          error.status === 403 ||
+                          error.message?.includes('permission denied') ||
+                          error.message?.includes('Could not find the table') ||
+                          error.message?.includes('schema cache');
+      
+      if (isTableError) {
+        // Silently handle expected errors - table may not exist or user may not have permission
         sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
         return;
       }
@@ -655,8 +671,16 @@ async function renderFollowUpSequences(dealId) {
       
       // Handle permission errors on simple query too
       if (simpleError) {
-        if (simpleError.code === '42501' || simpleError.code === 'PGRST205' || simpleError.message?.includes('permission denied')) {
-          console.warn('[Sales] Sequence executions table not available:', simpleError.message);
+        const isTableError = simpleError.code === 'PGRST205' || 
+                            simpleError.code === '42501' || 
+                            simpleError.status === 404 ||
+                            simpleError.status === 403 ||
+                            simpleError.message?.includes('permission denied') ||
+                            simpleError.message?.includes('Could not find the table') ||
+                            simpleError.message?.includes('schema cache');
+        
+        if (isTableError) {
+          // Silently handle expected errors - table may not exist or user may not have permission
           sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
           return;
         }
