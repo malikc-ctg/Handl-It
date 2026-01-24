@@ -2219,6 +2219,18 @@
         const { data, error } = await query;
         if (error) throw error;
         
+        // Debug: Log first deal to see what columns we're getting
+        if (data && data.length > 0) {
+          console.log('[Deals Debug] First deal sample:', {
+            id: data[0].id,
+            title: data[0].title,
+            deal_value: data[0].deal_value,
+            value_estimate: data[0].value_estimate,
+            estimated_value: data[0].estimated_value,
+            allKeys: Object.keys(data[0])
+          });
+        }
+        
         // Load site and contact data separately for each deal
         const dealsWithDetails = await Promise.all((data || []).map(async (deal) => {
           // Load site data if site_id exists
@@ -2303,8 +2315,38 @@
     }
 
     // Helper function to get deal value (checks multiple possible column names)
+    // Handles both numeric and string values from Supabase
     function getDealValue(deal) {
-      return Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
+      if (!deal) return 0;
+      
+      // Try each possible column name
+      let rawValue = deal.deal_value || deal.value_estimate || deal.estimated_value;
+      
+      // Handle null, undefined, empty string
+      if (rawValue == null || rawValue === '' || rawValue === 'null') {
+        return 0;
+      }
+      
+      // Convert to number (handles both numeric and string)
+      const value = typeof rawValue === 'string' 
+        ? parseFloat(rawValue.replace(/[^0-9.-]/g, '')) || 0
+        : Number(rawValue) || 0;
+      
+      // Debug logging for first few deals
+      if (window._debugDealCount === undefined) window._debugDealCount = 0;
+      if (window._debugDealCount < 3 && deal.id) {
+        console.log(`[Deal Value Debug] Deal ${deal.id} (${deal.title}):`, {
+          deal_value: deal.deal_value,
+          value_estimate: deal.value_estimate,
+          estimated_value: deal.estimated_value,
+          rawValue: rawValue,
+          type: typeof rawValue,
+          calculated: value
+        });
+        window._debugDealCount++;
+      }
+      
+      return isNaN(value) ? 0 : value;
     }
 
     // Calculate and render KPIs
