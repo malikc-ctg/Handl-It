@@ -82,7 +82,42 @@ function renderQuoteDetail(quote) {
   // Calculate values that will be used in multiple places
   const createdDate = quote.created_at ? new Date(quote.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'N/A';
   const revisionCount = quote.revisions?.length || 0;
-  const totalAmount = latestRevision?.total ? `$${Number(latestRevision.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'N/A';
+  
+  // Calculate total amount - check multiple sources
+  let totalAmount = 'N/A';
+  if (latestRevision) {
+    // Priority 1: Use revision.total if available
+    if (latestRevision.total != null && latestRevision.total !== 0) {
+      totalAmount = `$${Number(latestRevision.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+    }
+    // Priority 2: Calculate from subtotal + tax
+    else if (latestRevision.subtotal != null) {
+      const subtotal = Number(latestRevision.subtotal) || 0;
+      const tax = Number(latestRevision.tax) || 0;
+      const calculatedTotal = subtotal + tax;
+      if (calculatedTotal > 0) {
+        totalAmount = `$${calculatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      }
+    }
+    // Priority 3: Calculate from line items
+    else if (quote.lineItems && quote.lineItems.length > 0) {
+      const revisionLineItems = quote.lineItems.filter(item => item.revision_number === latestRevision.revision_number);
+      let subtotal = 0;
+      revisionLineItems.forEach(item => {
+        if (item.line_total != null) {
+          subtotal += Number(item.line_total) || 0;
+        } else if (item.unit_price != null && item.quantity != null) {
+          subtotal += (Number(item.unit_price) || 0) * (Number(item.quantity) || 0);
+        }
+      });
+      const tax = subtotal * 0.13; // 13% HST
+      const calculatedTotal = subtotal + tax;
+      if (calculatedTotal > 0) {
+        totalAmount = `$${calculatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+      }
+    }
+  }
+  
   const lineItemsCount = latestRevision ? (quote.lineItems?.filter(item => item.revision_number === latestRevision.revision_number).length || 0) : 0;
   
   // Meta information

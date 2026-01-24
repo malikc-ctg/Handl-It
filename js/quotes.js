@@ -133,7 +133,27 @@ export async function loadQuotes(filters = {}) {
     if (error) throw error;
 
     quotes = data || [];
-    return quotes;
+    
+    // Load latest revision for each quote to get totals
+    const quotesWithRevisions = await Promise.all(quotes.map(async (quote) => {
+      try {
+        const { data: revisions } = await supabase
+          .from('quote_revisions')
+          .select('revision_number, total, subtotal, tax')
+          .eq('quote_id', quote.id)
+          .order('revision_number', { ascending: false })
+          .limit(1);
+        
+        if (revisions && revisions.length > 0) {
+          quote.latestRevision = revisions[0];
+        }
+      } catch (err) {
+        console.warn(`[Quotes] Could not load revision for quote ${quote.id}:`, err);
+      }
+      return quote;
+    }));
+    
+    return quotesWithRevisions;
   } catch (error) {
     console.error('[Quotes] Error loading quotes:', error);
     toast.error('Failed to load quotes', 'Error');

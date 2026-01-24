@@ -3505,9 +3505,23 @@
           };
           const statusColor = statusColors[quote.status] || statusColors.draft;
           
-          // Get latest revision info (would need to fetch separately in production)
+          // Get latest revision info
           const revisionType = quote.quote_type === 'walkthrough_required' ? 'Proposal' : 'Final';
-          const totalDisplay = 'TBD'; // Would fetch from latest revision
+          let totalDisplay = 'N/A';
+          if (quote.latestRevision) {
+            const rev = quote.latestRevision;
+            // Try total first, then calculate from subtotal + tax
+            if (rev.total != null && rev.total !== 0) {
+              totalDisplay = `$${Number(rev.total).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            } else if (rev.subtotal != null) {
+              const subtotal = Number(rev.subtotal) || 0;
+              const tax = Number(rev.tax) || 0;
+              const calculatedTotal = subtotal + tax;
+              if (calculatedTotal > 0) {
+                totalDisplay = `$${calculatedTotal.toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+              }
+            }
+          }
           
           const sentDate = quote.updated_at ? new Date(quote.updated_at).toLocaleDateString() : '-';
           const expiryDate = '-'; // Would fetch from latest revision
