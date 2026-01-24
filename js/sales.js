@@ -488,10 +488,21 @@ async function renderDealDetail(deal) {
   // Load and render quotes
   await renderQuotes(deal.id);
 
-  // Display notes
+  // Display deal information (notes and owner)
   const notesEl = document.getElementById('deal-detail-notes');
   if (notesEl) {
     notesEl.textContent = deal.notes || 'No notes';
+  }
+  
+  // Display deal owner
+  const ownerEl = document.getElementById('deal-detail-owner');
+  if (ownerEl) {
+    const owner = deal.created_by_user;
+    if (owner) {
+      ownerEl.textContent = owner.name || owner.email || 'Unknown';
+    } else {
+      ownerEl.textContent = 'Unknown';
+    }
   }
 
   // Show detail view
@@ -678,9 +689,17 @@ export async function openDealDetail(dealId) {
     modal.classList.remove('hidden');
     console.log('[Sales] Modal shown');
     
+    // Fetch deal with creator information
     const { data, error } = await supabase
       .from('deals')
-      .select('*')
+      .select(`
+        *,
+        created_by_user:created_by (
+          id,
+          email,
+          raw_user_meta_data
+        )
+      `)
       .eq('id', dealId)
       .single();
 
@@ -743,6 +762,38 @@ export async function openDealDetail(dealId) {
         }
       } catch (contactError) {
         console.warn('[Sales] Could not load contact data for deal:', contactError);
+      }
+    }
+    
+    // Load creator/owner information if created_by exists
+    if (currentDeal && currentDeal.created_by && !currentDeal.created_by_user) {
+      try {
+        // Try to get user profile
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('id, email, full_name, first_name, last_name')
+          .eq('id', currentDeal.created_by)
+          .single();
+        
+        if (userProfile) {
+          currentDeal.created_by_user = {
+            id: userProfile.id,
+            email: userProfile.email,
+            name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
+          };
+        } else {
+          // Fallback to auth.users metadata if profile doesn't exist
+          const { data: { user } } = await supabase.auth.admin.getUserById(currentDeal.created_by);
+          if (user) {
+            currentDeal.created_by_user = {
+              id: user.id,
+              email: user.email,
+              name: user.user_metadata?.full_name || user.user_metadata?.name || user.email
+            };
+          }
+        }
+      } catch (ownerError) {
+        console.warn('[Sales] Could not load deal owner information:', ownerError);
       }
     }
     
