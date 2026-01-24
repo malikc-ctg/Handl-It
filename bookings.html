@@ -968,10 +968,6 @@
               <i data-lucide="calendar" class="w-4 h-4"></i>
               <span>Calendar</span>
         </button>
-            <button id="view-team-btn" class="view-toggle-btn px-4 py-2 rounded-lg border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700 font-medium flex items-center gap-2">
-              <i data-lucide="users" class="w-4 h-4"></i>
-              <span>Team</span>
-        </button>
           </div>
           
         </div>
@@ -1027,109 +1023,7 @@
           </table>
         </div>
         
-        <!-- Team View (hidden by default) -->
-        <div id="team-view-container" class="hidden w-full space-y-6">
-          <!-- Statistics Header -->
-          <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
-              <p id="team-total-count" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Active</p>
-              <p id="team-active-count" class="text-2xl font-semibold text-green-600 dark:text-green-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-              <p id="team-pending-count" class="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Inactive</p>
-              <p id="team-inactive-count" class="text-2xl font-semibold text-gray-600 dark:text-gray-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Admins</p>
-              <p id="team-admin-count" class="text-2xl font-semibold text-purple-600 dark:text-purple-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Staff</p>
-              <p id="team-staff-count" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">0</p>
-            </div>
-            <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Clients</p>
-              <p id="team-client-count" class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">0</p>
-            </div>
-          </div>
-
-          <!-- Search & Filter Bar -->
-          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4">
-            <div class="flex flex-col md:flex-row gap-4">
-              <!-- Search -->
-              <div class="flex-1">
-                <div class="relative">
-                  <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"></i>
-                  <input 
-                    type="search" 
-                    id="team-search-input" 
-                    placeholder="Search by name, email, or phone..." 
-                    class="w-full pl-10 pr-4 py-2 border border-nfgray rounded-xl focus:ring-2 focus:ring-nfgblue outline-none dark:bg-gray-700 dark:border-gray-600"
-                  />
-                </div>
-              </div>
-              
-              <!-- Role Filter -->
-              <select 
-                id="team-role-filter" 
-                class="px-4 py-2 border border-nfgray rounded-xl focus:ring-2 focus:ring-nfgblue outline-none dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="all">All Roles</option>
-                <option value="admin">Admin</option>
-                <option value="staff">Staff</option>
-                <option value="client">Client</option>
-              </select>
-              
-              <!-- Status Filter -->
-              <select 
-                id="team-status-filter" 
-                class="px-4 py-2 border border-nfgray rounded-xl focus:ring-2 focus:ring-nfgblue outline-none dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="all">All Status</option>
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="inactive">Inactive</option>
-                <option value="suspended">Suspended</option>
-              </select>
-              
-              <!-- Sort -->
-              <select 
-                id="team-sort-select" 
-                class="px-4 py-2 border border-nfgray rounded-xl focus:ring-2 focus:ring-nfgblue outline-none dark:bg-gray-700 dark:border-gray-600"
-              >
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
-                <option value="jobs-desc">Most Jobs</option>
-                <option value="sites-desc">Most Sites</option>
-                <option value="active-desc">Last Active</option>
-              </select>
-              
-              <!-- Clear Filters -->
-              <button 
-                id="team-clear-filters-btn" 
-                class="px-4 py-2 border border-nfgray rounded-xl hover:bg-nfglight dark:hover:bg-gray-700 transition whitespace-nowrap"
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-
-          <!-- Employee Cards Grid -->
-          <div id="team-employees-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <!-- Employee cards will be rendered here -->
-            <div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">
-              Loading employees...
-            </div>
-          </div>
-        </div>
+        <!-- Team View removed - moved to Sales Portal -->
         
         <!-- Calendar View (hidden by default) -->
         <div id="calendar-container" class="hidden w-full">
@@ -4342,10 +4236,12 @@
     function initViewToggle() {
       const tableBtn = document.getElementById('view-table-btn');
       const calendarBtn = document.getElementById('view-calendar-btn');
-      const teamBtn = document.getElementById('view-team-btn');
+      // Team tab removed - moved to Sales Portal
+      // const teamBtn = document.getElementById('view-team-btn');
       const tableContainer = document.getElementById('bookings-table-container');
       const calendarContainer = document.getElementById('calendar-container');
-      const teamContainer = document.getElementById('team-view-container');
+      // Team container removed - moved to Sales Portal
+      // const teamContainer = document.getElementById('team-view-container');
       const calendarControls = document.getElementById('calendar-controls');
       
       tableBtn?.addEventListener('click', () => {
@@ -4356,16 +4252,14 @@
         toggleView('calendar');
       });
       
-      teamBtn?.addEventListener('click', () => {
-        toggleView('team');
-      });
+      // Team button removed - moved to Sales Portal
     }
 
     function toggleView(view) {
       const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
       
       // Staff can only use calendar view
-      if (isStaff && (view === 'table' || view === 'team')) {
+      if (isStaff && view === 'table') {
         console.log('Staff can only view calendar');
         return;
       }
@@ -4373,15 +4267,17 @@
       currentView = view;
       const tableBtn = document.getElementById('view-table-btn');
       const calendarBtn = document.getElementById('view-calendar-btn');
-      const teamBtn = document.getElementById('view-team-btn');
+      // Team tab removed - moved to Sales Portal
+      // const teamBtn = document.getElementById('view-team-btn');
       const tableContainer = document.getElementById('bookings-table-container');
       const calendarContainer = document.getElementById('calendar-container');
-      const teamContainer = document.getElementById('team-view-container');
+      // Team container removed - moved to Sales Portal
+      // const teamContainer = document.getElementById('team-view-container');
       const calendarControls = document.getElementById('calendar-controls');
       const scrollableContent = document.querySelector('.scrollable-content');
       
       // Reset all button styles
-      [tableBtn, calendarBtn, teamBtn].forEach(btn => {
+      [tableBtn, calendarBtn].forEach(btn => {
         if (btn) {
           btn.classList.remove('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
           btn.classList.add('border', 'border-nfgray', 'hover:bg-nfglight', 'dark:hover:bg-gray-600', 'dark:bg-gray-700');
@@ -4391,7 +4287,7 @@
       // Hide all containers
       tableContainer?.classList.add('hidden');
       calendarContainer?.classList.add('hidden');
-      teamContainer?.classList.add('hidden');
+      // Team container removed
       calendarControls?.classList.add('hidden');
       
       if (view === 'table') {
@@ -4441,322 +4337,13 @@
             updateCalendar();
           }, 100);
         }
-      } else if (view === 'team') {
-        // Show team view, hide others
-        teamContainer?.classList.remove('hidden');
-        
-        // Reset scrollable content for team view
-        if (scrollableContent) {
-          scrollableContent.style.position = 'relative';
-          scrollableContent.style.height = 'auto';
-        }
-        
-        // Update button styles
-        teamBtn?.classList.add('bg-nfgblue', 'dark:bg-blue-900', 'text-white');
-        teamBtn?.classList.remove('border', 'border-nfgray', 'hover:bg-nfglight');
-        
-        // Initialize team view if not already loaded
-        initTeamView();
-      }
+      } 
+      // Team view removed - moved to Sales Portal
       
       if (window.lucide) lucide.createIcons();
     }
 
-    // ========== TEAM VIEW ==========
-    let teamViewInitialized = false;
-    let allTeamEmployees = [];
-    
-    async function initTeamView() {
-      if (teamViewInitialized) return;
-      
-      // Attach event listeners
-      document.getElementById('team-search-input')?.addEventListener('input', debounce(applyTeamFilters, 300));
-      document.getElementById('team-role-filter')?.addEventListener('change', applyTeamFilters);
-      document.getElementById('team-status-filter')?.addEventListener('change', applyTeamFilters);
-      document.getElementById('team-sort-select')?.addEventListener('change', applyTeamFilters);
-      document.getElementById('team-clear-filters-btn')?.addEventListener('click', clearTeamFilters);
-      
-      // Load team data
-      await loadTeamData();
-      
-      teamViewInitialized = true;
-    }
-    
-    async function loadTeamData() {
-      try {
-        const grid = document.getElementById('team-employees-grid');
-        if (grid) {
-          grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">Loading employees...</div>';
-        }
-        
-        // Fetch all users
-        const { data: users, error } = await supabase
-          .from('user_profiles')
-          .select('id, full_name, email, role, status, phone, created_at, profile_picture')
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('[Team] Error fetching users:', error);
-          if (grid) {
-            grid.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Failed to load employees. Please try again.</div>';
-          }
-          return;
-        }
-        
-        if (!users || users.length === 0) {
-          updateTeamStats(0, 0, 0, 0, 0, 0, 0);
-          renderEmployeeCards([]);
-          return;
-        }
-        
-        // Calculate statistics
-        const total = users.length;
-        const active = users.filter(u => u.status === 'active').length;
-        const pending = users.filter(u => u.status === 'pending' || !u.status).length;
-        const inactive = users.filter(u => u.status === 'inactive').length;
-        const admin = users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
-        const staff = users.filter(u => u.role === 'staff').length;
-        const client = users.filter(u => u.role === 'client').length;
-        
-        updateTeamStats(total, active, pending, inactive, admin, staff, client);
-        
-        // Fetch stats for each employee
-        const employeesWithStats = await fetchEmployeeStats(users);
-        allTeamEmployees = employeesWithStats;
-        
-        // Apply filters and render
-        applyTeamFilters();
-        
-      } catch (error) {
-        console.error('[Team] Error loading team data:', error);
-        const grid = document.getElementById('team-employees-grid');
-        if (grid) {
-          grid.innerHTML = '<div class="col-span-full text-center py-8 text-red-500">Error loading employees. Please refresh the page.</div>';
-        }
-      }
-    }
-    
-    async function fetchEmployeeStats(users) {
-      const userIds = users.map(u => u.id);
-      
-      // Fetch jobs for all users
-      const { data: allJobs } = await supabase
-        .from('jobs')
-        .select('id, assigned_worker_id, status')
-        .in('assigned_worker_id', userIds);
-      
-      // Fetch site assignments
-      const { data: sites } = await supabase
-        .from('worker_site_assignments')
-        .select('worker_id')
-        .in('worker_id', userIds);
-      
-      // Calculate stats for each user
-      return users.map(user => {
-        const userJobs = allJobs?.filter(j => j.assigned_worker_id === user.id) || [];
-        const jobsAssigned = userJobs.length;
-        const jobsCompleted = userJobs.filter(j => j.status === 'completed').length;
-        
-        const userSites = sites?.filter(s => s.worker_id === user.id) || [];
-        const sitesAssigned = userSites.length;
-        
-        return {
-          ...user,
-          jobsAssigned,
-          jobsCompleted,
-          sitesAssigned
-        };
-      });
-    }
-    
-    function updateTeamStats(total, active, pending, inactive, admin, staff, client) {
-      const elements = {
-        'team-total-count': total,
-        'team-active-count': active,
-        'team-pending-count': pending,
-        'team-inactive-count': inactive,
-        'team-admin-count': admin,
-        'team-staff-count': staff,
-        'team-client-count': client
-      };
-      
-      Object.entries(elements).forEach(([id, value]) => {
-        const el = document.getElementById(id);
-        if (el) el.textContent = value;
-      });
-    }
-    
-    function applyTeamFilters() {
-      let filtered = [...allTeamEmployees];
-      
-      // Search filter
-      const searchTerm = document.getElementById('team-search-input')?.value?.toLowerCase() || '';
-      if (searchTerm) {
-        filtered = filtered.filter(emp => 
-          emp.full_name?.toLowerCase().includes(searchTerm) ||
-          emp.email?.toLowerCase().includes(searchTerm) ||
-          emp.phone?.includes(searchTerm)
-        );
-      }
-      
-      // Role filter
-      const roleFilter = document.getElementById('team-role-filter')?.value || 'all';
-      if (roleFilter !== 'all') {
-        filtered = filtered.filter(emp => emp.role === roleFilter);
-      }
-      
-      // Status filter
-      const statusFilter = document.getElementById('team-status-filter')?.value || 'all';
-      if (statusFilter !== 'all') {
-        filtered = filtered.filter(emp => emp.status === statusFilter);
-      }
-      
-      // Sort
-      const sortValue = document.getElementById('team-sort-select')?.value || 'name-asc';
-      const [sortField, sortDir] = sortValue.split('-');
-      
-      filtered.sort((a, b) => {
-        let aVal, bVal;
-        
-        switch (sortField) {
-          case 'name':
-            aVal = (a.full_name || a.email || '').toLowerCase();
-            bVal = (b.full_name || b.email || '').toLowerCase();
-            return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-          case 'jobs':
-            aVal = a.jobsAssigned || 0;
-            bVal = b.jobsAssigned || 0;
-            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-          case 'sites':
-            aVal = a.sitesAssigned || 0;
-            bVal = b.sitesAssigned || 0;
-            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-          default:
-            return 0;
-        }
-      });
-      
-      renderEmployeeCards(filtered);
-    }
-    
-    function clearTeamFilters() {
-      document.getElementById('team-search-input').value = '';
-      document.getElementById('team-role-filter').value = 'all';
-      document.getElementById('team-status-filter').value = 'all';
-      document.getElementById('team-sort-select').value = 'name-asc';
-      applyTeamFilters();
-    }
-    
-    function renderEmployeeCards(employees) {
-      const grid = document.getElementById('team-employees-grid');
-      if (!grid) return;
-      
-      if (employees.length === 0) {
-        grid.innerHTML = '<div class="col-span-full text-center py-8 text-gray-500 dark:text-gray-400">No employees found matching your filters.</div>';
-        return;
-      }
-      
-      grid.innerHTML = employees.map(emp => {
-        const initials = getInitials(emp.full_name || emp.email);
-        const roleBadge = getRoleBadge(emp.role);
-        const statusBadge = getEmployeeStatusBadge(emp.status);
-        const avatarUrl = emp.profile_picture || '';
-        
-        return `
-          <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 hover:shadow-lg transition">
-            <!-- Avatar & Name -->
-            <div class="flex items-center gap-3 mb-4">
-              ${avatarUrl 
-                ? `<img src="${avatarUrl}" alt="${emp.full_name || emp.email}" class="w-12 h-12 rounded-full object-cover">`
-                : `<div class="w-12 h-12 rounded-full bg-nfgblue dark:bg-blue-600 flex items-center justify-center text-white font-medium">${initials}</div>`
-              }
-              <div class="flex-1">
-                <h3 class="font-semibold text-gray-900 dark:text-gray-100">${emp.full_name || 'No name'}</h3>
-                <p class="text-sm text-gray-500 dark:text-gray-400">${emp.email}</p>
-                ${emp.phone ? `<p class="text-xs text-gray-500 dark:text-gray-400">${emp.phone}</p>` : ''}
-              </div>
-            </div>
-            
-            <!-- Badges -->
-            <div class="flex gap-2 mb-4">
-              ${roleBadge}
-              ${statusBadge}
-            </div>
-            
-            <!-- Stats -->
-            <div class="grid grid-cols-3 gap-2 mb-4 pb-4 border-b border-nfgray dark:border-gray-700">
-              <div class="text-center">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Jobs</p>
-                <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">${emp.jobsAssigned || 0}</p>
-              </div>
-              <div class="text-center">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Completed</p>
-                <p class="text-lg font-semibold text-green-600 dark:text-green-400">${emp.jobsCompleted || 0}</p>
-              </div>
-              <div class="text-center">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Sites</p>
-                <p class="text-lg font-semibold text-blue-600 dark:text-blue-400">${emp.sitesAssigned || 0}</p>
-              </div>
-            </div>
-            
-            <!-- Actions -->
-            <div class="flex gap-2">
-              <button onclick="viewEmployeeDetails('${emp.id}')" class="flex-1 px-3 py-2 text-sm rounded-lg bg-nfgblue text-white hover:bg-nfgdark transition">
-                View Details
-              </button>
-            </div>
-          </div>
-        `;
-      }).join('');
-      
-      if (window.lucide) lucide.createIcons();
-    }
-    
-    function getInitials(name) {
-      if (!name) return '?';
-      const parts = name.trim().split(' ');
-      if (parts.length >= 2) {
-        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-      }
-      return name.substring(0, 2).toUpperCase();
-    }
-    
-    function getRoleBadge(role) {
-      const badges = {
-        'admin': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Admin</span>',
-        'super_admin': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Super Admin</span>',
-        'staff': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Staff</span>',
-        'client': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300">Client</span>'
-      };
-      return badges[role] || '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">' + (role || 'Unknown') + '</span>';
-    }
-    
-    function getEmployeeStatusBadge(status) {
-      const badges = {
-        'active': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">Active</span>',
-        'pending': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">Pending</span>',
-        'inactive': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">Inactive</span>',
-        'suspended': '<span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300">Suspended</span>'
-      };
-      return badges[status] || '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">' + (status || 'Unknown') + '</span>';
-    }
-    
-    function debounce(func, wait) {
-      let timeout;
-      return function executedFunction(...args) {
-        const later = () => {
-          clearTimeout(timeout);
-          func(...args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-      };
-    }
-    
-    function viewEmployeeDetails(userId) {
-      // Navigate to settings page with user management
-      window.location.href = './settings.html#user-management';
-    }
+    // Team view removed - moved to Sales Portal
 
     function changeCalendarView(viewType) {
       console.log('[Calendar] changeCalendarView called with:', viewType);
