@@ -1,5 +1,5 @@
 // Sales Portal JavaScript Module
-// Handles deals, quotes, timeline, follow-up sequences, and Quo integration
+// Handles deals, quotes, timeline, and Quo integration
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
@@ -20,13 +20,11 @@ function getTableAvailabilityCache() {
   try {
     const cached = sessionStorage.getItem('tableAvailabilityCache');
     return cached ? JSON.parse(cached) : {
-      deal_events: null, // null = unknown, false = unavailable, true = available
-      sequence_executions: null
+      deal_events: null // null = unknown, false = unavailable, true = available
     };
   } catch (e) {
     return {
-      deal_events: null,
-      sequence_executions: null
+      deal_events: null
     };
   }
 }
@@ -490,9 +488,6 @@ async function renderDealDetail(deal) {
   // Load and render quotes
   await renderQuotes(deal.id);
 
-  // Load and render follow-up sequences
-  await renderFollowUpSequences(deal.id);
-
   // Display notes
   const notesEl = document.getElementById('deal-detail-notes');
   if (notesEl) {
@@ -661,198 +656,6 @@ async function renderQuotes(dealId) {
     }).join('');
   } catch (error) {
     console.error('[Sales] Error rendering quotes:', error);
-  }
-}
-
-async function renderFollowUpSequences(dealId) {
-  const sequencesContainer = document.getElementById('sequences-container');
-  if (!sequencesContainer) return;
-
-  // Check cache - if table is known to be unavailable, skip query
-  // This prevents 403 errors from appearing in console after first check
-  const cache = getTableAvailabilityCache();
-  if (cache.sequence_executions === false) {
-    sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
-    return;
-  }
-
-  try {
-    // Note: Browser will log 404/403 errors in console if table doesn't exist or permission denied
-    // This is expected and harmless - the error is handled gracefully below
-    // Query sequence_executions which links sequences to deals
-    // Try to join with follow_up_sequences or sequences table
-    const { data, error } = await supabase
-      .from('sequence_executions')
-      .select(`
-        *,
-        follow_up_sequence:sequence_id (
-          id,
-          name,
-          description
-        ),
-        sequence:sequence_id (
-          id,
-          name,
-          description
-        )
-      `)
-      .eq('deal_id', dealId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      // Handle permission denied or table doesn't exist
-      const isTableError = error.code === 'PGRST205' || 
-                          error.code === '42501' || 
-                          error.status === 404 ||
-                          error.status === 403 ||
-                          error.message?.includes('permission denied') ||
-                          error.message?.includes('Could not find the table') ||
-                          error.message?.includes('schema cache');
-      
-      if (isTableError) {
-        // Cache that table is unavailable to skip future queries
-        setTableAvailability('sequence_executions', false);
-        // Silently handle expected errors - table may not exist or user may not have permission
-        sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
-        return;
-      }
-
-      // If join fails, try without join
-      console.warn('[Sales] Error with join, trying without:', error);
-      const { data: simpleData, error: simpleError } = await supabase
-        .from('sequence_executions')
-        .select('*')
-        .eq('deal_id', dealId)
-        .order('created_at', { ascending: false });
-      
-      // Handle permission errors on simple query too
-      if (simpleError) {
-        const isTableError = simpleError.code === 'PGRST205' || 
-                            simpleError.code === '42501' || 
-                            simpleError.status === 404 ||
-                            simpleError.status === 403 ||
-                            simpleError.message?.includes('permission denied') ||
-                            simpleError.message?.includes('Could not find the table') ||
-                            simpleError.message?.includes('schema cache');
-        
-        if (isTableError) {
-          // Cache that table is unavailable to skip future queries
-          setTableAvailability('sequence_executions', false);
-          // Silently handle expected errors - table may not exist or user may not have permission
-          sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
-          return;
-        }
-        throw simpleError;
-      }
-      
-      // Use simple data without sequence details
-      if (!simpleData || simpleData.length === 0) {
-        sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No follow-up sequences assigned.</p>';
-        return;
-      }
-      
-      // Cache that table is available (simple query worked)
-      setTableAvailability('sequence_executions', true);
-      
-      // Render with limited info
-      const statusColors = {
-        active: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
-        paused: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-        stopped: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-        completed: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-      };
-      
-      sequencesContainer.innerHTML = simpleData.map(execution => {
-        const status = execution.status || 'active';
-        return `
-          <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
-            <div class="flex justify-between items-start mb-2">
-              <div>
-                <h4 class="font-semibold text-nftext dark:text-gray-200">Sequence Execution</h4>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  Step ${execution.current_step || 0}
-                  ${execution.attempt_count ? ` • ${execution.attempt_count} attempts` : ''}
-                </p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[status] || statusColors.active}">
-                  ${status}
-                </span>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-      return;
-    }
-
-    // Cache that table is available
-    setTableAvailability('sequence_executions', true);
-
-    // sequencesContainer is already declared at the top of the function
-    if (!data || data.length === 0) {
-      sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No follow-up sequences assigned.</p>';
-      return;
-    }
-
-    const statusColors = {
-      active: 'bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300',
-      paused: 'bg-yellow-100 dark:bg-yellow-900 text-yellow-700 dark:text-yellow-300',
-      stopped: 'bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300',
-      completed: 'bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300'
-    };
-
-    sequencesContainer.innerHTML = data.map(execution => {
-      // Try both possible relationship names
-      const sequence = execution.follow_up_sequence || execution.sequence || {};
-      const sequenceName = sequence.name || 'Unknown Sequence';
-      const currentStep = execution.current_step || 0;
-      const status = execution.status || 'active';
-      
-      return `
-        <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4">
-          <div class="flex justify-between items-start mb-2">
-            <div>
-              <h4 class="font-semibold text-nftext dark:text-gray-200">${sequenceName}</h4>
-              <p class="text-sm text-gray-500 dark:text-gray-400">
-                Step ${currentStep}
-                ${execution.attempt_count ? ` • ${execution.attempt_count} attempts` : ''}
-              </p>
-            </div>
-            <div class="flex items-center gap-2">
-              <span class="px-2 py-1 rounded-lg text-xs font-medium ${statusColors[status] || statusColors.active}">
-                ${status}
-              </span>
-              ${status === 'active' ? `
-                <button data-sequence-id="${execution.id}" data-action="pause-sequence" class="px-2 py-1 text-xs border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded transition">
-                  Pause
-                </button>
-                <button data-sequence-id="${execution.id}" data-action="stop-sequence" class="px-2 py-1 text-xs border border-red-300 dark:border-red-700 hover:bg-red-50 dark:hover:bg-red-900 text-red-600 dark:text-red-400 rounded transition">
-                  Stop
-                </button>
-              ` : ''}
-            </div>
-          </div>
-        </div>
-      `;
-    }).join('');
-
-    // Attach event listeners
-    sequencesContainer.querySelectorAll('[data-action]').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        const action = btn.dataset.action;
-        const sequenceId = btn.dataset.sequenceId;
-        if (action === 'pause-sequence') await pauseSequence(sequenceId);
-        if (action === 'stop-sequence') await stopSequence(sequenceId);
-      });
-    });
-  } catch (error) {
-    console.error('[Sales] Error rendering follow-up sequences:', error);
-    // Show empty state on any other error
-    // sequencesContainer is already declared at the top of the function
-    if (sequencesContainer) {
-      sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Unable to load follow-up sequences.</p>';
-    }
   }
 }
 
@@ -1526,51 +1329,6 @@ async function createTimelineEvent(dealId, eventType, title, description, metada
   }
 }
 
-// ==========================================
-// FOLLOW-UP SEQUENCES
-// ==========================================
-export async function pauseSequence(sequenceId) {
-  try {
-    // Update sequence_executions instead of follow_up_sequences
-    const { error } = await supabase
-      .from('sequence_executions')
-      .update({
-        status: 'paused',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', sequenceId);
-
-    if (error) throw error;
-
-    toast.success('Sequence paused', 'Success');
-    if (currentDeal) await renderFollowUpSequences(currentDeal.id);
-  } catch (error) {
-    console.error('[Sales] Error pausing sequence:', error);
-    toast.error('Failed to pause sequence', 'Error');
-  }
-}
-
-export async function stopSequence(sequenceId) {
-  try {
-    // Update sequence_executions instead of follow_up_sequences
-    const { error } = await supabase
-      .from('sequence_executions')
-      .update({
-        status: 'stopped',
-        stopped_reason: 'Manually stopped',
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', sequenceId);
-
-    if (error) throw error;
-
-    toast.success('Sequence stopped', 'Success');
-    if (currentDeal) await renderFollowUpSequences(currentDeal.id);
-  } catch (error) {
-    console.error('[Sales] Error stopping sequence:', error);
-    toast.error('Failed to stop sequence', 'Error');
-  }
-}
 
 // ==========================================
 // QUO ACTIONS
