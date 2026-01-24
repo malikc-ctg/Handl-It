@@ -689,17 +689,10 @@ export async function openDealDetail(dealId) {
     modal.classList.remove('hidden');
     console.log('[Sales] Modal shown');
     
-    // Fetch deal with creator information
+    // Fetch deal (without relationship query since created_by might not be a FK)
     const { data, error } = await supabase
       .from('deals')
-      .select(`
-        *,
-        created_by_user:created_by (
-          id,
-          email,
-          raw_user_meta_data
-        )
-      `)
+      .select('*')
       .eq('id', dealId)
       .single();
 
@@ -765,14 +758,15 @@ export async function openDealDetail(dealId) {
       }
     }
     
-    // Load creator/owner information if created_by exists and not already loaded
-    if (currentDeal && currentDeal.created_by && !currentDeal.created_by_user) {
+    // Load creator/owner information - check multiple possible fields
+    const ownerId = currentDeal?.created_by || currentDeal?.owner_user_id || currentDeal?.assigned_user_id || currentDeal?.assigned_to;
+    if (ownerId && !currentDeal.created_by_user) {
       try {
         // Try to get user profile
         const { data: userProfile } = await supabase
           .from('user_profiles')
           .select('id, email, full_name, first_name, last_name')
-          .eq('id', currentDeal.created_by)
+          .eq('id', ownerId)
           .single();
         
         if (userProfile) {
@@ -781,19 +775,23 @@ export async function openDealDetail(dealId) {
             email: userProfile.email,
             name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
           };
+        } else {
+          // If user_profiles doesn't have the user, try to get email from auth (limited info)
+          // We can't directly query auth.users, so we'll just use the ID or show "Unknown"
+          currentDeal.created_by_user = {
+            id: ownerId,
+            email: null,
+            name: 'Unknown User'
+          };
         }
       } catch (ownerError) {
         console.warn('[Sales] Could not load deal owner information:', ownerError);
-        // If created_by_user was loaded from the relationship, use that
-        if (data.created_by_user) {
-          currentDeal.created_by_user = {
-            id: data.created_by_user.id,
-            email: data.created_by_user.email,
-            name: data.created_by_user.raw_user_meta_data?.full_name || 
-                  data.created_by_user.raw_user_meta_data?.name || 
-                  data.created_by_user.email
-          };
-        }
+        // Set a fallback
+        currentDeal.created_by_user = {
+          id: ownerId,
+          email: null,
+          name: 'Unknown User'
+        };
       }
     }
     
