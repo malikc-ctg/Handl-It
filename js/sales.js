@@ -765,7 +765,7 @@ export async function openDealDetail(dealId) {
       }
     }
     
-    // Load creator/owner information if created_by exists
+    // Load creator/owner information if created_by exists and not already loaded
     if (currentDeal && currentDeal.created_by && !currentDeal.created_by_user) {
       try {
         // Try to get user profile
@@ -781,19 +781,19 @@ export async function openDealDetail(dealId) {
             email: userProfile.email,
             name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
           };
-        } else {
-          // Fallback to auth.users metadata if profile doesn't exist
-          const { data: { user } } = await supabase.auth.admin.getUserById(currentDeal.created_by);
-          if (user) {
-            currentDeal.created_by_user = {
-              id: user.id,
-              email: user.email,
-              name: user.user_metadata?.full_name || user.user_metadata?.name || user.email
-            };
-          }
         }
       } catch (ownerError) {
         console.warn('[Sales] Could not load deal owner information:', ownerError);
+        // If created_by_user was loaded from the relationship, use that
+        if (data.created_by_user) {
+          currentDeal.created_by_user = {
+            id: data.created_by_user.id,
+            email: data.created_by_user.email,
+            name: data.created_by_user.raw_user_meta_data?.full_name || 
+                  data.created_by_user.raw_user_meta_data?.name || 
+                  data.created_by_user.email
+          };
+        }
       }
     }
     
