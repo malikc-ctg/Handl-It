@@ -2302,14 +2302,19 @@
       }
     }
 
+    // Helper function to get deal value (checks multiple possible column names)
+    function getDealValue(deal) {
+      return Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
+    }
+
     // Calculate and render KPIs
     function calculateAndRenderKPIs(deals, quotes) {
       // Open Pipeline
       const openDeals = deals.filter(d => ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(d.stage));
-      const totalOpen = openDeals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
+      const totalOpen = openDeals.reduce((sum, d) => sum + getDealValue(d), 0);
       const weightedOpen = openDeals.reduce((sum, d) => {
         const stageWeights = { prospecting: 0.1, qualification: 0.3, proposal: 0.7, negotiation: 0.9 };
-        return sum + (Number(d.deal_value) || 0) * (stageWeights[d.stage] || 0.5);
+        return sum + getDealValue(d) * (stageWeights[d.stage] || 0.5);
       }, 0);
 
       document.getElementById('kpi-total-open').textContent = `$${totalOpen.toLocaleString()}`;
@@ -2395,7 +2400,7 @@
               type: 'missed_callback',
               priority: (new Date() - nextAction) / (1000 * 60 * 60), // hours overdue
               company: d.company_name || d.title || 'Unknown',
-              dealValue: d.deal_value || 0,
+              dealValue: getDealValue(d),
               reason: 'Missed callback',
               lastActivity: d.last_contacted_at || d.updated_at,
               dealId: d.id
@@ -2414,7 +2419,7 @@
               type: 'walkthrough_today',
               priority: nextAction.getHours() * 60 + nextAction.getMinutes(), // minutes from midnight
               company: d.company_name || d.title || 'Unknown',
-              dealValue: d.deal_value || 0,
+              dealValue: getDealValue(d),
               reason: `Walkthrough at ${nextAction.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}`,
               lastActivity: d.last_contacted_at || d.updated_at,
               dealId: d.id,
@@ -2546,7 +2551,7 @@
             }
             
             // Get deal value - check multiple possible fields
-            let dealValue = Number(deal.deal_value || deal.value_estimate || deal.estimated_value || 0);
+            let dealValue = getDealValue(deal);
             
             // Fallback: Parse from notes if value is 0 and notes contain "Estimated Value: $X"
             if (dealValue === 0 && deal.notes) {
@@ -2806,7 +2811,7 @@
 
       // Calculate totals
       const totalDeals = deals.length;
-      const totalValue = deals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
+      const totalValue = deals.reduce((sum, d) => sum + getDealValue(d), 0);
       const openDeals = deals.filter(d => !d.stage?.includes('closed')).length;
       const wonDeals = deals.filter(d => d.stage === 'closed_won').length;
       const winRate = totalDeals > 0 ? ((wonDeals / (wonDeals + deals.filter(d => d.stage === 'closed_lost').length)) * 100).toFixed(1) : 0;
@@ -2840,7 +2845,7 @@
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           ${stages.map(stage => {
             const stageDeals = dealsByStage[stage] || [];
-            const stageValue = stageDeals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
+            const stageValue = stageDeals.reduce((sum, d) => sum + getDealValue(d), 0);
             return `
               <div class="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
                 <div class="flex items-center justify-between mb-3">
@@ -2876,7 +2881,7 @@
 
       container.innerHTML = deals.map(deal => {
         const contactName = deal.contact?.full_name || deal.contact?.email || 'No contact';
-        const dealValue = Number(deal.deal_value || 0);
+        const dealValue = getDealValue(deal);
         const lastContact = deal.last_contacted_at ? new Date(deal.last_contacted_at) : null;
         const daysIdle = lastContact ? Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24)) : null;
         const isIdle = daysIdle && daysIdle > 7;
@@ -2957,7 +2962,7 @@
 
       tbody.innerHTML = deals.map(deal => {
         const contactName = deal.contact?.full_name || deal.contact?.email || 'No contact';
-        const dealValue = Number(deal.deal_value || 0);
+        const dealValue = getDealValue(deal);
         
         // Determine priority
         let priority = 'Low';
@@ -3081,7 +3086,7 @@
                 <option value="closed_lost" ${deal.stage === 'closed_lost' ? 'selected' : ''}>Closed Lost</option>
               </select>
             </td>
-            <td class="px-4 py-3 text-sm font-semibold">$${Number(deal.deal_value || 0).toLocaleString()}</td>
+            <td class="px-4 py-3 text-sm font-semibold">$${getDealValue(deal).toLocaleString()}</td>
             <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">${lastContact ? lastContact.toLocaleDateString() : 'Never'}</td>
             <td class="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">${deal.next_action_type || 'None'}</td>
             <td class="px-4 py-3 text-sm ${isIdle ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-600 dark:text-gray-400'}">${daysIdle !== null ? daysIdle : 'N/A'}</td>
@@ -3116,7 +3121,7 @@
 
       snapshot.innerHTML = stages.map(stage => {
         const stageDeals = deals.filter(d => d.stage === stage.key);
-        const totalValue = stageDeals.reduce((sum, d) => sum + (Number(d.deal_value) || 0), 0);
+        const totalValue = stageDeals.reduce((sum, d) => sum + getDealValue(d), 0);
         const avgDays = stageDeals.length > 0 
           ? Math.round(stageDeals.reduce((sum, d) => {
               const created = new Date(d.created_at);
@@ -3388,7 +3393,7 @@
           address: address || deal.address || 'Address TBD',
           contact_phone: contactPhone || deal.contact_phone || null,
           contact_email: contactEmail || deal.contact_email || null,
-          deal_value: deal.deal_value || null,
+          deal_value: getDealValue(deal) || null,
           status: 'Active',
           notes: deal.notes || null,
           created_by: user.id
