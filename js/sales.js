@@ -515,6 +515,7 @@ async function renderTimeline(dealId) {
   if (!timelineContainer) return;
 
   // Check cache - if table is known to be unavailable, skip query
+  // This prevents 404 errors from appearing in console after first check
   const cache = getTableAvailabilityCache();
   if (cache.deal_events === false) {
     timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
@@ -522,6 +523,8 @@ async function renderTimeline(dealId) {
   }
 
   try {
+    // Note: Browser will log 404/403 errors in console if table doesn't exist or permission denied
+    // This is expected and harmless - the error is handled gracefully below
     // Use deal_events table instead of timeline_events
     const { data, error } = await supabase
       .from('deal_events')
@@ -666,6 +669,7 @@ async function renderFollowUpSequences(dealId) {
   if (!sequencesContainer) return;
 
   // Check cache - if table is known to be unavailable, skip query
+  // This prevents 403 errors from appearing in console after first check
   const cache = getTableAvailabilityCache();
   if (cache.sequence_executions === false) {
     sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
@@ -673,6 +677,8 @@ async function renderFollowUpSequences(dealId) {
   }
 
   try {
+    // Note: Browser will log 404/403 errors in console if table doesn't exist or permission denied
+    // This is expected and harmless - the error is handled gracefully below
     // Query sequence_executions which links sequences to deals
     // Try to join with follow_up_sequences or sequences table
     const { data, error } = await supabase
