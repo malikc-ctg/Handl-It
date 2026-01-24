@@ -774,7 +774,7 @@ export async function openDealDetail(dealId) {
         // Try to get user profile
         const { data: userProfile, error: profileError } = await supabase
           .from('user_profiles')
-          .select('id, email, full_name, first_name, last_name')
+          .select('id, email, full_name')
           .eq('id', ownerId)
           .single();
         
@@ -787,7 +787,7 @@ export async function openDealDetail(dealId) {
           currentDeal.created_by_user = {
             id: userProfile.id,
             email: userProfile.email,
-            name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
+            name: userProfile.full_name || userProfile.email
           };
         } else {
           // If user_profiles doesn't have the user, check if we can get current user info
@@ -825,7 +825,7 @@ export async function openDealDetail(dealId) {
         try {
           const { data: userProfile, error: profileError } = await supabase
             .from('user_profiles')
-            .select('id, email, full_name, first_name, last_name')
+            .select('id, email, full_name')
             .eq('id', currentUser.id)
             .single();
           
@@ -841,7 +841,7 @@ export async function openDealDetail(dealId) {
             currentDeal.created_by_user = {
               id: userProfile.id,
               email: userProfile.email,
-              name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
+              name: userProfile.full_name || userProfile.email
             };
           } else {
             // Use current user's auth info
