@@ -15,10 +15,33 @@ let currentDeal = null;
 let quoteLineItems = { good: [], better: [], best: [] };
 
 // Cache for table availability to prevent unnecessary queries
-const tableAvailabilityCache = {
-  deal_events: null, // null = unknown, false = unavailable, true = available
-  sequence_executions: null
-};
+// Use sessionStorage to persist across page reloads
+function getTableAvailabilityCache() {
+  try {
+    const cached = sessionStorage.getItem('tableAvailabilityCache');
+    return cached ? JSON.parse(cached) : {
+      deal_events: null, // null = unknown, false = unavailable, true = available
+      sequence_executions: null
+    };
+  } catch (e) {
+    return {
+      deal_events: null,
+      sequence_executions: null
+    };
+  }
+}
+
+function setTableAvailability(tableName, available) {
+  try {
+    const cache = getTableAvailabilityCache();
+    cache[tableName] = available;
+    sessionStorage.setItem('tableAvailabilityCache', JSON.stringify(cache));
+  } catch (e) {
+    // Ignore storage errors
+  }
+}
+
+const tableAvailabilityCache = getTableAvailabilityCache();
 
 // ==========================================
 // QUO INTEGRATION (Agent 04)
@@ -492,7 +515,8 @@ async function renderTimeline(dealId) {
   if (!timelineContainer) return;
 
   // Check cache - if table is known to be unavailable, skip query
-  if (tableAvailabilityCache.deal_events === false) {
+  const cache = getTableAvailabilityCache();
+  if (cache.deal_events === false) {
     timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
     return;
   }
@@ -518,7 +542,7 @@ async function renderTimeline(dealId) {
       
       if (isTableError) {
         // Cache that table is unavailable to skip future queries
-        tableAvailabilityCache.deal_events = false;
+        setTableAvailability('deal_events', false);
         // Silently handle expected errors - table may not exist or user may not have permission
         timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
         return;
@@ -527,7 +551,7 @@ async function renderTimeline(dealId) {
     }
 
     // Cache that table is available
-    tableAvailabilityCache.deal_events = true;
+    setTableAvailability('deal_events', true);
 
     if (!data || data.length === 0) {
       timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No timeline events yet.</p>';
@@ -642,7 +666,8 @@ async function renderFollowUpSequences(dealId) {
   if (!sequencesContainer) return;
 
   // Check cache - if table is known to be unavailable, skip query
-  if (tableAvailabilityCache.sequence_executions === false) {
+  const cache = getTableAvailabilityCache();
+  if (cache.sequence_executions === false) {
     sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
     return;
   }
@@ -680,7 +705,7 @@ async function renderFollowUpSequences(dealId) {
       
       if (isTableError) {
         // Cache that table is unavailable to skip future queries
-        tableAvailabilityCache.sequence_executions = false;
+        setTableAvailability('sequence_executions', false);
         // Silently handle expected errors - table may not exist or user may not have permission
         sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
         return;
@@ -706,7 +731,7 @@ async function renderFollowUpSequences(dealId) {
         
         if (isTableError) {
           // Cache that table is unavailable to skip future queries
-          tableAvailabilityCache.sequence_executions = false;
+          setTableAvailability('sequence_executions', false);
           // Silently handle expected errors - table may not exist or user may not have permission
           sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
           return;
@@ -719,6 +744,9 @@ async function renderFollowUpSequences(dealId) {
         sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No follow-up sequences assigned.</p>';
         return;
       }
+      
+      // Cache that table is available (simple query worked)
+      setTableAvailability('sequence_executions', true);
       
       // Render with limited info
       const statusColors = {
@@ -753,7 +781,7 @@ async function renderFollowUpSequences(dealId) {
     }
 
     // Cache that table is available
-    tableAvailabilityCache.sequence_executions = true;
+    setTableAvailability('sequence_executions', true);
 
     // sequencesContainer is already declared at the top of the function
     if (!data || data.length === 0) {
