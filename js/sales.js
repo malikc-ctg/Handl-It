@@ -760,29 +760,53 @@ export async function openDealDetail(dealId) {
     
     // Load creator/owner information - check multiple possible fields
     const ownerId = currentDeal?.created_by || currentDeal?.owner_user_id || currentDeal?.assigned_user_id || currentDeal?.assigned_to;
+    console.log('[Sales] Checking for deal owner. Deal fields:', {
+      created_by: currentDeal?.created_by,
+      owner_user_id: currentDeal?.owner_user_id,
+      assigned_user_id: currentDeal?.assigned_user_id,
+      assigned_to: currentDeal?.assigned_to,
+      ownerId
+    });
+    
     if (ownerId && !currentDeal.created_by_user) {
       try {
+        console.log('[Sales] Loading user profile for owner:', ownerId);
         // Try to get user profile
-        const { data: userProfile } = await supabase
+        const { data: userProfile, error: profileError } = await supabase
           .from('user_profiles')
           .select('id, email, full_name, first_name, last_name')
           .eq('id', ownerId)
           .single();
         
+        if (profileError) {
+          console.warn('[Sales] Error loading user profile:', profileError);
+        }
+        
         if (userProfile) {
+          console.log('[Sales] User profile found:', userProfile);
           currentDeal.created_by_user = {
             id: userProfile.id,
             email: userProfile.email,
             name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
           };
         } else {
-          // If user_profiles doesn't have the user, try to get email from auth (limited info)
-          // We can't directly query auth.users, so we'll just use the ID or show "Unknown"
-          currentDeal.created_by_user = {
-            id: ownerId,
-            email: null,
-            name: 'Unknown User'
-          };
+          // If user_profiles doesn't have the user, check if we can get current user info
+          const { data: { user: currentUser } } = await supabase.auth.getUser();
+          if (currentUser && currentUser.id === ownerId) {
+            // Use current user's info
+            currentDeal.created_by_user = {
+              id: currentUser.id,
+              email: currentUser.email,
+              name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || 'Current User'
+            };
+          } else {
+            // Fallback to showing the ID or "Unknown"
+            currentDeal.created_by_user = {
+              id: ownerId,
+              email: null,
+              name: 'Unknown User'
+            };
+          }
         }
       } catch (ownerError) {
         console.warn('[Sales] Could not load deal owner information:', ownerError);
@@ -793,6 +817,14 @@ export async function openDealDetail(dealId) {
           name: 'Unknown User'
         };
       }
+    } else if (!ownerId) {
+      console.warn('[Sales] No owner ID found in deal. Deal may not have been created with owner information.');
+      // Set default to show that no owner was set
+      currentDeal.created_by_user = {
+        id: null,
+        email: null,
+        name: 'Not Set'
+      };
     }
     
     await renderDealDetail(data);
@@ -1114,12 +1146,20 @@ export async function createDeal(formData) {
       dealNotes = dealNotes ? `${dealNotes}\n\nContact: ${contactInfo}` : `Contact: ${contactInfo}`;
     }
     
+    // Get current user for created_by
+    const { data: { user } } = await supabase.auth.getUser();
+    
     // Use absolute bare minimum - only title and stage which are required
     const dealInsertData = {
       title: dealTitle,
       stage: dealStage,
       notes: dealNotes || null
     };
+    
+    // Add created_by if user is available
+    if (user) {
+      dealInsertData.created_by = user.id;
+    }
     
     // Add deal_value if provided
     if (formData.value && formData.value.trim() !== '') {
