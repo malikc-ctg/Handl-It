@@ -14,6 +14,12 @@ let sites = [];
 let currentDeal = null;
 let quoteLineItems = { good: [], better: [], best: [] };
 
+// Cache for table availability to prevent unnecessary queries
+const tableAvailabilityCache = {
+  deal_events: null, // null = unknown, false = unavailable, true = available
+  sequence_executions: null
+};
+
 // ==========================================
 // QUO INTEGRATION (Agent 04)
 // ==========================================
@@ -485,6 +491,12 @@ async function renderTimeline(dealId) {
   const timelineContainer = document.getElementById('timeline-container');
   if (!timelineContainer) return;
 
+  // Check cache - if table is known to be unavailable, skip query
+  if (tableAvailabilityCache.deal_events === false) {
+    timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
+    return;
+  }
+
   try {
     // Use deal_events table instead of timeline_events
     const { data, error } = await supabase
@@ -505,12 +517,17 @@ async function renderTimeline(dealId) {
                           error.message?.includes('schema cache');
       
       if (isTableError) {
+        // Cache that table is unavailable to skip future queries
+        tableAvailabilityCache.deal_events = false;
         // Silently handle expected errors - table may not exist or user may not have permission
         timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
         return;
       }
       throw error;
     }
+
+    // Cache that table is available
+    tableAvailabilityCache.deal_events = true;
 
     if (!data || data.length === 0) {
       timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No timeline events yet.</p>';
@@ -624,6 +641,12 @@ async function renderFollowUpSequences(dealId) {
   const sequencesContainer = document.getElementById('sequences-container');
   if (!sequencesContainer) return;
 
+  // Check cache - if table is known to be unavailable, skip query
+  if (tableAvailabilityCache.sequence_executions === false) {
+    sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
+    return;
+  }
+
   try {
     // Query sequence_executions which links sequences to deals
     // Try to join with follow_up_sequences or sequences table
@@ -656,6 +679,8 @@ async function renderFollowUpSequences(dealId) {
                           error.message?.includes('schema cache');
       
       if (isTableError) {
+        // Cache that table is unavailable to skip future queries
+        tableAvailabilityCache.sequence_executions = false;
         // Silently handle expected errors - table may not exist or user may not have permission
         sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
         return;
@@ -680,6 +705,8 @@ async function renderFollowUpSequences(dealId) {
                             simpleError.message?.includes('schema cache');
         
         if (isTableError) {
+          // Cache that table is unavailable to skip future queries
+          tableAvailabilityCache.sequence_executions = false;
           // Silently handle expected errors - table may not exist or user may not have permission
           sequencesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Follow-up sequences are not available.</p>';
           return;
@@ -724,6 +751,9 @@ async function renderFollowUpSequences(dealId) {
       }).join('');
       return;
     }
+
+    // Cache that table is available
+    tableAvailabilityCache.sequence_executions = true;
 
     // sequencesContainer is already declared at the top of the function
     if (!data || data.length === 0) {
