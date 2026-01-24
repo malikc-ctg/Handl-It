@@ -818,13 +818,48 @@ export async function openDealDetail(dealId) {
         };
       }
     } else if (!ownerId) {
-      console.warn('[Sales] No owner ID found in deal. Deal may not have been created with owner information.');
-      // Set default to show that no owner was set
-      currentDeal.created_by_user = {
-        id: null,
-        email: null,
-        name: 'Not Set'
-      };
+      console.warn('[Sales] No owner ID found in deal. Using current user as owner.');
+      // Use current user as owner if no owner is set
+      if (currentUser) {
+        // Try to get user profile for current user
+        try {
+          const { data: userProfile } = await supabase
+            .from('user_profiles')
+            .select('id, email, full_name, first_name, last_name')
+            .eq('id', currentUser.id)
+            .single();
+          
+          if (userProfile) {
+            currentDeal.created_by_user = {
+              id: userProfile.id,
+              email: userProfile.email,
+              name: userProfile.full_name || `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || userProfile.email
+            };
+          } else {
+            // Use current user's auth info
+            currentDeal.created_by_user = {
+              id: currentUser.id,
+              email: currentUser.email,
+              name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || 'Current User'
+            };
+          }
+        } catch (error) {
+          console.warn('[Sales] Could not load current user profile, using auth info:', error);
+          // Fallback to current user's auth info
+          currentDeal.created_by_user = {
+            id: currentUser.id,
+            email: currentUser.email,
+            name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || 'Current User'
+          };
+        }
+      } else {
+        // If no current user, show "Not Set"
+        currentDeal.created_by_user = {
+          id: null,
+          email: null,
+          name: 'Not Set'
+        };
+      }
     }
     
     await renderDealDetail(data);
