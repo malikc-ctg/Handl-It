@@ -823,13 +823,21 @@ export async function openDealDetail(dealId) {
       if (currentUser) {
         // Try to get user profile for current user
         try {
-          const { data: userProfile } = await supabase
+          const { data: userProfile, error: profileError } = await supabase
             .from('user_profiles')
             .select('id, email, full_name, first_name, last_name')
             .eq('id', currentUser.id)
             .single();
           
-          if (userProfile) {
+          if (profileError) {
+            console.warn('[Sales] Error loading user profile, using auth info:', profileError);
+            // Fallback to current user's auth info
+            currentDeal.created_by_user = {
+              id: currentUser.id,
+              email: currentUser.email,
+              name: currentUser.user_metadata?.full_name || currentUser.user_metadata?.name || currentUser.email || 'Current User'
+            };
+          } else if (userProfile) {
             currentDeal.created_by_user = {
               id: userProfile.id,
               email: userProfile.email,
@@ -1442,14 +1450,38 @@ async function createTimelineEvent(dealId, eventType, title, description, metada
         }
       });
 
-    if (error) throw error;
+    if (error) {
+      // Handle table doesn't exist or permission errors gracefully
+      const isTableError = error.code === 'PGRST205' || 
+                          error.code === '42501' || 
+                          error.status === 404 ||
+                          error.status === 403 ||
+                          error.message?.includes('permission denied') ||
+                          error.message?.includes('Could not find the table') ||
+                          error.message?.includes('schema cache');
+      
+      if (isTableError) {
+        // Silently handle - table may not exist or user may not have permission
+        console.warn('[Sales] Timeline events table not available, skipping event creation');
+        return;
+      }
+      throw error;
+    }
 
     // Refresh timeline if on deal detail
     if (currentDeal && currentDeal.id === dealId) {
       await renderTimeline(dealId);
     }
   } catch (error) {
-    console.error('[Sales] Error creating timeline event:', error);
+    // Only log non-table errors
+    const isTableError = error.code === 'PGRST205' || 
+                        error.code === '42501' || 
+                        error.status === 404 ||
+                        error.status === 403;
+    
+    if (!isTableError) {
+      console.error('[Sales] Error creating timeline event:', error);
+    }
   }
 }
 
