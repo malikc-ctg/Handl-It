@@ -2391,6 +2391,90 @@ async function subscribeToMessages(conversationId) {
   }
 }
 
+// Check if current user is group admin (Phase 4.3)
+async function isGroupAdmin(conversationId) {
+  try {
+    // Check cache first
+    const cachedRole = currentUserGroupRole.get(conversationId);
+    if (cachedRole) {
+      return cachedRole === 'admin';
+    }
+    
+    // Load participants if not cached
+    if (!groupParticipants.has(conversationId)) {
+      await loadGroupParticipantsForConversation(conversationId);
+    }
+    
+    // Get role from cached participants
+    const participants = groupParticipants.get(conversationId) || [];
+    const currentUserParticipant = participants.find(p => p.user_id === currentUser.id);
+    const userRole = currentUserParticipant?.role || 'participant';
+    
+    // Cache the role
+    currentUserGroupRole.set(conversationId, userRole);
+    
+    return userRole === 'admin';
+  } catch (error) {
+    console.error('Error checking group admin status:', error);
+    return false;
+  }
+}
+
+// Load group participants for a conversation (Phase 4.3)
+async function loadGroupParticipantsForConversation(conversationId) {
+  try {
+    // Check cache first
+    if (groupParticipants.has(conversationId)) {
+      return groupParticipants.get(conversationId);
+    }
+    
+    // Fetch participants with their roles
+    const { data: participants, error: participantsError } = await supabase
+      .from('conversation_participants')
+      .select('user_id, role, joined_at')
+      .eq('conversation_id', conversationId);
+    
+    if (participantsError) throw participantsError;
+    
+    // Fetch user profiles for participants
+    const userIds = participants.map(p => p.user_id);
+    if (userIds.length === 0) {
+      groupParticipants.set(conversationId, []);
+      return [];
+    }
+    
+    const { data: profiles, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('id, full_name, email, profile_picture')
+      .in('id', userIds);
+    
+    if (profilesError) throw profilesError;
+    
+    // Combine participants with profiles
+    const profilesMap = new Map(profiles.map(p => [p.id, p]));
+    const participantsWithProfiles = participants.map(p => ({
+      user_id: p.user_id,
+      role: p.role,
+      joined_at: p.joined_at,
+      user: profilesMap.get(p.user_id)
+    }));
+    
+    // Cache participants
+    groupParticipants.set(conversationId, participantsWithProfiles);
+    
+    // Also cache current user's role
+    const currentUserParticipant = participants.find(p => p.user_id === currentUser.id);
+    if (currentUserParticipant) {
+      currentUserGroupRole.set(conversationId, currentUserParticipant.role);
+    }
+    
+    return participantsWithProfiles;
+  } catch (error) {
+    console.error('Error loading group participants:', error);
+    return [];
+  }
+}
+
 // Update group actions visibility based on permissions (Phase 4.3)
 async function updateGroupActionsVisibility() {
   if (!currentConversation || currentConversation.type !== 'group') {
