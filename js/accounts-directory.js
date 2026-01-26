@@ -12,6 +12,7 @@ let currentUserProfile = null;
 let currentAccount = null;
 let accounts = [];
 let allReps = [];
+let activeAccountMenu = null;
 
 // Get current user and profile
 async function getCurrentUser() {
@@ -486,8 +487,6 @@ function setupEventListeners() {
   });
 
   // Account actions menu (three-dot menu)
-  let activeAccountMenu = null;
-  
   // Use event delegation on the table body for better reliability
   const accountsTableBody = document.getElementById('accounts-table-body');
   if (accountsTableBody) {
