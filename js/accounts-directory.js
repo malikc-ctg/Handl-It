@@ -171,12 +171,13 @@ function renderAccounts() {
             <div 
               class="account-actions-menu fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
               data-account-id="${account.id}"
-              onclick="event.stopPropagation();"
             >
               <button 
                 class="account-action-btn edit-account-btn w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5 whitespace-nowrap"
                 data-action="edit" 
                 data-account-id="${account.id}"
+                type="button"
+                onclick="window.accountsDirectory?.handleAccountAction('edit', '${account.id}'); event.stopPropagation();"
               >
                 <i data-lucide="edit" class="w-4 h-4 flex-shrink-0"></i>
                 <span class="flex-1">Edit</span>
@@ -185,6 +186,8 @@ function renderAccounts() {
                 class="account-action-btn delete-account-btn w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
                 data-action="delete" 
                 data-account-id="${account.id}"
+                type="button"
+                onclick="window.accountsDirectory?.handleAccountAction('delete', '${account.id}'); event.stopPropagation();"
               >
                 <i data-lucide="trash-2" class="w-4 h-4 flex-shrink-0"></i>
                 <span class="flex-1">Delete</span>
@@ -197,6 +200,9 @@ function renderAccounts() {
   }).join('');
 
   if (window.lucide) lucide.createIcons();
+  
+  // Attach event listeners to action buttons after rendering
+  attachAccountActionListeners();
 }
 
 // Escape HTML to prevent XSS
@@ -557,7 +563,7 @@ function setupEventListeners() {
     }
   });
 
-  // Handle account action buttons (edit, delete) - use event delegation on menu
+  // Handle account action buttons (edit, delete) - use event delegation as backup
   document.addEventListener('click', async (e) => {
     // Check if click is on action button or any child element (icon, span, etc.)
     const actionBtn = e.target.closest('.account-action-btn');
@@ -569,46 +575,14 @@ function setupEventListeners() {
     const action = actionBtn.dataset.action;
     const accountId = actionBtn.dataset.accountId;
     
-    console.log('[Accounts] Action button clicked:', { action, accountId });
+    console.log('[Accounts] Action button clicked via delegation:', { action, accountId });
     
     if (!action || !accountId) {
       console.warn('[Accounts] Missing action or accountId:', { action, accountId });
       return;
     }
     
-    // Close menu first
-    const menu = actionBtn.closest('.account-actions-menu');
-    if (menu) {
-      menu.classList.add('hidden');
-      activeAccountMenu = null;
-    }
-    
-    if (action === 'edit') {
-      console.log('[Accounts] Opening account drawer for edit:', accountId);
-      // Open account drawer in edit mode
-      await openAccountDrawer(accountId);
-      // You could add edit mode logic here if needed
-    } else if (action === 'delete') {
-      console.log('[Accounts] Delete action triggered for:', accountId);
-      // Confirm and delete
-      const account = accounts.find(a => a.id === accountId);
-      if (!account) {
-        toast.error('Account not found', 'Error');
-        return;
-      }
-      
-      if (confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
-        try {
-          console.log('[Accounts] Deleting account:', accountId);
-          await accountsService.deleteAccount(accountId);
-          toast.success('Account deleted successfully', 'Success');
-          await loadAccounts();
-        } catch (error) {
-          console.error('[Accounts] Error deleting account:', error);
-          toast.error(`Failed to delete account: ${error.message}`, 'Error');
-        }
-      }
-    }
+    await handleAccountAction(action, accountId);
   });
 
   // Close drawer
@@ -786,12 +760,68 @@ function openSetDMModal(account) {
   });
 }
 
+// Handle account actions (edit/delete)
+async function handleAccountAction(action, accountId) {
+  console.log('[Accounts] handleAccountAction called:', { action, accountId });
+  
+  // Close menu
+  const menu = document.querySelector(`.account-actions-menu[data-account-id="${accountId}"]`);
+  if (menu) {
+    menu.classList.add('hidden');
+    activeAccountMenu = null;
+  }
+  
+  if (action === 'edit') {
+    console.log('[Accounts] Opening account drawer for edit:', accountId);
+    await openAccountDrawer(accountId);
+  } else if (action === 'delete') {
+    console.log('[Accounts] Delete action triggered for:', accountId);
+    const account = accounts.find(a => a.id === accountId);
+    if (!account) {
+      toast.error('Account not found', 'Error');
+      return;
+    }
+    
+    if (confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
+      try {
+        console.log('[Accounts] Deleting account:', accountId);
+        await accountsService.deleteAccount(accountId);
+        toast.success('Account deleted successfully', 'Success');
+        await loadAccounts();
+      } catch (error) {
+        console.error('[Accounts] Error deleting account:', error);
+        toast.error(`Failed to delete account: ${error.message}`, 'Error');
+      }
+    }
+  }
+}
+
+// Attach event listeners to action buttons
+function attachAccountActionListeners() {
+  document.querySelectorAll('.account-action-btn').forEach(btn => {
+    // Remove any existing listeners to prevent duplicates
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    
+    // Attach click listener
+    newBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const action = newBtn.dataset.action;
+      const accountId = newBtn.dataset.accountId;
+      console.log('[Accounts] Button clicked directly:', { action, accountId });
+      await handleAccountAction(action, accountId);
+    });
+  });
+}
+
 // Export for use in sales.html
 const accountsDirectoryModule = {
   init: initAccountsDirectory,
   loadAccounts,
   openAccountDrawer,
-  closeAccountDrawer
+  closeAccountDrawer,
+  handleAccountAction
 };
 
 // Set on window for backward compatibility
