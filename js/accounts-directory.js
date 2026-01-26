@@ -164,7 +164,7 @@ function renderAccounts() {
         <td class="px-4 py-3 text-sm text-gray-500">${lastTouch}</td>
         <td class="px-4 py-3">
           <div class="relative">
-            <button class="account-actions-btn p-1 rounded hover:bg-nfgray" data-account-id="${account.id}" onclick="event.stopPropagation()">
+            <button class="account-actions-btn p-1 rounded hover:bg-nfgray" data-account-id="${account.id}" type="button">
               <i data-lucide="more-vertical" class="w-4 h-4"></i>
             </button>
             <!-- Dropdown Menu -->
@@ -482,52 +482,68 @@ function setupEventListeners() {
   // Account actions menu (three-dot menu)
   let activeAccountMenu = null;
   
-  document.addEventListener('click', (e) => {
-    const actionsBtn = e.target.closest('.account-actions-btn');
-    if (actionsBtn) {
-      e.stopPropagation();
-      e.preventDefault();
-      const accountId = actionsBtn.dataset.accountId;
+  // Use event delegation on the table body for better reliability
+  const accountsTableBody = document.getElementById('accounts-table-body');
+  if (accountsTableBody) {
+    accountsTableBody.addEventListener('click', (e) => {
+      // Check if click is on the button or icon inside it
+      let actionsBtn = e.target.closest('.account-actions-btn');
       
-      // Close any other open menu
-      if (activeAccountMenu && activeAccountMenu !== actionsBtn.nextElementSibling) {
-        activeAccountMenu.classList.add('hidden');
+      // If clicked on icon, get the parent button
+      if (!actionsBtn && e.target.closest('i[data-lucide="more-vertical"]')) {
+        actionsBtn = e.target.closest('i[data-lucide="more-vertical"]').closest('.account-actions-btn');
       }
       
-      // Toggle current menu
-      const menu = actionsBtn.nextElementSibling;
-      if (menu && menu.classList.contains('account-actions-menu')) {
-        const isHidden = menu.classList.contains('hidden');
+      if (actionsBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const accountId = actionsBtn.dataset.accountId;
         
-        // Close all menus first
-        document.querySelectorAll('.account-actions-menu').forEach(m => m.classList.add('hidden'));
+        // Find the menu (next sibling div)
+        let menu = actionsBtn.nextElementSibling;
+        while (menu && !menu.classList.contains('account-actions-menu')) {
+          menu = menu.nextElementSibling;
+        }
         
-        if (isHidden) {
-          // Position menu relative to button
-          const rect = actionsBtn.getBoundingClientRect();
-          // Temporarily show menu to get its width
-          menu.classList.remove('hidden');
-          const menuWidth = menu.offsetWidth || 150;
-          menu.style.position = 'fixed';
-          menu.style.top = `${rect.bottom + 5}px`;
-          menu.style.left = `${Math.max(10, rect.right - menuWidth)}px`;
-          menu.style.zIndex = '9999';
-          activeAccountMenu = menu;
+        if (menu && menu.classList.contains('account-actions-menu')) {
+          const isHidden = menu.classList.contains('hidden');
           
-          // Re-initialize icons
-          if (window.lucide) {
-            lucide.createIcons();
+          // Close all menus first
+          document.querySelectorAll('.account-actions-menu').forEach(m => {
+            m.classList.add('hidden');
+            m.style.top = '';
+            m.style.left = '';
+          });
+          
+          if (isHidden) {
+            // Position menu relative to button
+            const rect = actionsBtn.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = `${rect.bottom + 5}px`;
+            menu.style.left = `${Math.max(10, rect.right - 150)}px`;
+            menu.style.zIndex = '9999';
+            menu.classList.remove('hidden');
+            activeAccountMenu = menu;
+            
+            // Re-initialize icons
+            if (window.lucide) {
+              lucide.createIcons();
+            }
+          } else {
+            activeAccountMenu = null;
           }
-        } else {
-          activeAccountMenu = null;
         }
       }
-    } else {
-      // Close menu if clicking outside
-      if (activeAccountMenu && !e.target.closest('.account-actions-menu') && !e.target.closest('.account-actions-btn')) {
-        activeAccountMenu.classList.add('hidden');
-        activeAccountMenu = null;
-      }
+    });
+  }
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (activeAccountMenu && 
+        !e.target.closest('.account-actions-menu') && 
+        !e.target.closest('.account-actions-btn')) {
+      activeAccountMenu.classList.add('hidden');
+      activeAccountMenu = null;
     }
   });
 
@@ -596,24 +612,67 @@ function setupEventListeners() {
   });
 
   // Create account form
-  document.getElementById('create-account-form')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    try {
-      await accountsService.createAccount({
-        name: formData.get('name'),
-        status: formData.get('status'),
-        hq_address: formData.get('hq_address'),
-        city: formData.get('city')
-      });
-      toast.success('Account created');
-      document.getElementById('create-account-modal')?.classList.add('hidden');
-      e.target.reset();
-      await loadAccounts();
-    } catch (error) {
-      toast.error('Failed to create account', 'Error');
-    }
-  });
+  const createAccountForm = document.getElementById('create-account-form');
+  if (createAccountForm) {
+    let isSubmitting = false;
+    
+    createAccountForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Prevent double submission
+      if (isSubmitting) {
+        console.log('[Accounts] Form submission already in progress, ignoring...');
+        return;
+      }
+      
+      isSubmitting = true;
+      const submitBtn = createAccountForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn?.textContent;
+      
+      // Disable submit button
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating...';
+      }
+      
+      try {
+        const formData = new FormData(e.target);
+        const accountName = formData.get('name')?.trim();
+        
+        if (!accountName) {
+          toast.error('Account name is required', 'Error');
+          isSubmitting = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText || 'Create Account';
+          }
+          return;
+        }
+        
+        await accountsService.createAccount({
+          name: accountName,
+          status: formData.get('status'),
+          hq_address: formData.get('hq_address')?.trim() || null,
+          city: formData.get('city')?.trim() || null
+        });
+        toast.success('Account created');
+        document.getElementById('create-account-modal')?.classList.add('hidden');
+        e.target.reset();
+        await loadAccounts();
+      } catch (error) {
+        console.error('[Accounts] Error creating account:', error);
+        const errorMessage = error.message || 'Failed to create account';
+        toast.error(errorMessage, 'Error');
+      } finally {
+        isSubmitting = false;
+        // Re-enable submit button
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText || 'Create Account';
+        }
+      }
+    });
+  }
 
   // Add contact form
   document.getElementById('add-contact-form')?.addEventListener('submit', async (e) => {

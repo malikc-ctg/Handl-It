@@ -272,8 +272,23 @@ export async function createAccount(accountData) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
 
+    // Check for duplicate account name (case-insensitive)
+    if (accountData.name) {
+      const { data: existingAccounts, error: checkError } = await supabase
+        .from('accounts')
+        .select('id, name')
+        .ilike('name', accountData.name.trim())
+        .limit(1);
+
+      if (checkError) {
+        console.warn('[Accounts] Error checking for duplicates:', checkError);
+      } else if (existingAccounts && existingAccounts.length > 0) {
+        throw new Error(`An account with the name "${accountData.name}" already exists.`);
+      }
+    }
+
     const account = {
-      name: accountData.name,
+      name: accountData.name.trim(),
       status: accountData.status || 'prospect',
       owner_user_id: accountData.owner_user_id || user.id,
       hq_address: accountData.hq_address || null,
