@@ -164,9 +164,32 @@ function renderAccounts() {
         <td class="px-4 py-3 text-sm text-gray-500">${lastTouch}</td>
         <td class="px-4 py-3">
           <div class="relative">
-            <button class="account-actions-btn p-1 rounded hover:bg-nfgray" onclick="event.stopPropagation()">
+            <button class="account-actions-btn p-1 rounded hover:bg-nfgray" data-account-id="${account.id}" onclick="event.stopPropagation()">
               <i data-lucide="more-vertical" class="w-4 h-4"></i>
             </button>
+            <!-- Dropdown Menu -->
+            <div 
+              class="account-actions-menu fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
+              data-account-id="${account.id}"
+              onclick="event.stopPropagation();"
+            >
+              <button 
+                class="account-action-btn edit-account-btn w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                data-action="edit" 
+                data-account-id="${account.id}"
+              >
+                <i data-lucide="edit" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="flex-1">Edit</span>
+              </button>
+              <button 
+                class="account-action-btn delete-account-btn w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                data-action="delete" 
+                data-account-id="${account.id}"
+              >
+                <i data-lucide="trash-2" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="flex-1">Delete</span>
+              </button>
+            </div>
           </div>
         </td>
       </tr>
@@ -453,6 +476,99 @@ function setupEventListeners() {
     const row = e.target.closest('.account-row');
     if (row && !e.target.closest('button, a')) {
       openAccountDrawer(row.dataset.accountId);
+    }
+  });
+
+  // Account actions menu (three-dot menu)
+  let activeAccountMenu = null;
+  
+  document.addEventListener('click', (e) => {
+    const actionsBtn = e.target.closest('.account-actions-btn');
+    if (actionsBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      const accountId = actionsBtn.dataset.accountId;
+      
+      // Close any other open menu
+      if (activeAccountMenu && activeAccountMenu !== actionsBtn.nextElementSibling) {
+        activeAccountMenu.classList.add('hidden');
+      }
+      
+      // Toggle current menu
+      const menu = actionsBtn.nextElementSibling;
+      if (menu && menu.classList.contains('account-actions-menu')) {
+        const isHidden = menu.classList.contains('hidden');
+        
+        // Close all menus first
+        document.querySelectorAll('.account-actions-menu').forEach(m => m.classList.add('hidden'));
+        
+        if (isHidden) {
+          // Position menu relative to button
+          const rect = actionsBtn.getBoundingClientRect();
+          // Temporarily show menu to get its width
+          menu.classList.remove('hidden');
+          const menuWidth = menu.offsetWidth || 150;
+          menu.style.position = 'fixed';
+          menu.style.top = `${rect.bottom + 5}px`;
+          menu.style.left = `${Math.max(10, rect.right - menuWidth)}px`;
+          menu.style.zIndex = '9999';
+          activeAccountMenu = menu;
+          
+          // Re-initialize icons
+          if (window.lucide) {
+            lucide.createIcons();
+          }
+        } else {
+          activeAccountMenu = null;
+        }
+      }
+    } else {
+      // Close menu if clicking outside
+      if (activeAccountMenu && !e.target.closest('.account-actions-menu') && !e.target.closest('.account-actions-btn')) {
+        activeAccountMenu.classList.add('hidden');
+        activeAccountMenu = null;
+      }
+    }
+  });
+
+  // Handle account action buttons (edit, delete)
+  document.addEventListener('click', async (e) => {
+    const actionBtn = e.target.closest('.account-action-btn');
+    if (!actionBtn) return;
+    
+    e.stopPropagation();
+    const action = actionBtn.dataset.action;
+    const accountId = actionBtn.dataset.accountId;
+    
+    // Close menu
+    const menu = actionBtn.closest('.account-actions-menu');
+    if (menu) {
+      menu.classList.add('hidden');
+      activeAccountMenu = null;
+    }
+    
+    if (action === 'edit') {
+      // Open account drawer in edit mode
+      await openAccountDrawer(accountId);
+      // You could add edit mode logic here if needed
+    } else if (action === 'delete') {
+      // Confirm and delete
+      const account = accounts.find(a => a.id === accountId);
+      if (!account) {
+        toast.error('Account not found', 'Error');
+        return;
+      }
+      
+      if (confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
+        try {
+          await accountsService.deleteAccount(accountId);
+          toast.success('Account deleted successfully', 'Success');
+          await loadAccounts();
+        } catch (error) {
+          console.error('[Accounts] Error deleting account:', error);
+          toast.error(`Failed to delete account: ${error.message}`, 'Error');
+        }
+      }
     }
   });
 

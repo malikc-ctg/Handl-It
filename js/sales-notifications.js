@@ -7,6 +7,25 @@ import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
 
 /**
+ * Get all admin user IDs (admin and super_admin roles)
+ */
+async function getAllAdminUserIds() {
+  try {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('id')
+      .in('role', ['admin', 'super_admin']);
+    
+    if (error) throw error;
+    
+    return data?.map(user => user.id) || [];
+  } catch (error) {
+    console.warn('[Sales Notifications] Could not get admin user IDs:', error);
+    return [];
+  }
+}
+
+/**
  * Create a notification in the database
  */
 async function createNotification(title, message, type = 'info', link = null, userId = null) {
@@ -58,6 +77,58 @@ async function createNotification(title, message, type = 'info', link = null, us
   } catch (error) {
     console.warn('[Sales Notifications] Error creating notification:', error);
     return null;
+  }
+}
+
+/**
+ * Create notifications for multiple users
+ */
+async function createNotificationsForUsers(title, message, type = 'info', link = null, userIds = []) {
+  if (!userIds || userIds.length === 0) return [];
+
+  // Map sales notification types to notification center types
+  const notificationTypeMap = {
+    'deal_created': 'job_assigned',
+    'deal_updated': 'job_updated',
+    'deal_stage_changed': 'job_updated',
+    'deal_won': 'job_completed',
+    'deal_lost': 'booking_cancelled',
+    'quote_created': 'booking_created',
+    'quote_sent': 'booking_created',
+    'quote_accepted': 'job_completed',
+    'quote_rejected': 'booking_cancelled',
+    'account_created': 'site_assigned',
+    'contact_created': 'mention',
+    'default': 'system'
+  };
+
+  const dbType = notificationTypeMap[type] || notificationTypeMap['default'];
+
+  // Create notifications for all users
+  const notifications = userIds.map(userId => ({
+    user_id: userId,
+    type: dbType,
+    title,
+    message,
+    link: link || null,
+    read: false
+  }));
+
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert(notifications)
+      .select();
+
+    if (error) {
+      console.warn('[Sales Notifications] Could not create notifications for users:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.warn('[Sales Notifications] Error creating notifications for users:', error);
+    return [];
   }
 }
 
@@ -176,7 +247,22 @@ export const accountNotifications = {
   async contactCreated(contact, accountName) {
     const message = `New contact "${contact.full_name || 'Untitled'}" has been added${accountName ? ` to ${accountName}` : ''}`;
     toast.success(message, 'Contact Created');
-    await createNotification('Contact Created', message, 'contact_created', `#contacts?contact=${contact.id}`);
+    
+    // Get all admin user IDs and notify them
+    const adminUserIds = await getAllAdminUserIds();
+    
+    if (adminUserIds.length > 0) {
+      await createNotificationsForUsers(
+        'Contact Created',
+        message,
+        'contact_created',
+        `#contacts?contact=${contact.id}`,
+        adminUserIds
+      );
+    } else {
+      // Fallback: notify current user if no admins found
+      await createNotification('Contact Created', message, 'contact_created', `#contacts?contact=${contact.id}`);
+    }
   },
 
   async contactUpdated(contact) {

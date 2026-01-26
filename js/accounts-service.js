@@ -350,6 +350,24 @@ export async function setDecisionMaker(accountId, contactId) {
 }
 
 /**
+ * Delete account
+ */
+export async function deleteAccount(accountId) {
+  try {
+    const { error } = await supabase
+      .from('accounts')
+      .delete()
+      .eq('id', accountId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('[Accounts] Error deleting account:', error);
+    throw error;
+  }
+}
+
+/**
  * List contacts for account
  */
 export async function listContactsByAccount(accountId) {
