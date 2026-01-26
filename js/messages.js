@@ -897,8 +897,12 @@ async function selectConversation(conversationId) {
   
   // Load group participants if group conversation (Phase 4.3)
   if (currentConversation && currentConversation.type === 'group') {
-    await loadGroupParticipantsForConversation(conversationId);
-    updateGroupActionsVisibility();
+    try {
+      await loadGroupParticipantsForConversation(conversationId);
+      await updateGroupActionsVisibility();
+    } catch (groupErr) {
+      console.warn('[Messages] Group participant/actions setup failed:', groupErr);
+    }
   }
 
     // Mark as read
@@ -2394,6 +2398,8 @@ async function subscribeToMessages(conversationId) {
 // Check if current user is group admin (Phase 4.3)
 async function isGroupAdmin(conversationId) {
   try {
+    if (!currentUser?.id || !conversationId) return false;
+    
     // Check cache first
     const cachedRole = currentUserGroupRole.get(conversationId);
     if (cachedRole) {
@@ -2423,9 +2429,11 @@ async function isGroupAdmin(conversationId) {
 // Load group participants for a conversation (Phase 4.3)
 async function loadGroupParticipantsForConversation(conversationId) {
   try {
+    if (!conversationId) return [];
+    
     // Check cache first
     if (groupParticipants.has(conversationId)) {
-      return groupParticipants.get(conversationId);
+      return groupParticipants.get(conversationId) || [];
     }
     
     // Fetch participants with their roles
@@ -2436,8 +2444,9 @@ async function loadGroupParticipantsForConversation(conversationId) {
     
     if (participantsError) throw participantsError;
     
-    // Fetch user profiles for participants
-    const userIds = participants.map(p => p.user_id);
+    const parts = participants || [];
+    const userIds = parts.map(p => p.user_id).filter(Boolean);
+    
     if (userIds.length === 0) {
       groupParticipants.set(conversationId, []);
       return [];
@@ -2450,9 +2459,9 @@ async function loadGroupParticipantsForConversation(conversationId) {
     
     if (profilesError) throw profilesError;
     
-    // Combine participants with profiles
-    const profilesMap = new Map(profiles.map(p => [p.id, p]));
-    const participantsWithProfiles = participants.map(p => ({
+    const profileList = profiles || [];
+    const profilesMap = new Map(profileList.map(p => [p.id, p]));
+    const participantsWithProfiles = parts.map(p => ({
       user_id: p.user_id,
       role: p.role,
       joined_at: p.joined_at,
@@ -2463,36 +2472,43 @@ async function loadGroupParticipantsForConversation(conversationId) {
     groupParticipants.set(conversationId, participantsWithProfiles);
     
     // Also cache current user's role
-    const currentUserParticipant = participants.find(p => p.user_id === currentUser.id);
-    if (currentUserParticipant) {
-      currentUserGroupRole.set(conversationId, currentUserParticipant.role);
+    if (currentUser?.id) {
+      const currentUserParticipant = parts.find(p => p.user_id === currentUser.id);
+      if (currentUserParticipant) {
+        currentUserGroupRole.set(conversationId, currentUserParticipant.role);
+      }
     }
     
     return participantsWithProfiles;
   } catch (error) {
     console.error('Error loading group participants:', error);
+    groupParticipants.set(conversationId, []);
     return [];
   }
 }
 
 // Update group actions visibility based on permissions (Phase 4.3)
 async function updateGroupActionsVisibility() {
-  if (!currentConversation || currentConversation.type !== 'group') {
+  try {
+    if (!currentConversation || currentConversation.type !== 'group') {
+      const groupActionsBtn = document.getElementById('group-actions-btn');
+      if (groupActionsBtn) {
+        groupActionsBtn.classList.add('hidden');
+      }
+      return;
+    }
+    
     const groupActionsBtn = document.getElementById('group-actions-btn');
     if (groupActionsBtn) {
-      groupActionsBtn.classList.add('hidden');
+      groupActionsBtn.classList.remove('hidden');
     }
-    return;
-  }
-  
-  const groupActionsBtn = document.getElementById('group-actions-btn');
-  if (groupActionsBtn) {
-    groupActionsBtn.classList.remove('hidden');
-  }
-  
-  // Load role if not cached
-  if (!currentUserGroupRole.has(currentConversation.id)) {
-    await isGroupAdmin(currentConversation.id);
+    
+    // Load role if not cached
+    if (!currentUserGroupRole.has(currentConversation.id)) {
+      await isGroupAdmin(currentConversation.id);
+    }
+  } catch (err) {
+    console.warn('[Messages] updateGroupActionsVisibility failed:', err);
   }
 }
 
@@ -4263,13 +4279,12 @@ function updateConversationHeader() {
     }
   }
 
-  // Show/hide group actions button (Phase 4.2)
-  // Show/hide group actions button (Phase 4.3)
+  // Show/hide group actions button (Phase 4.2 / 4.3)
   if (groupActionsBtn) {
     if (isGroup) {
       groupActionsBtn.classList.remove('hidden');
-      // Update visibility based on permissions (async check)
-      updateGroupActionsVisibility();
+      // Update visibility based on permissions (async check) — don't block header update
+      updateGroupActionsVisibility().catch((e) => console.warn('[Messages] updateGroupActionsVisibility in header:', e));
     } else {
       groupActionsBtn.classList.add('hidden');
     }
