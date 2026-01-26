@@ -486,6 +486,11 @@ function setupEventListeners() {
   const accountsTableBody = document.getElementById('accounts-table-body');
   if (accountsTableBody) {
     accountsTableBody.addEventListener('click', (e) => {
+      // Don't handle clicks on action menu buttons - let them bubble up
+      if (e.target.closest('.account-action-btn') || e.target.closest('.account-actions-menu')) {
+        return;
+      }
+      
       // Check if click is on the button or icon inside it
       let actionsBtn = e.target.closest('.account-actions-btn');
       
@@ -537,8 +542,13 @@ function setupEventListeners() {
     });
   }
   
-  // Close menu when clicking outside
+  // Close menu when clicking outside (but not on action buttons)
   document.addEventListener('click', (e) => {
+    // Don't close if clicking on action buttons inside the menu
+    if (e.target.closest('.account-action-btn')) {
+      return;
+    }
+    
     if (activeAccountMenu && 
         !e.target.closest('.account-actions-menu') && 
         !e.target.closest('.account-actions-btn')) {
@@ -547,16 +557,26 @@ function setupEventListeners() {
     }
   });
 
-  // Handle account action buttons (edit, delete)
+  // Handle account action buttons (edit, delete) - use event delegation on menu
   document.addEventListener('click', async (e) => {
+    // Check if click is on action button or any child element (icon, span, etc.)
     const actionBtn = e.target.closest('.account-action-btn');
     if (!actionBtn) return;
     
     e.stopPropagation();
+    e.preventDefault();
+    
     const action = actionBtn.dataset.action;
     const accountId = actionBtn.dataset.accountId;
     
-    // Close menu
+    console.log('[Accounts] Action button clicked:', { action, accountId });
+    
+    if (!action || !accountId) {
+      console.warn('[Accounts] Missing action or accountId:', { action, accountId });
+      return;
+    }
+    
+    // Close menu first
     const menu = actionBtn.closest('.account-actions-menu');
     if (menu) {
       menu.classList.add('hidden');
@@ -564,10 +584,12 @@ function setupEventListeners() {
     }
     
     if (action === 'edit') {
+      console.log('[Accounts] Opening account drawer for edit:', accountId);
       // Open account drawer in edit mode
       await openAccountDrawer(accountId);
       // You could add edit mode logic here if needed
     } else if (action === 'delete') {
+      console.log('[Accounts] Delete action triggered for:', accountId);
       // Confirm and delete
       const account = accounts.find(a => a.id === accountId);
       if (!account) {
@@ -577,6 +599,7 @@ function setupEventListeners() {
       
       if (confirm(`Are you sure you want to delete "${account.name}"? This action cannot be undone.`)) {
         try {
+          console.log('[Accounts] Deleting account:', accountId);
           await accountsService.deleteAccount(accountId);
           toast.success('Account deleted successfully', 'Success');
           await loadAccounts();
