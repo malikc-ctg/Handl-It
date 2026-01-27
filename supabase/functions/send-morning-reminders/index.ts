@@ -136,7 +136,7 @@ serve(async (req) => {
 
     // Pick a random quote for today (same quote for everyone)
     const quote = getRandomQuote()
-    const title = 'Good Morning'
+    const title = 'Good Morning -- Lets lock in'
     const message = quote
 
     console.log(`Sending morning reminders to ${users.length} users with quote: "${quote}"`)
