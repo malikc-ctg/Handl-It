@@ -505,9 +505,9 @@ export async function createStandaloneContact(contactData) {
 }
 
 /**
- * Update standalone contact
+ * Update standalone contact (in contacts table)
  */
-export async function updateContact(contactId, updates) {
+export async function updateStandaloneContact(contactId, updates) {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
@@ -556,15 +556,15 @@ export async function updateContact(contactId, updates) {
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('[Accounts] Error updating contact:', error);
+    console.error('[Accounts] Error updating standalone contact:', error);
     throw error;
   }
 }
 
 /**
- * Delete standalone contact
+ * Delete standalone contact (from contacts table)
  */
-export async function deleteContact(contactId) {
+export async function deleteStandaloneContact(contactId) {
   try {
     const { error } = await supabase
       .from('contacts')
@@ -574,7 +574,7 @@ export async function deleteContact(contactId) {
     if (error) throw error;
     return true;
   } catch (error) {
-    console.error('[Accounts] Error deleting contact:', error);
+    console.error('[Accounts] Error deleting standalone contact:', error);
     throw error;
   }
 }

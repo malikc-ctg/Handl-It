@@ -1161,7 +1161,7 @@ async function handleContactAction(action, contactId) {
     if (confirm(`Are you sure you want to delete "${contactName}"? This action cannot be undone.`)) {
       try {
         console.log('[Accounts] Deleting contact:', contactId);
-        await accountsService.deleteContact(contactId);
+        await accountsService.deleteStandaloneContact(contactId);
         toast.success('Contact deleted successfully', 'Success');
         await loadAccounts();
       } catch (error) {
