@@ -491,15 +491,90 @@ export async function createStandaloneContact(contactData) {
       .single();
 
     if (error) throw error;
-    
+
     // Send notification to admins
     if (window.salesNotifications?.account) {
       await window.salesNotifications.account.contactCreated(data);
     }
-    
+
     return data;
   } catch (error) {
     console.error('[Accounts] Error creating standalone contact:', error);
+    throw error;
+  }
+}
+
+/**
+ * Update standalone contact
+ */
+export async function updateContact(contactId, updates) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Normalize phone number if provided
+    let normalizedPhone = updates.phone || updates.normalized_phone || null;
+    if (normalizedPhone && !normalizedPhone.startsWith('+')) {
+      // Basic normalization - remove non-digits except +
+      normalizedPhone = normalizedPhone.replace(/[^\d+]/g, '');
+      if (!normalizedPhone.startsWith('+')) {
+        // Assume US/Canada if no country code
+        normalizedPhone = '+1' + normalizedPhone;
+      }
+    }
+
+    const contactUpdates = {
+      email: updates.email !== undefined ? updates.email : undefined,
+      normalized_phone: normalizedPhone !== undefined ? normalizedPhone : undefined,
+      first_name: updates.first_name !== undefined ? updates.first_name : undefined,
+      last_name: updates.last_name !== undefined ? updates.last_name : undefined,
+      title: updates.title !== undefined ? updates.title : undefined,
+      company_name: updates.company_name !== undefined ? updates.company_name : undefined,
+      street_address: updates.address !== undefined ? updates.address : updates.street_address !== undefined ? updates.street_address : undefined,
+      city: updates.city !== undefined ? updates.city : undefined,
+      state_province: updates.state_province !== undefined ? updates.state_province : undefined,
+      postal_code: updates.postal_code !== undefined ? updates.postal_code : undefined,
+      country: updates.country !== undefined ? updates.country : undefined,
+      role: updates.role !== undefined ? updates.role : undefined,
+      notes: updates.notes !== undefined ? updates.notes : undefined
+    };
+
+    // Remove undefined values
+    Object.keys(contactUpdates).forEach(key => {
+      if (contactUpdates[key] === undefined) {
+        delete contactUpdates[key];
+      }
+    });
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .update(contactUpdates)
+      .eq('id', contactId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('[Accounts] Error updating contact:', error);
+    throw error;
+  }
+}
+
+/**
+ * Delete standalone contact
+ */
+export async function deleteContact(contactId) {
+  try {
+    const { error } = await supabase
+      .from('contacts')
+      .delete()
+      .eq('id', contactId);
+
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error('[Accounts] Error deleting contact:', error);
     throw error;
   }
 }

@@ -13,6 +13,7 @@ let currentAccount = null;
 let accounts = [];
 let allReps = [];
 let activeAccountMenu = null;
+let activeContactMenu = null;
 
 // Get current user and profile
 async function getCurrentUser() {
@@ -291,6 +292,29 @@ function renderAccounts() {
             <button class="contact-actions-btn p-1 rounded hover:bg-nfgray" data-contact-id="${contact.id}" type="button">
               <i data-lucide="more-vertical" class="w-4 h-4"></i>
             </button>
+            <!-- Dropdown Menu -->
+            <div 
+              class="contact-actions-menu fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
+              data-contact-id="${contact.id}">
+              <button 
+                class="contact-action-btn edit-contact-btn w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                data-action="edit" 
+                data-contact-id="${contact.id}"
+                type="button"
+                onclick="window.accountsDirectory?.handleContactAction('edit', '${contact.id}'); event.stopPropagation();">
+                <i data-lucide="edit" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="flex-1">Edit</span>
+              </button>
+              <button 
+                class="contact-action-btn delete-contact-btn w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                data-action="delete" 
+                data-contact-id="${contact.id}"
+                type="button"
+                onclick="window.accountsDirectory?.handleContactAction('delete', '${contact.id}'); event.stopPropagation();">
+                <i data-lucide="trash-2" class="w-4 h-4 flex-shrink-0"></i>
+                <span class="flex-1">Delete</span>
+              </button>
+            </div>
           </div>
         </td>
       </tr>
@@ -303,6 +327,7 @@ function renderAccounts() {
   
   // Attach event listeners to action buttons after rendering
   attachAccountActionListeners();
+  attachContactActionListeners();
 }
 
 // Escape HTML to prevent XSS
@@ -646,10 +671,70 @@ function setupEventListeners() {
     });
   }
   
+  // Contact actions menu (three-dot menu) - similar to account actions
+  if (accountsTableBody) {
+    accountsTableBody.addEventListener('click', (e) => {
+      // Don't handle clicks on action menu buttons - let them bubble up
+      if (e.target.closest('.contact-action-btn') || e.target.closest('.contact-actions-menu')) {
+        return;
+      }
+      
+      // Check if click is on the button or icon inside it
+      let actionsBtn = e.target.closest('.contact-actions-btn');
+      
+      // If clicked on icon, get the parent button
+      if (!actionsBtn && e.target.closest('i[data-lucide="more-vertical"]')) {
+        actionsBtn = e.target.closest('i[data-lucide="more-vertical"]').closest('.contact-actions-btn');
+      }
+      
+      if (actionsBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const contactId = actionsBtn.dataset.contactId;
+        
+        // Find the menu (next sibling div)
+        let menu = actionsBtn.nextElementSibling;
+        while (menu && !menu.classList.contains('contact-actions-menu')) {
+          menu = menu.nextElementSibling;
+        }
+        
+        if (menu && menu.classList.contains('contact-actions-menu')) {
+          const isHidden = menu.classList.contains('hidden');
+          
+          // Close all menus first (both account and contact)
+          document.querySelectorAll('.account-actions-menu, .contact-actions-menu').forEach(m => {
+            m.classList.add('hidden');
+            m.style.top = '';
+            m.style.left = '';
+          });
+          
+          if (isHidden) {
+            // Position menu relative to button
+            const rect = actionsBtn.getBoundingClientRect();
+            menu.style.position = 'fixed';
+            menu.style.top = `${rect.bottom + 5}px`;
+            menu.style.left = `${Math.max(10, rect.right - 150)}px`;
+            menu.style.zIndex = '9999';
+            menu.classList.remove('hidden');
+            activeContactMenu = menu;
+            activeAccountMenu = null; // Clear account menu
+            
+            // Re-initialize icons
+            if (window.lucide) {
+              lucide.createIcons();
+            }
+          } else {
+            activeContactMenu = null;
+          }
+        }
+      }
+    });
+  }
+
   // Close menu when clicking outside (but not on action buttons)
   document.addEventListener('click', (e) => {
     // Don't close if clicking on action buttons inside the menu
-    if (e.target.closest('.account-action-btn')) {
+    if (e.target.closest('.account-action-btn') || e.target.closest('.contact-action-btn')) {
       return;
     }
     
@@ -658,6 +743,13 @@ function setupEventListeners() {
         !e.target.closest('.account-actions-btn')) {
       activeAccountMenu.classList.add('hidden');
       activeAccountMenu = null;
+    }
+    
+    if (activeContactMenu && 
+        !e.target.closest('.contact-actions-menu') && 
+        !e.target.closest('.contact-actions-btn')) {
+      activeContactMenu.classList.add('hidden');
+      activeContactMenu = null;
     }
   });
 
@@ -1016,13 +1108,76 @@ function attachAccountActionListeners() {
   });
 }
 
+// Handle contact actions (edit, delete)
+async function handleContactAction(action, contactId) {
+  console.log('[Accounts] handleContactAction called:', { action, contactId });
+  
+  // Close menu
+  const menu = document.querySelector(`.contact-actions-menu[data-contact-id="${contactId}"]`);
+  if (menu) {
+    menu.classList.add('hidden');
+    activeContactMenu = null;
+  }
+  
+  const allItems = window.allAccountsAndContacts || { contacts: [] };
+  const contact = allItems.contacts.find(c => c.id === contactId);
+  
+  if (action === 'edit') {
+    console.log('[Accounts] Opening contact edit modal:', contactId);
+    // TODO: Open edit modal for contact (similar to account drawer)
+    // For now, show a message
+    toast.info('Contact editing will be available soon', 'Info');
+    // You can implement a contact edit modal similar to the account drawer
+  } else if (action === 'delete') {
+    console.log('[Accounts] Delete action triggered for contact:', contactId);
+    if (!contact) {
+      toast.error('Contact not found', 'Error');
+      return;
+    }
+    
+    const contactName = contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown';
+    
+    if (confirm(`Are you sure you want to delete "${contactName}"? This action cannot be undone.`)) {
+      try {
+        console.log('[Accounts] Deleting contact:', contactId);
+        await accountsService.deleteContact(contactId);
+        toast.success('Contact deleted successfully', 'Success');
+        await loadAccounts();
+      } catch (error) {
+        console.error('[Accounts] Error deleting contact:', error);
+        toast.error(`Failed to delete contact: ${error.message}`, 'Error');
+      }
+    }
+  }
+}
+
+// Attach event listeners to contact action buttons
+function attachContactActionListeners() {
+  document.querySelectorAll('.contact-action-btn').forEach(btn => {
+    // Remove any existing listeners to prevent duplicates
+    const newBtn = btn.cloneNode(true);
+    btn.parentNode.replaceChild(newBtn, btn);
+    
+    // Attach click listener
+    newBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const action = newBtn.dataset.action;
+      const contactId = newBtn.dataset.contactId;
+      console.log('[Accounts] Contact button clicked directly:', { action, contactId });
+      await handleContactAction(action, contactId);
+    });
+  });
+}
+
 // Export for use in sales.html
 const accountsDirectoryModule = {
   init: initAccountsDirectory,
   loadAccounts,
   openAccountDrawer,
   closeAccountDrawer,
-  handleAccountAction
+  handleAccountAction,
+  handleContactAction
 };
 
 // Set on window for backward compatibility
