@@ -1134,42 +1134,99 @@
     </main>
   </div>
 
-  <!-- Create Account Modal -->
+  <!-- Create Account/Contact Modal -->
   <div id="create-account-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
       <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
-        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Create Account</h3>
+        <h3 id="create-modal-title" class="text-lg font-semibold text-nfgblue dark:text-blue-400">Create Account</h3>
         <button id="create-account-close" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
       <form id="create-account-form" class="p-4 space-y-4">
+        <!-- Contact Type Selector -->
         <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
-          <input name="name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Type</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" id="contact-type-account" class="contact-type-btn p-3 border-2 border-nfgblue bg-nfgblue text-white rounded-xl font-medium transition cursor-pointer text-center">
+              <i data-lucide="building-2" class="w-5 h-5 mx-auto mb-1"></i>
+              <span>Account</span>
+            </button>
+            <button type="button" id="contact-type-contact" class="contact-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue dark:hover:border-blue-400 rounded-xl bg-white dark:bg-gray-800 transition cursor-pointer text-center">
+              <i data-lucide="user" class="w-5 h-5 mx-auto mb-1"></i>
+              <span>Contact</span>
+            </button>
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-          <select name="status" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
-            <option value="prospect">Prospect</option>
-            <option value="in_progress">In Progress</option>
-            <option value="active">Active Client</option>
-            <option value="dormant">Dormant</option>
-          </select>
+
+        <!-- Account Fields (shown when Account is selected) -->
+        <div id="account-fields" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name <span class="text-red-500">*</span></label>
+            <input name="name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+            <select name="status" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+              <option value="prospect">Prospect</option>
+              <option value="in_progress">In Progress</option>
+              <option value="active">Active Client</option>
+              <option value="dormant">Dormant</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HQ Address</label>
+            <input name="hq_address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+            <input name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HQ Address</label>
-          <input name="hq_address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+
+        <!-- Contact Fields (shown when Contact is selected) -->
+        <div id="contact-fields" class="hidden space-y-4">
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">First Name <span class="text-red-500">*</span></label>
+              <input name="first_name" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Last Name <span class="text-red-500">*</span></label>
+              <input name="last_name" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <input name="email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+            <input name="phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
+            <input name="title" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="e.g., Manager, Director">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name</label>
+            <input name="company_name" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address</label>
+            <input name="address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+            <input name="contact_city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
-          <input name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
-        </div>
+
         <div class="flex justify-end gap-3 pt-2">
           <button type="button" id="create-account-cancel" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
             Cancel
           </button>
-          <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">
+          <button type="submit" id="create-submit-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">
             Create
           </button>
         </div>

@@ -608,6 +608,65 @@ function setupEventListeners() {
   });
 
   // Create account form
+  // Contact type toggle
+  let currentContactType = 'account'; // 'account' or 'contact'
+  
+  const accountTypeBtn = document.getElementById('contact-type-account');
+  const contactTypeBtn = document.getElementById('contact-type-contact');
+  const accountFields = document.getElementById('account-fields');
+  const contactFields = document.getElementById('contact-fields');
+  const modalTitle = document.getElementById('create-modal-title');
+  const submitBtn = document.getElementById('create-submit-btn');
+
+  function setContactType(type) {
+    currentContactType = type;
+    
+    if (type === 'account') {
+      // Account selected
+      accountTypeBtn?.classList.remove('border-nfgray', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-800');
+      accountTypeBtn?.classList.add('border-nfgblue', 'bg-nfgblue', 'text-white');
+      contactTypeBtn?.classList.remove('border-nfgblue', 'bg-nfgblue', 'text-white');
+      contactTypeBtn?.classList.add('border-nfgray', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-800');
+      
+      accountFields?.classList.remove('hidden');
+      contactFields?.classList.add('hidden');
+      
+      if (modalTitle) modalTitle.textContent = 'Create Account';
+      if (submitBtn) submitBtn.textContent = 'Create Account';
+      
+      // Update required fields
+      const accountNameInput = createAccountForm?.querySelector('input[name="name"]');
+      if (accountNameInput) accountNameInput.required = true;
+      const firstNameInput = createAccountForm?.querySelector('input[name="first_name"]');
+      if (firstNameInput) firstNameInput.required = false;
+      const lastNameInput = createAccountForm?.querySelector('input[name="last_name"]');
+      if (lastNameInput) lastNameInput.required = false;
+    } else {
+      // Contact selected
+      contactTypeBtn?.classList.remove('border-nfgray', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-800');
+      contactTypeBtn?.classList.add('border-nfgblue', 'bg-nfgblue', 'text-white');
+      accountTypeBtn?.classList.remove('border-nfgblue', 'bg-nfgblue', 'text-white');
+      accountTypeBtn?.classList.add('border-nfgray', 'dark:border-gray-600', 'bg-white', 'dark:bg-gray-800');
+      
+      accountFields?.classList.add('hidden');
+      contactFields?.classList.remove('hidden');
+      
+      if (modalTitle) modalTitle.textContent = 'Create Contact';
+      if (submitBtn) submitBtn.textContent = 'Create Contact';
+      
+      // Update required fields
+      const accountNameInput = createAccountForm?.querySelector('input[name="name"]');
+      if (accountNameInput) accountNameInput.required = false;
+      const firstNameInput = createAccountForm?.querySelector('input[name="first_name"]');
+      if (firstNameInput) firstNameInput.required = true;
+      const lastNameInput = createAccountForm?.querySelector('input[name="last_name"]');
+      if (lastNameInput) lastNameInput.required = true;
+    }
+  }
+
+  accountTypeBtn?.addEventListener('click', () => setContactType('account'));
+  contactTypeBtn?.addEventListener('click', () => setContactType('contact'));
+
   const createAccountForm = document.getElementById('create-account-form');
   if (createAccountForm) {
     let isSubmitting = false;
@@ -633,38 +692,82 @@ function setupEventListeners() {
       
       try {
         const formData = new FormData(e.target);
-        const accountName = formData.get('name')?.trim();
         
-        if (!accountName) {
-          toast.error('Account name is required', 'Error');
-          isSubmitting = false;
-          if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.textContent = originalBtnText || 'Create Account';
+        if (currentContactType === 'account') {
+          // Create Account
+          const accountName = formData.get('name')?.trim();
+          
+          if (!accountName) {
+            toast.error('Account name is required', 'Error');
+            isSubmitting = false;
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalBtnText || 'Create Account';
+            }
+            return;
           }
-          return;
+          
+          await accountsService.createAccount({
+            name: accountName,
+            status: formData.get('status'),
+            hq_address: formData.get('hq_address')?.trim() || null,
+            city: formData.get('city')?.trim() || null
+          });
+          toast.success('Account created');
+        } else {
+          // Create Contact (standalone person)
+          const firstName = formData.get('first_name')?.trim();
+          const lastName = formData.get('last_name')?.trim();
+          const email = formData.get('email')?.trim();
+          const phone = formData.get('phone')?.trim();
+          
+          if (!firstName || !lastName) {
+            toast.error('First name and last name are required', 'Error');
+            isSubmitting = false;
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalBtnText || 'Create Contact';
+            }
+            return;
+          }
+          
+          if (!email && !phone) {
+            toast.error('Contact must have either an email or phone number', 'Error');
+            isSubmitting = false;
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = originalBtnText || 'Create Contact';
+            }
+            return;
+          }
+          
+          await accountsService.createStandaloneContact({
+            first_name: firstName,
+            last_name: lastName,
+            email: email || null,
+            phone: phone || null,
+            title: formData.get('title')?.trim() || null,
+            company_name: formData.get('company_name')?.trim() || null,
+            address: formData.get('address')?.trim() || null,
+            city: formData.get('contact_city')?.trim() || null
+          });
+          toast.success('Contact created');
         }
         
-        await accountsService.createAccount({
-          name: accountName,
-          status: formData.get('status'),
-          hq_address: formData.get('hq_address')?.trim() || null,
-          city: formData.get('city')?.trim() || null
-        });
-        toast.success('Account created');
         document.getElementById('create-account-modal')?.classList.add('hidden');
         e.target.reset();
+        setContactType('account'); // Reset to account type
         await loadAccounts();
       } catch (error) {
-        console.error('[Accounts] Error creating account:', error);
-        const errorMessage = error.message || 'Failed to create account';
+        console.error('[Accounts] Error creating:', error);
+        const errorMessage = error.message || `Failed to create ${currentContactType}`;
         toast.error(errorMessage, 'Error');
       } finally {
         isSubmitting = false;
         // Re-enable submit button
         if (submitBtn) {
           submitBtn.disabled = false;
-          submitBtn.textContent = originalBtnText || 'Create Account';
+          submitBtn.textContent = originalBtnText || 'Create';
         }
       }
     });

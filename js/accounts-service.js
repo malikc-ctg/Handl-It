@@ -403,7 +403,7 @@ export async function listContactsByAccount(accountId) {
 }
 
 /**
- * Create contact
+ * Create contact (linked to account)
  */
 export async function createContact(contactData) {
   try {
@@ -440,6 +440,66 @@ export async function createContact(contactData) {
     return data;
   } catch (error) {
     console.error('[Accounts] Error creating contact:', error);
+    throw error;
+  }
+}
+
+/**
+ * Create standalone contact (person, not linked to account)
+ */
+export async function createStandaloneContact(contactData) {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    // Normalize phone number if provided
+    let normalizedPhone = contactData.phone || null;
+    if (normalizedPhone) {
+      // Basic normalization - remove non-digits except +
+      normalizedPhone = normalizedPhone.replace(/[^\d+]/g, '');
+      if (!normalizedPhone.startsWith('+')) {
+        // Assume US/Canada if no country code
+        normalizedPhone = '+1' + normalizedPhone;
+      }
+    }
+
+    // Validate: must have email or phone
+    if (!contactData.email && !normalizedPhone) {
+      throw new Error('Contact must have either an email or phone number');
+    }
+
+    const contact = {
+      email: contactData.email || null,
+      normalized_phone: normalizedPhone,
+      first_name: contactData.first_name || null,
+      last_name: contactData.last_name || null,
+      title: contactData.title || null,
+      company_name: contactData.company_name || null,
+      street_address: contactData.address || null,
+      city: contactData.city || null,
+      state_province: contactData.state_province || null,
+      postal_code: contactData.postal_code || null,
+      country: contactData.country || 'US',
+      role: contactData.role || 'other',
+      notes: contactData.notes || null
+    };
+
+    const { data, error } = await supabase
+      .from('contacts')
+      .insert(contact)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    // Send notification to admins
+    if (window.salesNotifications?.account) {
+      await window.salesNotifications.account.contactCreated(data);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('[Accounts] Error creating standalone contact:', error);
     throw error;
   }
 }
