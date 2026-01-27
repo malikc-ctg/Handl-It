@@ -1692,8 +1692,25 @@
         }
 
         if (data && data.length > 0) {
-          // Already clocked in
-          currentTimeEntry = data[0];
+          // Already clocked in - also check for corresponding staff_time_logs entry
+          const timeEntry = data[0];
+          
+          // Try to find matching staff_time_logs entry
+          const { data: staffLog } = await supabase
+            .from('staff_time_logs')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('clock_in', timeEntry.clock_in)
+            .is('clock_out', null)
+            .order('clock_in', { ascending: false })
+            .limit(1)
+            .single();
+
+          currentTimeEntry = {
+            ...timeEntry,
+            staff_time_log_id: staffLog?.id
+          };
+          
           showClockedInState();
           startTimer();
           console.log('[TimeClock] ✅ Already clocked in since', new Date(currentTimeEntry.clock_in).toLocaleTimeString());
@@ -1717,29 +1734,55 @@
 
         const notesInput = document.getElementById('clock-notes');
         const notes = notesInput ? notesInput.value.trim() : null;
+        const clockInTime = new Date().toISOString();
 
-        const { data, error } = await supabase
+        // Insert into time_entries (for backward compatibility)
+        const { data: timeEntry, error: timeEntryError } = await supabase
           .from('time_entries')
           .insert({
             user_id: user.id,
-            clock_in: new Date().toISOString(),
+            clock_in: clockInTime,
             notes: notes || null
           })
           .select()
           .single();
 
-        if (error) {
+        // Also insert into staff_time_logs (for reports)
+        let staffTimeLog = null;
+        const { data: staffLog, error: staffLogError } = await supabase
+          .from('staff_time_logs')
+          .insert({
+            user_id: user.id,
+            clock_in: clockInTime,
+            notes: notes || null,
+            status: 'pending'
+          })
+          .select()
+          .single();
+
+        if (staffLogError) {
+          console.warn('[TimeClock] ⚠️ Could not create staff_time_logs entry:', staffLogError.message);
+          // Continue even if staff_time_logs fails - time_entries is primary
+        } else {
+          staffTimeLog = staffLog;
+        }
+
+        if (timeEntryError) {
           // Check if it's a "table not found" error
-          if (error.message.includes('relation') || error.code === '42P01') {
+          if (timeEntryError.message.includes('relation') || timeEntryError.code === '42P01') {
             toast.error('Time tracking table not set up. Please run SETUP_TIME_TRACKING.sql in Supabase first.', 'Setup Required');
             console.error('[TimeClock] ❌ Table does not exist. Run SETUP_TIME_TRACKING.sql');
           } else {
-            toast.error('Failed to clock in: ' + error.message, 'Clock In Failed');
+            toast.error('Failed to clock in: ' + timeEntryError.message, 'Clock In Failed');
           }
-          throw error;
+          throw timeEntryError;
         }
 
-        currentTimeEntry = data;
+        // Use time_entries as primary, but store staff_time_logs id if available
+        currentTimeEntry = {
+          ...timeEntry,
+          staff_time_log_id: staffTimeLog?.id
+        };
         showClockedInState();
         startTimer();
         
@@ -1747,7 +1790,7 @@
         if (notesInput) notesInput.value = '';
         
         toast.success('Successfully clocked in!', 'Clocked In');
-        console.log('[TimeClock] ✅ Clocked in at', new Date(data.clock_in).toLocaleTimeString());
+        console.log('[TimeClock] ✅ Clocked in at', new Date(timeEntry.clock_in).toLocaleTimeString());
       } catch (error) {
         console.error('[TimeClock] ❌ Error clocking in:', error);
       }
@@ -1760,27 +1803,82 @@
 
         const notesInput = document.getElementById('clock-notes');
         const notes = notesInput ? notesInput.value.trim() : null;
+        const clockOutTime = new Date().toISOString();
+        const clockInTime = new Date(currentTimeEntry.clock_in);
+        const totalSeconds = Math.floor((new Date(clockOutTime) - clockInTime) / 1000);
+        const totalHours = totalSeconds / 3600;
+        
+        // Check for overtime (8 hours = 28800 seconds)
+        const OVERTIME_THRESHOLD = 8 * 3600; // 8 hours in seconds
+        const isOvertime = totalSeconds > OVERTIME_THRESHOLD;
 
         // Update notes if provided
+        const finalNotes = notes 
+          ? (currentTimeEntry.notes ? `${currentTimeEntry.notes}\n${notes}` : notes)
+          : currentTimeEntry.notes;
+
+        // Update time_entries (for backward compatibility)
         const updateData = {
-          clock_out: new Date().toISOString()
+          clock_out: clockOutTime,
+          total_hours: parseFloat(totalHours.toFixed(2))
         };
-        if (notes) {
-          updateData.notes = currentTimeEntry.notes 
-            ? `${currentTimeEntry.notes}\n${notes}` 
-            : notes;
+        if (finalNotes) {
+          updateData.notes = finalNotes;
         }
 
-        const { error } = await supabase
+        const { error: timeEntryError } = await supabase
           .from('time_entries')
           .update(updateData)
           .eq('id', currentTimeEntry.id);
 
-        if (error) throw error;
+        if (timeEntryError) throw timeEntryError;
 
-        const clockInTime = new Date(currentTimeEntry.clock_in);
-        const clockOutTime = new Date();
-        const hoursWorked = ((clockOutTime - clockInTime) / (1000 * 60 * 60)).toFixed(2);
+        // Also update staff_time_logs (for reports)
+        if (currentTimeEntry.staff_time_log_id) {
+          const staffLogUpdate = {
+            clock_out: clockOutTime,
+            total_duration: totalSeconds,
+            is_overtime: isOvertime,
+            status: 'pending' // Needs approval
+          };
+          if (finalNotes) {
+            staffLogUpdate.notes = finalNotes;
+          }
+
+          const { error: staffLogError } = await supabase
+            .from('staff_time_logs')
+            .update(staffLogUpdate)
+            .eq('id', currentTimeEntry.staff_time_log_id);
+
+          if (staffLogError) {
+            console.warn('[TimeClock] ⚠️ Could not update staff_time_logs:', staffLogError.message);
+            // Continue even if staff_time_logs fails
+          } else {
+            console.log('[TimeClock] ✅ Updated staff_time_logs for reports');
+          }
+        } else {
+          // If no staff_time_logs entry exists, try to create one now
+          const { data: { user } } = await supabase.auth.getUser();
+          if (user) {
+            const { error: createError } = await supabase
+              .from('staff_time_logs')
+              .insert({
+                user_id: user.id,
+                clock_in: currentTimeEntry.clock_in,
+                clock_out: clockOutTime,
+                total_duration: totalSeconds,
+                is_overtime: isOvertime,
+                notes: finalNotes || null,
+                status: 'pending'
+              });
+            
+            if (createError) {
+              console.warn('[TimeClock] ⚠️ Could not create staff_time_logs entry:', createError.message);
+            }
+          }
+        }
+
+        const hoursWorked = totalHours.toFixed(2);
 
         stopTimer();
         showClockedOutState();
