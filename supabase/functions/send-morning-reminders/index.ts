@@ -156,13 +156,20 @@ serve(async (req) => {
     }))
 
     // Insert all notifications in a single batch
+    // Use service role client which should bypass RLS
+    console.log(`Attempting to insert ${notifications.length} notifications`)
+    
     const { data: insertedNotifications, error: insertError } = await supabase
       .from('notifications')
       .insert(notifications)
       .select('id')
 
     if (insertError) {
-      throw new Error(`Failed to create notifications: ${insertError.message}`)
+      console.error('Insert error details:', JSON.stringify(insertError, null, 2))
+      console.error('Error code:', insertError.code)
+      console.error('Error message:', insertError.message)
+      console.error('Error details:', insertError.details)
+      throw new Error(`Failed to create notifications: ${insertError.message} (Code: ${insertError.code})`)
     }
 
     const successCount = insertedNotifications?.length || 0
