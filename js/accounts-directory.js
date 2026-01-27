@@ -52,7 +52,7 @@ async function loadReps() {
   }
 }
 
-// Load accounts
+// Load accounts and standalone contacts
 async function loadAccounts() {
   const tbody = document.getElementById('accounts-table-body');
   if (!tbody) {
@@ -61,7 +61,7 @@ async function loadAccounts() {
   }
 
   try {
-    console.log('[Accounts] Loading accounts...');
+    console.log('[Accounts] Loading accounts and contacts...');
     const search = document.getElementById('accounts-search')?.value || '';
     const statusFilter = document.getElementById('accounts-status-filter')?.value || '';
     const ownerFilter = document.getElementById('accounts-owner-filter')?.value || '';
@@ -73,13 +73,51 @@ async function loadAccounts() {
     if (ownerFilter) filters.owner_user_id = ownerFilter;
     if (sitesFilter) filters.sites = sitesFilter;
 
+    // Load accounts
     accounts = await accountsService.listAccounts({
       search,
       filters,
       sort: sortBy
     });
 
+    // Also load standalone contacts
+    let standaloneContacts = [];
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        let contactsQuery = supabase
+          .from('contacts')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        // Apply search to contacts
+        if (search && search.trim()) {
+          const searchTerm = search.trim();
+          contactsQuery = contactsQuery.or(`first_name.ilike.%${searchTerm}%,last_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,normalized_phone.ilike.%${searchTerm}%,company_name.ilike.%${searchTerm}%`);
+        }
+
+        const { data: contacts, error: contactsError } = await contactsQuery;
+        
+        if (contactsError) {
+          console.warn('[Accounts] Could not load standalone contacts:', contactsError);
+        } else {
+          standaloneContacts = contacts || [];
+          console.log('[Accounts] Standalone contacts loaded:', standaloneContacts.length);
+        }
+      }
+    } catch (error) {
+      console.warn('[Accounts] Error loading standalone contacts:', error);
+    }
+
     console.log('[Accounts] Accounts loaded:', accounts?.length || 0);
+    console.log('[Accounts] Contacts loaded:', standaloneContacts?.length || 0);
+    
+    // Combine accounts and contacts for rendering
+    window.allAccountsAndContacts = {
+      accounts: accounts || [],
+      contacts: standaloneContacts || []
+    };
+    
     renderAccounts();
   } catch (error) {
     console.error('[Accounts] Error loading accounts:', error);
@@ -101,22 +139,26 @@ async function loadAccounts() {
     }
     toast.error(`Failed to load accounts: ${error.message}`, 'Error');
     accounts = []; // Set to empty array so renderAccounts doesn't break
+    window.allAccountsAndContacts = { accounts: [], contacts: [] };
   }
 }
 
-// Render accounts table
+// Render accounts and contacts table
 function renderAccounts() {
   const tbody = document.getElementById('accounts-table-body');
   if (!tbody) return;
 
-  if (!accounts || accounts.length === 0) {
+  const allItems = window.allAccountsAndContacts || { accounts: accounts || [], contacts: [] };
+  const totalItems = allItems.accounts.length + allItems.contacts.length;
+
+  if (totalItems === 0) {
     tbody.innerHTML = `
       <tr>
         <td colspan="8" class="px-4 py-12 text-center">
           <i data-lucide="building" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-          <p class="text-gray-500">No accounts found</p>
+          <p class="text-gray-500">No accounts or contacts found</p>
           <button id="create-account-btn-empty" class="mt-4 px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> Create Account
+            <i data-lucide="plus" class="w-4 h-4"></i> Create Account or Contact
           </button>
         </td>
       </tr>
@@ -125,7 +167,8 @@ function renderAccounts() {
     return;
   }
 
-  tbody.innerHTML = accounts.map(account => {
+  // Render accounts
+  const accountsHTML = allItems.accounts.map(account => {
     const dmContact = account.dm_contact;
     const statusBadges = {
       prospect: '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Prospect</span>',
