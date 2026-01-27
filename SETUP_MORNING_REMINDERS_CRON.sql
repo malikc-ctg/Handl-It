@@ -29,6 +29,10 @@ SELECT cron.unschedule('morning-reminders') WHERE EXISTS (
 --   PST (UTC-8): '30 16 * * 1-5' (4:30 PM UTC = 8:30 AM PST)
 --   CST (UTC-6): '30 14 * * 1-5' (2:30 PM UTC = 8:30 AM CST)
 
+-- Note: Replace YOUR_ANON_KEY below with your actual Supabase anon key
+-- You can find it in Supabase Dashboard → Settings → API → anon/public key
+-- The function is public and doesn't require service role key to call it
+
 SELECT cron.schedule(
   'morning-reminders',                    -- Job name
   '30 8 * * 1-5',                         -- Cron schedule: 8:30 AM Monday-Friday (UTC)
@@ -37,7 +41,7 @@ SELECT cron.schedule(
     url := 'https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-morning-reminders',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
-      'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
+      'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpxY2JsZGdoZWltcXJucW1iYmVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA3MDM5NjIsImV4cCI6MjA3NjI3OTk2Mn0.UYlnTQeCjNLed6g9oNRLQIXD69OgzRrXupl3LXUvh4I'
     )::jsonb,
     body := '{}'::jsonb
   ) AS request_id;
