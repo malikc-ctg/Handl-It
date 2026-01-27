@@ -185,10 +185,15 @@ function renderAccounts() {
     const lastTouch = account.last_touch_at ? new Date(account.last_touch_at).toLocaleDateString() : '—';
 
     return `
-      <tr class="account-row hover:bg-nfglight cursor-pointer border-b border-nfgray" data-account-id="${account.id}">
+      <tr class="account-row hover:bg-nfglight cursor-pointer border-b border-nfgray" data-account-id="${account.id}" data-type="account">
         <td class="px-4 py-3">
-          <div class="font-medium text-nfgblue dark:text-blue-400">${escapeHtml(account.name)}</div>
-          ${account.city ? `<div class="text-sm text-gray-500">${escapeHtml(account.city)}</div>` : ''}
+          <div class="flex items-center gap-2">
+            <i data-lucide="building-2" class="w-4 h-4 text-gray-400"></i>
+            <div>
+              <div class="font-medium text-nfgblue dark:text-blue-400">${escapeHtml(account.name)}</div>
+              ${account.city ? `<div class="text-sm text-gray-500">${escapeHtml(account.city)}</div>` : ''}
+            </div>
+          </div>
         </td>
         <td class="px-4 py-3">
           <div class="text-sm">${escapeHtml(dmName)}</div>
@@ -242,6 +247,57 @@ function renderAccounts() {
       </tr>
     `;
   }).join('');
+
+  // Render standalone contacts
+  const contactsHTML = allItems.contacts.map(contact => {
+    const fullName = contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown';
+    const phone = contact.normalized_phone || contact.phone || '';
+    const email = contact.email || '';
+    const company = contact.company_name || '';
+    const city = contact.city || '';
+    const title = contact.title || '';
+    const createdDate = contact.created_at ? new Date(contact.created_at).toLocaleDateString() : '—';
+
+    return `
+      <tr class="contact-row hover:bg-nfglight cursor-pointer border-b border-nfgray" data-contact-id="${contact.id}" data-type="contact">
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
+            <div>
+              <div class="font-medium text-nfgblue dark:text-blue-400">${escapeHtml(fullName)}</div>
+              ${city ? `<div class="text-sm text-gray-500">${escapeHtml(city)}</div>` : ''}
+            </div>
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="text-sm">${escapeHtml(title || '—')}</div>
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            ${phone ? `<a href="tel:${phone}" class="text-gray-600 hover:text-nfgblue" onclick="event.stopPropagation()"><i data-lucide="phone" class="w-4 h-4"></i></a>` : '<span class="text-gray-400"><i data-lucide="phone" class="w-4 h-4"></i></span>'}
+            ${email ? `<a href="mailto:${email}" class="text-gray-600 hover:text-nfgblue" onclick="event.stopPropagation()"><i data-lucide="mail" class="w-4 h-4"></i></a>` : '<span class="text-gray-400"><i data-lucide="mail" class="w-4 h-4"></i></span>'}
+          </div>
+        </td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Contact</span>
+        </td>
+        <td class="px-4 py-3">
+          <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">—</span>
+        </td>
+        <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(company || '—')}</td>
+        <td class="px-4 py-3 text-sm text-gray-500">${createdDate}</td>
+        <td class="px-4 py-3">
+          <div class="relative">
+            <button class="contact-actions-btn p-1 rounded hover:bg-nfgray" data-contact-id="${contact.id}" type="button">
+              <i data-lucide="more-vertical" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join('');
+
+  tbody.innerHTML = accountsHTML + contactsHTML;
 
   if (window.lucide) lucide.createIcons();
   
