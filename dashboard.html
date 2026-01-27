@@ -168,24 +168,12 @@
             <i data-lucide="plus" class="w-4 h-4"></i> Add Site
           </button>
 
-          <!-- Clock In/Out (Staff Only) - Icon only on mobile, hidden on very small screens -->
-          <div id="time-clock-container" class="flex items-center gap-1 sm:gap-2">
-            <button id="clock-in-btn" class="hidden items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-green-600 text-white hover:bg-green-700 font-medium shadow-md transition flex-shrink-0"
-                    title="Clock In">
-              <i data-lucide="clock" class="w-4 h-4"></i>
-              <span class="hidden sm:inline text-xs sm:text-sm">Clock In</span>
-            </button>
-            <button id="clock-out-btn" class="hidden items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium shadow-md transition flex-shrink-0"
-                    title="Clock Out">
-              <i data-lucide="clock" class="w-4 h-4"></i>
-              <span class="hidden sm:inline text-xs sm:text-sm">Clock Out</span>
-            </button>
-            <div id="clock-status" class="hidden items-center gap-1 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-blue-50 border border-blue-200 text-xs sm:text-sm flex-shrink-0">
-              <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-              <span id="clock-time" class="font-medium text-blue-900 hidden sm:inline">00:00:00</span>
-              <span id="clock-time-mobile" class="font-medium text-blue-900 sm:hidden">00:00</span>
-            </div>
-          </div>
+          <!-- Clock In/Out Button - Opens Modal -->
+          <button id="clock-modal-btn" class="flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue text-white hover:bg-nfgdark font-medium shadow-md transition flex-shrink-0"
+                  data-action="open-modal" data-target="clockInOutModal" title="Clock In/Out">
+            <i data-lucide="clock" class="w-4 h-4"></i>
+            <span class="hidden sm:inline text-xs sm:text-sm">Time Clock</span>
+          </button>
         </div>
       </div>
     </header>
@@ -760,6 +748,58 @@
             <i data-lucide="trash-2" class="w-4 h-4"></i>
             Delete Site
           </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clock In/Out Modal -->
+  <div id="clockInOutModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-md">
+      <div class="p-4 border-b border-nfgray flex items-center justify-between">
+        <h4 class="text-nfgblue dark:text-blue-400 font-semibold">Time Clock</h4>
+        <button data-action="close-modal" data-target="clockInOutModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <!-- Clock Status Display -->
+        <div id="clock-modal-status" class="text-center space-y-3">
+          <!-- Clocked Out State -->
+          <div id="clocked-out-state" class="space-y-4">
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                <i data-lucide="clock" class="w-8 h-8 text-gray-400"></i>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">Not Clocked In</p>
+            </div>
+            <button id="modal-clock-in-btn" class="w-full px-4 py-3 rounded-xl bg-green-600 text-white hover:bg-green-700 font-medium shadow-md transition flex items-center justify-center gap-2">
+              <i data-lucide="play" class="w-5 h-5"></i>
+              <span>Clock In</span>
+            </button>
+          </div>
+          
+          <!-- Clocked In State -->
+          <div id="clocked-in-state" class="hidden space-y-4">
+            <div class="flex flex-col items-center gap-2">
+              <div class="w-16 h-16 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <div class="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
+              </div>
+              <p class="text-sm font-medium text-green-600 dark:text-green-400">Clocked In</p>
+              <div class="text-3xl font-mono font-bold text-nfgblue dark:text-blue-400" id="modal-clock-time">00:00:00</div>
+              <p class="text-xs text-gray-500 dark:text-gray-400" id="modal-clock-in-time">Started at --:--</p>
+            </div>
+            <button id="modal-clock-out-btn" class="w-full px-4 py-3 rounded-xl bg-red-600 text-white hover:bg-red-700 font-medium shadow-md transition flex items-center justify-center gap-2">
+              <i data-lucide="square" class="w-5 h-5"></i>
+              <span>Clock Out</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Notes Section (Optional) -->
+        <div class="pt-4 border-t border-nfgray">
+          <label class="block text-sm font-medium mb-2">Notes (Optional)</label>
+          <textarea id="clock-notes" rows="2" placeholder="Add any notes about this shift..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none text-sm"></textarea>
         </div>
       </div>
     </div>
@@ -1558,47 +1598,74 @@
       const { data: { user }, error: userError } = await supabase.auth.getUser();
       if (userError || !user) return;
 
-      // Get user profile
-      const { data: profile } = await supabase
-        .from('user_profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
+      // Check if already clocked in today
+      await checkClockStatus(supabase);
 
-      const addSiteBtn = document.getElementById('add-site-btn');
-      const timeClockContainer = document.getElementById('time-clock-container');
-
-      // Show/hide based on role
-      if (profile?.role === 'staff') {
-        // Staff: Show clock, hide add site
-        console.log('[TimeClock] ✅ Staff user detected');
-        if (addSiteBtn) {
-          addSiteBtn.classList.add('hidden');
-          addSiteBtn.classList.remove('md:inline-flex');
-        }
-        if (timeClockContainer) {
-          timeClockContainer.classList.remove('hidden');
-          timeClockContainer.classList.add('flex');
-        }
-
-        // Check if already clocked in today
-        await checkClockStatus(supabase);
-
-        // Set up button listeners
-        document.getElementById('clock-in-btn').addEventListener('click', () => handleClockIn(supabase, toast));
-        document.getElementById('clock-out-btn').addEventListener('click', () => handleClockOut(supabase, toast));
-      } else {
-        // Admin/Client: Show add site, hide clock
-        console.log('[TimeClock] ℹ️ Admin/Client user - showing Add Site button');
-        if (addSiteBtn) {
-          addSiteBtn.classList.remove('hidden');
-          addSiteBtn.classList.add('md:inline-flex');
-        }
-        if (timeClockContainer) {
-          timeClockContainer.classList.add('hidden');
-          timeClockContainer.classList.remove('flex');
-        }
+      // Set up modal button listeners
+      const modalClockInBtn = document.getElementById('modal-clock-in-btn');
+      const modalClockOutBtn = document.getElementById('modal-clock-out-btn');
+      
+      if (modalClockInBtn) {
+        modalClockInBtn.addEventListener('click', () => handleClockIn(supabase, toast));
       }
+      if (modalClockOutBtn) {
+        modalClockOutBtn.addEventListener('click', () => handleClockOut(supabase, toast));
+      }
+
+      // Update modal when it opens
+      const clockModal = document.getElementById('clockInOutModal');
+      if (clockModal) {
+        // Listen for modal open
+        const observer = new MutationObserver(() => {
+          if (!clockModal.classList.contains('hidden')) {
+            updateClockModal();
+          }
+        });
+        observer.observe(clockModal, { attributes: true, attributeFilter: ['class'] });
+      }
+    }
+
+    function updateClockModal() {
+      const clockedOutState = document.getElementById('clocked-out-state');
+      const clockedInState = document.getElementById('clocked-in-state');
+      const modalClockTime = document.getElementById('modal-clock-time');
+      const modalClockInTime = document.getElementById('modal-clock-in-time');
+
+      if (currentTimeEntry) {
+        // Show clocked in state
+        if (clockedOutState) clockedOutState.classList.add('hidden');
+        if (clockedInState) clockedInState.classList.remove('hidden');
+        
+        // Update clock in time display
+        if (modalClockInTime) {
+          const clockInDate = new Date(currentTimeEntry.clock_in);
+          modalClockInTime.textContent = `Started at ${clockInDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+        
+        // Update timer if running
+        if (clockTimer) {
+          updateModalTimer();
+        }
+      } else {
+        // Show clocked out state
+        if (clockedOutState) clockedOutState.classList.remove('hidden');
+        if (clockedInState) clockedInState.classList.add('hidden');
+      }
+    }
+
+    function updateModalTimer() {
+      if (!currentTimeEntry) return;
+      const modalClockTime = document.getElementById('modal-clock-time');
+      if (!modalClockTime) return;
+      
+      const now = new Date();
+      const clockInTime = new Date(currentTimeEntry.clock_in);
+      const diff = now - clockInTime;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      const seconds = Math.floor((diff % 60000) / 1000);
+      const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+      modalClockTime.textContent = timeStr;
     }
 
     async function checkClockStatus(supabase) {
@@ -1648,11 +1715,15 @@
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        const notesInput = document.getElementById('clock-notes');
+        const notes = notesInput ? notesInput.value.trim() : null;
+
         const { data, error } = await supabase
           .from('time_entries')
           .insert({
             user_id: user.id,
-            clock_in: new Date().toISOString()
+            clock_in: new Date().toISOString(),
+            notes: notes || null
           })
           .select()
           .single();
@@ -1672,6 +1743,9 @@
         showClockedInState();
         startTimer();
         
+        // Clear notes
+        if (notesInput) notesInput.value = '';
+        
         toast.success('Successfully clocked in!', 'Clocked In');
         console.log('[TimeClock] ✅ Clocked in at', new Date(data.clock_in).toLocaleTimeString());
       } catch (error) {
@@ -1684,11 +1758,22 @@
         console.log('[TimeClock] 🔴 Clocking out...');
         if (!currentTimeEntry) return;
 
+        const notesInput = document.getElementById('clock-notes');
+        const notes = notesInput ? notesInput.value.trim() : null;
+
+        // Update notes if provided
+        const updateData = {
+          clock_out: new Date().toISOString()
+        };
+        if (notes) {
+          updateData.notes = currentTimeEntry.notes 
+            ? `${currentTimeEntry.notes}\n${notes}` 
+            : notes;
+        }
+
         const { error } = await supabase
           .from('time_entries')
-          .update({
-            clock_out: new Date().toISOString()
-          })
+          .update(updateData)
           .eq('id', currentTimeEntry.id);
 
         if (error) throw error;
@@ -1701,6 +1786,16 @@
         showClockedOutState();
         currentTimeEntry = null;
         
+        // Clear notes
+        if (notesInput) notesInput.value = '';
+        
+        // Close modal
+        const clockModal = document.getElementById('clockInOutModal');
+        if (clockModal) {
+          clockModal.classList.add('hidden');
+          clockModal.classList.remove('flex');
+        }
+        
         toast.success(`Clocked out! Hours worked: ${hoursWorked}`, 'Clocked Out');
         console.log('[TimeClock] ✅ Clocked out. Total hours:', hoursWorked);
       } catch (error) {
@@ -1710,42 +1805,13 @@
     }
 
     function showClockedInState() {
-      const clockInBtn = document.getElementById('clock-in-btn');
-      const clockOutBtn = document.getElementById('clock-out-btn');
-      const clockStatus = document.getElementById('clock-status');
-      
-      if (clockInBtn) {
-        clockInBtn.classList.add('hidden');
-        clockInBtn.classList.remove('flex');
-      }
-      if (clockOutBtn) {
-        clockOutBtn.classList.remove('hidden');
-        clockOutBtn.classList.add('flex');
-      }
-      if (clockStatus) {
-        clockStatus.classList.remove('hidden');
-        clockStatus.classList.add('flex');
-      }
+      updateClockModal();
       updateTimer();
+      updateModalTimer();
     }
 
     function showClockedOutState() {
-      const clockInBtn = document.getElementById('clock-in-btn');
-      const clockOutBtn = document.getElementById('clock-out-btn');
-      const clockStatus = document.getElementById('clock-status');
-      
-      if (clockInBtn) {
-        clockInBtn.classList.remove('hidden');
-        clockInBtn.classList.add('flex');
-      }
-      if (clockOutBtn) {
-        clockOutBtn.classList.add('hidden');
-        clockOutBtn.classList.remove('flex');
-      }
-      if (clockStatus) {
-        clockStatus.classList.add('hidden');
-        clockStatus.classList.remove('flex');
-      }
+      updateClockModal();
       stopTimer();
     }
 
@@ -1753,24 +1819,16 @@
       if (!currentTimeEntry) return;
       
       updateTimer(); // Update immediately
-      clockTimer = setInterval(updateTimer, 1000);
+      updateModalTimer(); // Update modal timer
+      clockTimer = setInterval(() => {
+        updateTimer();
+        updateModalTimer();
+      }, 1000);
     }
     
     function updateTimer() {
       if (!currentTimeEntry) return;
-      const now = new Date();
-      const clockInTime = new Date(currentTimeEntry.clock_in);
-      const diff = now - clockInTime;
-      const hours = Math.floor(diff / 3600000);
-      const minutes = Math.floor((diff % 3600000) / 60000);
-      const seconds = Math.floor((diff % 60000) / 1000);
-      const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-      const timeStrMobile = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-      
-      const clockTime = document.getElementById('clock-time');
-      const clockTimeMobile = document.getElementById('clock-time-mobile');
-      if (clockTime) clockTime.textContent = timeStr;
-      if (clockTimeMobile) clockTimeMobile.textContent = timeStrMobile;
+      updateModalTimer();
     }
 
     function stopTimer() {
