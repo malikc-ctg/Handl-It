@@ -1736,6 +1736,17 @@
         const notes = notesInput ? notesInput.value.trim() : null;
         const clockInTime = new Date().toISOString();
 
+        // Get user profile for name
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('full_name, email, role')
+          .eq('id', user.id)
+          .single();
+
+        const userName = userProfile?.full_name || userProfile?.email || 'Unknown User';
+        const userRole = userProfile?.role || 'staff';
+        const roleLabel = userRole === 'admin' || userRole === 'super_admin' ? ' (Admin)' : '';
+
         // Insert into time_entries (for backward compatibility)
         const { data: timeEntry, error: timeEntryError } = await supabase
           .from('time_entries')
@@ -1791,6 +1802,9 @@
         
         toast.success('Successfully clocked in!', 'Clocked In');
         console.log('[TimeClock] ✅ Clocked in at', new Date(timeEntry.clock_in).toLocaleTimeString());
+
+        // Notify all admins about clock in
+        await notifyAdminsClockInOut(supabase, userName + roleLabel, clockInTime, 'in');
       } catch (error) {
         console.error('[TimeClock] ❌ Error clocking in:', error);
       }
@@ -1800,6 +1814,20 @@
       try {
         console.log('[TimeClock] 🔴 Clocking out...');
         if (!currentTimeEntry) return;
+
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Get user profile for name
+        const { data: userProfile } = await supabase
+          .from('user_profiles')
+          .select('full_name, email, role')
+          .eq('id', user.id)
+          .single();
+
+        const userName = userProfile?.full_name || userProfile?.email || 'Unknown User';
+        const userRole = userProfile?.role || 'staff';
+        const roleLabel = userRole === 'admin' || userRole === 'super_admin' ? ' (Admin)' : '';
 
         const notesInput = document.getElementById('clock-notes');
         const notes = notesInput ? notesInput.value.trim() : null;
@@ -1858,7 +1886,6 @@
           }
         } else {
           // If no staff_time_logs entry exists, try to create one now
-          const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             const { error: createError } = await supabase
               .from('staff_time_logs')
@@ -1896,9 +1923,68 @@
         
         toast.success(`Clocked out! Hours worked: ${hoursWorked}`, 'Clocked Out');
         console.log('[TimeClock] ✅ Clocked out. Total hours:', hoursWorked);
+
+        // Notify all admins about clock out
+        await notifyAdminsClockInOut(supabase, userName + roleLabel, clockOutTime, 'out', hoursWorked);
       } catch (error) {
         console.error('[TimeClock] Error clocking out:', error);
         toast.error('Failed to clock out: ' + error.message, 'Clock Out Failed');
+      }
+    }
+
+    // Notify all admins when someone clocks in or out
+    async function notifyAdminsClockInOut(supabase, userName, timestamp, action, hoursWorked = null) {
+      try {
+        // Get all admin user IDs
+        const { data: admins, error: adminError } = await supabase
+          .from('user_profiles')
+          .select('id')
+          .in('role', ['admin', 'super_admin']);
+        
+        if (adminError || !admins || admins.length === 0) {
+          console.warn('[TimeClock] ⚠️ Could not get admin user IDs for notifications');
+          return;
+        }
+
+        const adminUserIds = admins.map(admin => admin.id);
+        const timeStr = new Date(timestamp).toLocaleTimeString('en-US', { 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        });
+
+        let title, message, link;
+        if (action === 'in') {
+          title = 'Clock In';
+          message = `${userName} clocked in at ${timeStr}`;
+          link = '#reports?tab=time-tracking';
+        } else {
+          title = 'Clock Out';
+          const hoursText = hoursWorked ? ` (${hoursWorked} hours)` : '';
+          message = `${userName} clocked out at ${timeStr}${hoursText}`;
+          link = '#reports?tab=time-tracking';
+        }
+
+        // Create notifications for all admins
+        const notifications = adminUserIds.map(adminId => ({
+          user_id: adminId,
+          type: 'system',
+          title: title,
+          message: message,
+          link: link,
+          read: false
+        }));
+
+        const { error: notifyError } = await supabase
+          .from('notifications')
+          .insert(notifications);
+
+        if (notifyError) {
+          console.warn('[TimeClock] ⚠️ Could not create admin notifications:', notifyError);
+        } else {
+          console.log(`[TimeClock] ✅ Notified ${adminUserIds.length} admin(s) about ${action === 'in' ? 'clock in' : 'clock out'}`);
+        }
+      } catch (error) {
+        console.error('[TimeClock] ❌ Error notifying admins:', error);
       }
     }
 
