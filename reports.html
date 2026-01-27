@@ -2718,10 +2718,11 @@
     // Admin: Load staff list for filter
     async function loadStaffList() {
       try {
+        // Include staff, admins, and super_admins who might clock in/out
         const { data: staff, error } = await supabase
           .from('user_profiles')
-          .select('id, full_name, email')
-          .eq('role', 'staff')
+          .select('id, full_name, email, role')
+          .in('role', ['staff', 'admin', 'super_admin'])
           .order('full_name');
         
         if (error) {
@@ -2733,12 +2734,13 @@
         if (!select) return;
         
         // Clear existing options except "All Staff"
-        select.innerHTML = '<option value="">All Staff</option>';
+        select.innerHTML = '<option value="">All Staff & Admins</option>';
         
         staff.forEach(member => {
           const option = document.createElement('option');
           option.value = member.id;
-          option.textContent = member.full_name || member.email;
+          const roleLabel = member.role === 'staff' ? '' : ` (${member.role})`;
+          option.textContent = (member.full_name || member.email) + roleLabel;
           select.appendChild(option);
         });
       } catch (error) {
