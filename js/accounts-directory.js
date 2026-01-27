@@ -756,23 +756,44 @@ function setupEventListeners() {
   // Handle account action buttons (edit, delete) - use event delegation as backup
   document.addEventListener('click', async (e) => {
     // Check if click is on action button or any child element (icon, span, etc.)
-    const actionBtn = e.target.closest('.account-action-btn');
-    if (!actionBtn) return;
-    
-    e.stopPropagation();
-    e.preventDefault();
-    
-    const action = actionBtn.dataset.action;
-    const accountId = actionBtn.dataset.accountId;
-    
-    console.log('[Accounts] Action button clicked via delegation:', { action, accountId });
-    
-    if (!action || !accountId) {
-      console.warn('[Accounts] Missing action or accountId:', { action, accountId });
+    const accountActionBtn = e.target.closest('.account-action-btn');
+    if (accountActionBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const action = accountActionBtn.dataset.action;
+      const accountId = accountActionBtn.dataset.accountId;
+      
+      console.log('[Accounts] Action button clicked via delegation:', { action, accountId });
+      
+      if (!action || !accountId) {
+        console.warn('[Accounts] Missing action or accountId:', { action, accountId });
+        return;
+      }
+      
+      await handleAccountAction(action, accountId);
       return;
     }
     
-    await handleAccountAction(action, accountId);
+    // Handle contact action buttons
+    const contactActionBtn = e.target.closest('.contact-action-btn');
+    if (contactActionBtn) {
+      e.stopPropagation();
+      e.preventDefault();
+      
+      const action = contactActionBtn.dataset.action;
+      const contactId = contactActionBtn.dataset.contactId;
+      
+      console.log('[Accounts] Contact action button clicked via delegation:', { action, contactId });
+      
+      if (!action || !contactId) {
+        console.warn('[Accounts] Missing action or contactId:', { action, contactId });
+        return;
+      }
+      
+      await handleContactAction(action, contactId);
+      return;
+    }
   });
 
   // Close drawer
