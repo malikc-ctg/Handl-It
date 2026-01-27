@@ -114,28 +114,22 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    // Get all active users
-    // Fetch all users - we'll filter out inactive/suspended users
+    // Get all users (regardless of status)
     const { data: allUsers, error: usersError } = await supabase
       .from('user_profiles')
-      .select('id, status')
+      .select('id')
     
     if (usersError) {
       throw new Error(`Failed to fetch users: ${usersError.message}`)
     }
     
-    // Filter to only active users (status = 'active' or 'pending')
-    // Exclude 'inactive' and 'suspended' users
-    const users = (allUsers || []).filter(user => {
-      if (!user.status) return true // Include if status is null/undefined (legacy users)
-      const status = (user.status || '').toLowerCase()
-      return status === 'active' || status === 'pending'
-    })
+    // Send to all users (no status filtering)
+    const users = allUsers || []
 
     if (!users || users.length === 0) {
-      console.log('No active users found')
+      console.log('No users found')
       return new Response(
-        JSON.stringify({ success: true, message: 'No active users found', count: 0 }),
+        JSON.stringify({ success: true, message: 'No users found', count: 0 }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
