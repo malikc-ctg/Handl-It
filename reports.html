@@ -2547,13 +2547,43 @@
         document.getElementById('time-tracking-title').textContent = 'My Time Sheet';
         await loadMyTimeSheet();
       } else {
-        // Show admin view
+        // Show admin view (but also load their own time sheet)
         document.getElementById('time-sheets-view')?.classList.add('hidden');
         document.getElementById('time-admin-view')?.classList.remove('hidden');
         document.getElementById('time-tracking-title').textContent = 'Time Tracking & Approval';
         await loadStaffList();
         await loadPendingTimeEntries();
         await loadTimeReports();
+        // Also load admin's own time entries for reference
+        await loadAdminOwnTimeSheet();
+      }
+    }
+    
+    // Admin: Load their own time sheet (for reference)
+    async function loadAdminOwnTimeSheet() {
+      try {
+        const timePeriod = document.getElementById('time-period')?.value || '30';
+        const { startDate, endDate } = getDateRange(timePeriod);
+        
+        // Fetch admin's own time entries
+        const { data: timeEntries, error } = await supabase
+          .from('staff_time_logs')
+          .select('*, jobs(title, sites(name))')
+          .eq('user_id', currentUser.id)
+          .gte('clock_in', startDate + 'T00:00:00')
+          .lte('clock_in', endDate + 'T23:59:59')
+          .order('clock_in', { ascending: false });
+        
+        if (error) {
+          console.warn('Could not load admin time sheet:', error);
+          return;
+        }
+        
+        // Store for potential display in admin view
+        window.adminOwnTimeEntries = timeEntries || [];
+        console.log('[Reports] Admin own time entries:', window.adminOwnTimeEntries.length);
+      } catch (error) {
+        console.error('Error loading admin own time sheet:', error);
       }
     }
     
@@ -2969,7 +2999,7 @@
         const timePeriod = document.getElementById('time-period')?.value || '30';
         const { startDate, endDate } = getDateRange(timePeriod);
         
-        // Fetch all time entries
+        // Fetch all time entries (includes both staff and admin entries)
         const { data: timeEntries, error } = await supabase
           .from('staff_time_logs')
           .select('*, jobs(title, sites(name))')
