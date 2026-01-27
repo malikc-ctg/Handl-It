@@ -360,6 +360,67 @@ function closeAccountDrawer() {
   currentAccount = null;
 }
 
+// Open edit contact modal
+async function openEditContactModal(contactId) {
+  try {
+    const allItems = window.allAccountsAndContacts || { contacts: [] };
+    const contact = allItems.contacts.find(c => c.id === contactId);
+    
+    if (!contact) {
+      // Try to fetch from database if not in cache
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', contactId)
+        .single();
+      
+      if (error || !data) {
+        toast.error('Contact not found', 'Error');
+        return;
+      }
+      
+      // Populate form with contact data
+      populateEditContactForm(data);
+    } else {
+      // Populate form with contact data
+      populateEditContactForm(contact);
+    }
+    
+    // Show modal
+    const modal = document.getElementById('edit-contact-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+  } catch (error) {
+    console.error('[Accounts] Error opening edit contact modal:', error);
+    toast.error('Failed to load contact details', 'Error');
+  }
+}
+
+// Populate edit contact form
+function populateEditContactForm(contact) {
+  document.getElementById('edit-contact-id').value = contact.id || '';
+  document.getElementById('edit-first-name').value = contact.first_name || '';
+  document.getElementById('edit-last-name').value = contact.last_name || '';
+  document.getElementById('edit-email').value = contact.email || '';
+  document.getElementById('edit-phone').value = contact.normalized_phone || contact.phone || '';
+  document.getElementById('edit-title').value = contact.title || '';
+  document.getElementById('edit-company-name').value = contact.company_name || '';
+  document.getElementById('edit-address').value = contact.street_address || contact.address || '';
+  document.getElementById('edit-city').value = contact.city || '';
+}
+
+// Close edit contact modal
+function closeEditContactModal() {
+  const modal = document.getElementById('edit-contact-modal');
+  if (modal) modal.classList.add('hidden');
+  
+  // Reset form
+  const form = document.getElementById('edit-contact-form');
+  if (form) form.reset();
+}
+
 // Render account drawer content
 function renderAccountDrawer() {
   if (!currentAccount) return;
@@ -601,6 +662,86 @@ function setupEventListeners() {
   document.getElementById('create-account-cancel')?.addEventListener('click', () => {
     document.getElementById('create-account-modal')?.classList.add('hidden');
   });
+
+  // Edit contact modal handlers
+  document.getElementById('edit-contact-close')?.addEventListener('click', closeEditContactModal);
+  document.getElementById('edit-contact-cancel')?.addEventListener('click', closeEditContactModal);
+  
+  // Edit contact form submission
+  const editContactForm = document.getElementById('edit-contact-form');
+  if (editContactForm) {
+    let isSubmitting = false;
+    
+    editContactForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      if (isSubmitting) {
+        console.log('[Accounts] Edit form submission already in progress, ignoring...');
+        return;
+      }
+      
+      isSubmitting = true;
+      const submitBtn = editContactForm.querySelector('button[type="submit"]');
+      const originalBtnText = submitBtn?.textContent;
+      
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+      }
+      
+      try {
+        const formData = new FormData(e.target);
+        const contactId = formData.get('contact_id');
+        
+        if (!contactId) {
+          toast.error('Contact ID is missing', 'Error');
+          isSubmitting = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText || 'Save Changes';
+          }
+          return;
+        }
+        
+        const firstName = formData.get('first_name')?.trim();
+        const lastName = formData.get('last_name')?.trim();
+        
+        if (!firstName || !lastName) {
+          toast.error('First name and last name are required', 'Error');
+          isSubmitting = false;
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText || 'Save Changes';
+          }
+          return;
+        }
+        
+        await accountsService.updateStandaloneContact(contactId, {
+          first_name: firstName,
+          last_name: lastName,
+          email: formData.get('email')?.trim() || null,
+          phone: formData.get('phone')?.trim() || null,
+          title: formData.get('title')?.trim() || null,
+          company_name: formData.get('company_name')?.trim() || null,
+          address: formData.get('address')?.trim() || null,
+          city: formData.get('city')?.trim() || null
+        });
+        
+        toast.success('Contact updated successfully', 'Success');
+        closeEditContactModal();
+        await loadAccounts();
+      } catch (error) {
+        console.error('[Accounts] Error updating contact:', error);
+        toast.error(`Failed to update contact: ${error.message}`, 'Error');
+      } finally {
+        isSubmitting = false;
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalBtnText || 'Save Changes';
+        }
+      }
+    });
+  }
 
   // Account row click
   document.getElementById('accounts-table-body')?.addEventListener('click', (e) => {
@@ -1145,10 +1286,7 @@ async function handleContactAction(action, contactId) {
   
   if (action === 'edit') {
     console.log('[Accounts] Opening contact edit modal:', contactId);
-    // TODO: Open edit modal for contact (similar to account drawer)
-    // For now, show a message
-    toast.info('Contact editing will be available soon', 'Info');
-    // You can implement a contact edit modal similar to the account drawer
+    await openEditContactModal(contactId);
   } else if (action === 'delete') {
     console.log('[Accounts] Delete action triggered for contact:', contactId);
     if (!contact) {
