@@ -224,7 +224,7 @@
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="routes.html">
         <i data-lucide="route" class="w-4 h-4"></i> Routes
       </a>
-      <a id="nav-tools" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="sales.html" onclick="event.preventDefault(); if (window.switchTab) window.switchTab('tools');">
+      <a id="nav-tools" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="sales.html?tab=tools">
         <i data-lucide="wrench" class="w-4 h-4"></i> Tools & Resources
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="bookings.html" onclick="sessionStorage.setItem('isSalesMode','true');">
@@ -2679,6 +2679,10 @@
           if (window.location.pathname.endsWith('sales.html') || window.location.pathname.endsWith('/sales.html')) {
             e.preventDefault();
             switchTab('tools');
+            // Update URL without reload
+            const url = new URL(window.location);
+            url.searchParams.set('tab', 'tools');
+            window.history.pushState({}, '', url);
           }
         });
       }
@@ -4427,6 +4431,18 @@
         console.log('[Sales Dashboard] Step 6: Loading dashboard data...');
         // Load dashboard tab by default
         await loadDashboardData();
+        
+        // Check for tab parameter in URL (e.g., ?tab=tools)
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get('tab');
+        if (tabParam && window.switchTab) {
+          console.log(`[Sales Dashboard] Switching to tab from URL: ${tabParam}`);
+          // Small delay to ensure everything is loaded
+          setTimeout(() => {
+            window.switchTab(tabParam);
+          }, 100);
+        }
+        
         console.log('[Sales Dashboard] ✅ Initialization complete!');
       } catch (error) {
         console.error('[Sales Dashboard] ❌ Error during initialization:', error);
