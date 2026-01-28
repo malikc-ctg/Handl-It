@@ -280,6 +280,9 @@
           <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="team">
             <i data-lucide="users-2" class="w-4 h-4 inline mr-2"></i> Team
           </button>
+          <button class="sales-tab px-4 py-3 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent whitespace-nowrap" data-tab="tools">
+            <i data-lucide="wrench" class="w-4 h-4 inline mr-2"></i> Tools & Resources
+          </button>
         </div>
       </div>
 
@@ -831,6 +834,185 @@
           </div>
         </div>
 
+        <!-- Tools & Resources Tab -->
+        <div id="tab-tools" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="mb-6">
+              <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-2">Tools & Resources</h2>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Quick access to calculators, templates, and sales resources</p>
+            </div>
+
+            <!-- Calculators & Tools Section -->
+            <div class="mb-8">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <i data-lucide="calculator" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                Calculators & Tools
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- ROI Calculator Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openROICalculator()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <i data-lucide="trending-up" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">ROI Calculator</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Calculate ROI and payback period for proposals</p>
+                </div>
+
+                <!-- Commission Calculator Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openCommissionCalculator()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                      <i data-lucide="dollar-sign" class="w-6 h-6 text-green-600 dark:text-green-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Commission Calculator</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Calculate commission based on deal value</p>
+                </div>
+
+                <!-- Pricing Guide Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openPricingGuide()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                      <i data-lucide="file-text" class="w-6 h-6 text-purple-600 dark:text-purple-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Pricing Guide</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Reference guide for standard pricing</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Templates & Scripts Section -->
+            <div class="mb-8">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <i data-lucide="file-text" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                Templates & Scripts
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Email Templates Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openEmailTemplates()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                      <i data-lucide="mail" class="w-6 h-6 text-orange-600 dark:text-orange-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Email Templates</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Pre-written email templates for common scenarios</p>
+                </div>
+
+                <!-- Call Scripts Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openCallScripts()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                      <i data-lucide="phone" class="w-6 h-6 text-red-600 dark:text-red-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Call Scripts</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Scripts for cold calls, follow-ups, and objections</p>
+                </div>
+
+                <!-- Quote Templates Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openQuoteTemplates()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+                      <i data-lucide="file-check" class="w-6 h-6 text-indigo-600 dark:text-indigo-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Quote Templates</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Quick access to saved quote templates</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Training & Documentation Section -->
+            <div class="mb-8">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <i data-lucide="graduation-cap" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                Training & Documentation
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Sales Playbooks Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openSalesPlaybooks()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-yellow-100 dark:bg-yellow-900/30 rounded-lg">
+                      <i data-lucide="book-open" class="w-6 h-6 text-yellow-600 dark:text-yellow-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Sales Playbooks</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Step-by-step guides and best practices</p>
+                </div>
+
+                <!-- Product Knowledge Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openProductKnowledge()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-teal-100 dark:bg-teal-900/30 rounded-lg">
+                      <i data-lucide="info" class="w-6 h-6 text-teal-600 dark:text-teal-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Product Knowledge</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Service descriptions, features, and FAQs</p>
+                </div>
+
+                <!-- Video Tutorials Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openVideoTutorials()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-pink-100 dark:bg-pink-900/30 rounded-lg">
+                      <i data-lucide="video" class="w-6 h-6 text-pink-600 dark:text-pink-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Video Tutorials</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Training videos and how-to guides</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Links & Resources Section -->
+            <div class="mb-8">
+              <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <i data-lucide="link" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+                Quick Links & Resources
+              </h3>
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- External Tools Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openExternalTools()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                      <i data-lucide="external-link" class="w-6 h-6 text-cyan-600 dark:text-cyan-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">External Tools</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Links to CRM, email, calendar, and more</p>
+                </div>
+
+                <!-- Company Resources Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openCompanyResources()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-gray-100 dark:bg-gray-700 rounded-lg">
+                      <i data-lucide="building" class="w-6 h-6 text-gray-600 dark:text-gray-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Company Resources</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">Handbook, policies, and internal resources</p>
+                </div>
+
+                <!-- Help & Support Card -->
+                <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 shadow-nfg hover:shadow-lg transition cursor-pointer" onclick="window.salesTools?.openHelpSupport()">
+                  <div class="flex items-start justify-between mb-4">
+                    <div class="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <i data-lucide="help-circle" class="w-6 h-6 text-blue-600 dark:text-blue-400"></i>
+                    </div>
+                  </div>
+                  <h4 class="font-semibold text-gray-900 dark:text-white mb-2">Help & Support</h4>
+                  <p class="text-sm text-gray-500 dark:text-gray-400">FAQ, support contacts, and bug reporting</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Team Tab -->
         <div id="tab-team" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
           <!-- Statistics Header -->
@@ -1290,6 +1472,241 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Tools & Resources Modals -->
+  
+  <!-- ROI Calculator Modal -->
+  <div id="roi-calculator-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">ROI Calculator</h3>
+        <button onclick="document.getElementById('roi-calculator-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Current Monthly Cost <span class="text-red-500">*</span></label>
+          <input type="number" id="roi-current-cost" step="0.01" min="0" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="0.00">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Proposed Monthly Cost <span class="text-red-500">*</span></label>
+          <input type="number" id="roi-proposed-cost" step="0.01" min="0" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="0.00">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">One-time Setup Cost</label>
+          <input type="number" id="roi-setup-cost" step="0.01" min="0" value="0" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="0.00">
+        </div>
+        <button onclick="window.salesTools?.calculateROI()" class="w-full px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium">
+          Calculate ROI
+        </button>
+        <div id="roi-results" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Commission Calculator Modal -->
+  <div id="commission-calculator-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Commission Calculator</h3>
+        <button onclick="document.getElementById('commission-calculator-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Deal Value <span class="text-red-500">*</span></label>
+          <input type="number" id="commission-deal-value" step="0.01" min="0" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="0.00">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Commission Rate (%) <span class="text-red-500">*</span></label>
+          <input type="number" id="commission-rate" step="0.1" min="0" max="100" value="10" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="10">
+        </div>
+        <button onclick="window.salesTools?.calculateCommission()" class="w-full px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium">
+          Calculate Commission
+        </button>
+        <div id="commission-results" class="hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Guide Modal -->
+  <div id="pricing-guide-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Pricing Guide</h3>
+        <button onclick="document.getElementById('pricing-guide-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <table class="w-full text-sm">
+          <thead class="bg-nfglight dark:bg-gray-700">
+            <tr>
+              <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Service</th>
+              <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Frequency</th>
+              <th class="px-4 py-3 text-left font-medium text-nfgblue dark:text-blue-400">Price Range</th>
+            </tr>
+          </thead>
+          <tbody id="pricing-guide-table-body" class="divide-y divide-nfgray dark:divide-gray-700">
+            <!-- Pricing data will be loaded here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Email Templates Modal -->
+  <div id="email-templates-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Email Templates</h3>
+        <button onclick="document.getElementById('email-templates-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="email-templates-list" class="space-y-3">
+          <!-- Templates will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Call Scripts Modal -->
+  <div id="call-scripts-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Call Scripts</h3>
+        <button onclick="document.getElementById('call-scripts-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="call-scripts-list" class="space-y-4">
+          <!-- Scripts will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales Playbooks Modal -->
+  <div id="sales-playbooks-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Sales Playbooks</h3>
+        <button onclick="document.getElementById('sales-playbooks-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="sales-playbooks-list" class="space-y-3">
+          <!-- Playbooks will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Product Knowledge Modal -->
+  <div id="product-knowledge-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Product Knowledge</h3>
+        <button onclick="document.getElementById('product-knowledge-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="product-knowledge-list" class="space-y-3">
+          <!-- Products will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Video Tutorials Modal -->
+  <div id="video-tutorials-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Video Tutorials</h3>
+        <button onclick="document.getElementById('video-tutorials-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="video-tutorials-list" class="space-y-3">
+          <!-- Tutorials will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- External Tools Modal -->
+  <div id="external-tools-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">External Tools</h3>
+        <button onclick="document.getElementById('external-tools-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="external-tools-list" class="space-y-3">
+          <!-- Tools will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Company Resources Modal -->
+  <div id="company-resources-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Company Resources</h3>
+        <button onclick="document.getElementById('company-resources-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <div id="company-resources-list" class="space-y-3">
+          <!-- Resources will be loaded here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help & Support Modal -->
+  <div id="help-support-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Help & Support</h3>
+        <button onclick="document.getElementById('help-support-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <h4 class="font-semibold text-gray-900 dark:text-white mb-4">Frequently Asked Questions</h4>
+        <div id="help-support-faq" class="space-y-3">
+          <!-- FAQs will be loaded here -->
+        </div>
+        <div class="mt-6 pt-6 border-t border-nfgray dark:border-gray-700">
+          <h4 class="font-semibold text-gray-900 dark:text-white mb-3">Need More Help?</h4>
+          <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">Contact support for additional assistance:</p>
+          <div class="space-y-2">
+            <a href="mailto:support@nfgone.ca" class="flex items-center gap-2 text-nfgblue dark:text-blue-400 hover:text-nfgdark dark:hover:text-blue-300">
+              <i data-lucide="mail" class="w-4 h-4"></i>
+              <span>support@nfgone.ca</span>
+            </a>
+            <a href="tel:+1234567890" class="flex items-center gap-2 text-nfgblue dark:text-blue-400 hover:text-nfgdark dark:hover:text-blue-300">
+              <i data-lucide="phone" class="w-4 h-4"></i>
+              <span>(123) 456-7890</span>
+            </a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -2175,6 +2592,10 @@
         window.accountsDirectory = accountsDirModule.default;
       }
       console.log('[Sales Dashboard] ✅ accounts directory module loaded', window.accountsDirectory ? '✓' : '✗');
+      
+      // Load sales tools module
+      window.salesTools = await import('./js/sales-tools.js');
+      console.log('[Sales Dashboard] ✅ sales tools module loaded');
       
       
       console.log('[Sales Dashboard] ✅ All modules loaded successfully');
