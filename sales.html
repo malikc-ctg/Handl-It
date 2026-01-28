@@ -218,7 +218,7 @@
       />
     </div>
     <nav class="px-3 pb-4 flex-1 space-y-1">
-      <a id="nav-sales" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="sales.html" onclick="event.preventDefault(); if (window.switchTab) window.switchTab('dashboard');">
+      <a id="nav-sales" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="sales.html">
         <i data-lucide="trending-up" class="w-4 h-4"></i> Sales
       </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="routes.html">
@@ -2636,8 +2636,36 @@
         }
       });
       
+      // Update sidebar active state
+      updateSidebarActiveState(targetTabName);
+      
       // Load data for the active tab
       loadTabData(targetTabName);
+    }
+    
+    // Update sidebar navigation active state
+    function updateSidebarActiveState(activeTab) {
+      const navSales = document.getElementById('nav-sales');
+      const navTools = document.getElementById('nav-tools');
+      
+      // Remove active state from all sidebar links
+      if (navSales) {
+        navSales.classList.remove('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
+        navSales.classList.add('hover:bg-nfglight', 'dark:hover:bg-gray-700');
+      }
+      if (navTools) {
+        navTools.classList.remove('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
+        navTools.classList.add('hover:bg-nfglight', 'dark:hover:bg-gray-700');
+      }
+      
+      // Add active state based on current tab
+      if (activeTab === 'tools' && navTools) {
+        navTools.classList.add('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
+        navTools.classList.remove('hover:bg-nfglight', 'dark:hover:bg-gray-700');
+      } else if (activeTab === 'dashboard' && navSales) {
+        navSales.classList.add('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
+        navSales.classList.remove('hover:bg-nfglight', 'dark:hover:bg-gray-700');
+      }
     }
     
     // Make switchTab available globally for sidebar links
@@ -2669,6 +2697,10 @@
           if (window.location.pathname.endsWith('sales.html') || window.location.pathname.endsWith('/sales.html')) {
             e.preventDefault();
             switchTab('dashboard');
+            // Update URL
+            const url = new URL(window.location);
+            url.searchParams.delete('tab');
+            window.history.pushState({}, '', url);
           }
         });
       }
@@ -4440,7 +4472,11 @@
           // Small delay to ensure everything is loaded
           setTimeout(() => {
             window.switchTab(tabParam);
+            updateSidebarActiveState(tabParam);
           }, 100);
+        } else {
+          // Update sidebar based on default tab
+          updateSidebarActiveState('dashboard');
         }
         
         console.log('[Sales Dashboard] ✅ Initialization complete!');
