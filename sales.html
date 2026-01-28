@@ -322,10 +322,6 @@
                   <span class="text-gray-600 dark:text-gray-400">Closed:</span>
                   <span id="kpi-today-closed" class="font-semibold text-green-600 dark:text-green-400">0</span>
                 </div>
-                <div class="flex justify-between">
-                  <span class="text-gray-600 dark:text-gray-400">Walkthroughs:</span>
-                  <span id="kpi-today-walkthroughs" class="font-semibold text-nfgblue dark:text-blue-400">0</span>
-                </div>
               </div>
             </div>
 
@@ -409,28 +405,6 @@
             </div>
           </div>
 
-          <!-- Bottom Section: Quotes Watch & Walkthroughs -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <!-- 5. Quotes Watch -->
-            <div>
-              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-3">Quotes Watch</h3>
-              <div id="quotes-watch" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg">
-                <div id="quotes-watch-list" class="divide-y divide-nfgray dark:divide-gray-700">
-                  <!-- Quotes will be rendered here -->
-                </div>
-              </div>
-            </div>
-
-            <!-- 6. Walkthroughs Today -->
-            <div>
-              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-3">Walkthroughs Today</h3>
-              <div id="walkthroughs-today" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg">
-                <div id="walkthroughs-list" class="divide-y divide-nfgray dark:divide-gray-700">
-                  <!-- Walkthroughs will be rendered here -->
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Deals Tab -->
@@ -2829,12 +2803,6 @@
         // Render pipeline stage snapshot
         renderPipelineSnapshot(dealsData);
 
-        // Render quotes watch
-        renderQuotesWatch(quotesData);
-
-        // Render walkthroughs today
-        renderWalkthroughsToday(dealsData);
-
         console.log('[Dashboard] ✅ Dashboard data loaded');
       } catch (error) {
         console.error('[Dashboard] Error loading dashboard data:', error);
@@ -3017,15 +2985,9 @@
       const today = new Date().toISOString().split('T')[0];
       const todayQuotes = quotes.filter(q => q.created_at?.startsWith(today)).length;
       const todayClosed = deals.filter(d => d.stage === 'closed_won' && d.updated_at?.startsWith(today)).length;
-      const todayWalkthroughs = deals.filter(d => {
-        // Check if deal has walkthrough scheduled for today
-        // This is a placeholder - adjust based on your schema
-        return false; // TODO: Implement based on actual walkthrough data
-      }).length;
 
       document.getElementById('kpi-today-quotes').textContent = todayQuotes;
       document.getElementById('kpi-today-closed').textContent = todayClosed;
-      document.getElementById('kpi-today-walkthroughs').textContent = todayWalkthroughs;
 
       // Next 7 days at risk
       const sevenDaysFromNow = new Date();
@@ -3844,98 +3806,6 @@
       });
     }
 
-    // Render quotes watch
-    function renderQuotesWatch(quotes) {
-      const watchList = document.getElementById('quotes-watch-list');
-      if (!watchList) return;
-
-      // Sort by expiry date (soonest first)
-      const sortedQuotes = quotes
-        .filter(q => q.expiry_date)
-        .sort((a, b) => new Date(a.expiry_date) - new Date(b.expiry_date))
-        .slice(0, 10);
-
-      if (sortedQuotes.length === 0) {
-        watchList.innerHTML = `
-          <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-            No quotes to watch
-          </div>
-        `;
-        return;
-      }
-
-      watchList.innerHTML = sortedQuotes.map(quote => {
-        const expiry = new Date(quote.expiry_date);
-        const now = new Date();
-        const hoursUntilExpiry = (expiry - now) / (1000 * 60 * 60);
-        const isExpiringSoon = hoursUntilExpiry < 48;
-
-        return `
-          <div class="p-3 hover:bg-nfglight dark:hover:bg-gray-700 transition">
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <p class="text-sm font-medium text-nfgblue dark:text-blue-400">${quote.company_name || 'Unknown'}</p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">$${Number(quote.quote_value || 0).toLocaleString()}</p>
-              </div>
-              <div class="text-right">
-                <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(quote.created_at).toLocaleDateString()}</p>
-                <p class="text-xs ${isExpiringSoon ? 'text-red-600 dark:text-red-400 font-semibold' : 'text-gray-500 dark:text-gray-400'}">
-                  ${hoursUntilExpiry > 0 ? `${Math.round(hoursUntilExpiry)}h left` : 'Expired'}
-                </p>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
-
-    // Render walkthroughs today
-    function renderWalkthroughsToday(deals) {
-      const walkthroughsList = document.getElementById('walkthroughs-list');
-      if (!walkthroughsList) return;
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const tomorrow = new Date(today);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-
-      const walkthroughs = deals
-        .filter(d => d.next_action_type === 'walkthrough' && d.next_action_date)
-        .filter(d => {
-          const actionDate = new Date(d.next_action_date);
-          return actionDate >= today && actionDate < tomorrow;
-        })
-        .sort((a, b) => new Date(a.next_action_date) - new Date(b.next_action_date));
-
-      if (walkthroughs.length === 0) {
-        walkthroughsList.innerHTML = `
-          <div class="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
-            No walkthroughs scheduled for today
-          </div>
-        `;
-        return;
-      }
-
-      walkthroughsList.innerHTML = walkthroughs.map(deal => {
-        const walkthroughTime = new Date(deal.next_action_date);
-        return `
-          <div class="p-3 hover:bg-nfglight dark:hover:bg-gray-700 transition">
-            <div class="flex items-center justify-between">
-              <div class="flex-1">
-                <p class="text-sm font-medium text-nfgblue dark:text-blue-400">${deal.company_name || deal.title || 'Unknown'}</p>
-                <p class="text-xs text-gray-600 dark:text-gray-400">${walkthroughTime.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</p>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="px-2 py-1 rounded text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">Scheduled</span>
-                <button class="px-2 py-1 bg-nfgblue hover:bg-nfgdark text-white rounded text-xs font-medium transition">
-                  Outcome
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-    }
 
     // Helper functions
     function filterDealsTableByStage(stage) {
