@@ -2605,17 +2605,29 @@
       const tabContents = document.querySelectorAll('.sales-tab-content');
       const targetTab = Array.from(tabs).find(t => t.dataset.tab === targetTabName);
       
-      if (!targetTab) return;
-      
-      // Update active tab
-      tabs.forEach(t => {
-        t.classList.remove('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
-        t.classList.add('text-gray-600', 'dark:text-gray-400', 'border-transparent');
-      });
-      targetTab.classList.add('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
-      targetTab.classList.remove('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+      // Update active tab (only if tab button exists)
+      if (targetTab) {
+        tabs.forEach(t => {
+          t.classList.remove('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
+          t.classList.add('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+        });
+        targetTab.classList.add('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
+        targetTab.classList.remove('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+      } else {
+        // If no tab button exists (like for tools accessed from sidebar), deactivate all tabs
+        tabs.forEach(t => {
+          t.classList.remove('active', 'text-nfgblue', 'dark:text-blue-400', 'border-nfgblue', 'dark:border-blue-400');
+          t.classList.add('text-gray-600', 'dark:text-gray-400', 'border-transparent');
+        });
+      }
       
       // Show/hide tab content
+      const targetContent = document.getElementById(`tab-${targetTabName}`);
+      if (!targetContent) {
+        console.warn(`[Sales] Tab content not found: tab-${targetTabName}`);
+        return;
+      }
+      
       tabContents.forEach(content => {
         if (content.id === `tab-${targetTabName}`) {
           content.classList.remove('hidden');
@@ -2754,6 +2766,14 @@
             break;
           case 'quotes':
             await loadQuotes();
+            break;
+          case 'tools':
+            // Tools & Resources tab - no special data loading needed
+            console.log('[Sales] Loading tools tab');
+            // Initialize icons if needed
+            if (window.lucide) {
+              lucide.createIcons();
+            }
             break;
           case 'contacts':
             // Initialize accounts directory on first load
