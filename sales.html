@@ -2818,22 +2818,12 @@
         if (!user) return [];
 
         // Load all deals including closed ones for kanban board
-        // Try to load site and contact data - fallback to separate queries if relationship fails
+        // Filter by assigned user - ALL users see only their own deals
         let query = supabase
           .from('deals')
           .select('*')
+          .or(`assigned_to.eq.${user.id},assigned_user_id.eq.${user.id}`)
           .order('updated_at', { ascending: false });
-
-        // Filter by assigned user if rep
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
-
-        if (profile && profile.role === 'rep') {
-          query = query.or(`assigned_to.eq.${user.id},assigned_user_id.eq.${user.id}`);
-        }
 
         const { data, error } = await query;
         if (error) throw error;
@@ -2920,11 +2910,36 @@
 
     async function loadQuotesForDashboard() {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        // First, get all deals assigned to the current user
+        const { data: userDeals, error: dealsError } = await supabase
+          .from('deals')
+          .select('id')
+          .or(`assigned_to.eq.${user.id},assigned_user_id.eq.${user.id}`);
+        
+        if (dealsError) {
+          console.error('[Dashboard] Error loading user deals for quotes:', dealsError);
+          return [];
+        }
+
+        // If user has no deals, return empty array
+        if (!userDeals || userDeals.length === 0) {
+          return [];
+        }
+
+        // Get deal IDs
+        const dealIds = userDeals.map(d => d.id);
+
+        // Load quotes for deals assigned to the current user
         const { data, error } = await supabase
           .from('quotes')
           .select('*')
+          .in('deal_id', dealIds)
           .order('created_at', { ascending: false })
           .limit(50);
+        
         if (error) throw error;
         return data || [];
       } catch (error) {
