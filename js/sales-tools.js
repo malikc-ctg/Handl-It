@@ -14,10 +14,13 @@ export function openROICalculator() {
   if (modal) {
     modal.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
-    // Reset form
-    document.getElementById('roi-current-cost')?.value = '';
-    document.getElementById('roi-proposed-cost')?.value = '';
-    document.getElementById('roi-setup-cost')?.value = '';
+    // Reset form (can't use ?. on LHS of assignment)
+    const roiCurrent = document.getElementById('roi-current-cost');
+    if (roiCurrent) roiCurrent.value = '';
+    const roiProposed = document.getElementById('roi-proposed-cost');
+    if (roiProposed) roiProposed.value = '';
+    const roiSetup = document.getElementById('roi-setup-cost');
+    if (roiSetup) roiSetup.value = '';
     document.getElementById('roi-results')?.classList.add('hidden');
   }
 }
@@ -100,9 +103,11 @@ export async function openCommissionCalculator() {
     if (modal) {
       modal.classList.remove('hidden');
       if (window.lucide) lucide.createIcons();
-      // Reset form
-      document.getElementById('commission-deal-value')?.value = '';
-      document.getElementById('commission-rate')?.value = '10'; // Default 10%
+      // Reset form (can't use ?. on LHS of assignment)
+      const dealVal = document.getElementById('commission-deal-value');
+      if (dealVal) dealVal.value = '';
+      const rateEl = document.getElementById('commission-rate');
+      if (rateEl) rateEl.value = '10'; // Default 10%
       document.getElementById('commission-results')?.classList.add('hidden');
     }
   } catch (error) {

@@ -102,6 +102,10 @@ function updateIndicator() {
   const actions = document.getElementById('offline-sync-actions');
   const progress = document.getElementById('offline-sync-progress');
 
+  if (!icon || !title || !text || !actions || !progress) {
+    return; // DOM was replaced (e.g. error UI) or indicator not yet in document
+  }
+
   if (!online) {
     // Offline mode
     icon.className = 'w-5 h-5 rounded-full bg-red-500 animate-pulse';
