@@ -23,11 +23,11 @@ SELECT cron.unschedule('morning-reminders') WHERE EXISTS (
 );
 
 -- Schedule the morning reminders function
--- Cron expression: '30 8 * * 1-5' = 8:30 AM Monday-Friday (UTC)
--- Adjust time based on your timezone:
---   EST (UTC-5): '30 13 * * 1-5' (1:30 PM UTC = 8:30 AM EST)
---   PST (UTC-8): '30 16 * * 1-5' (4:30 PM UTC = 8:30 AM PST)
---   CST (UTC-6): '30 14 * * 1-5' (2:30 PM UTC = 8:30 AM CST)
+-- Cron uses UTC. We use 13:30 UTC = 8:30 AM Eastern (EST/EDT).
+-- Other timezones (all 8:30 AM local):
+--   PST (UTC-8): '30 16 * * 1-5'
+--   CST (UTC-6): '30 14 * * 1-5'
+--   UTC:        '30 8 * * 1-5'
 
 -- Note: Replace YOUR_ANON_KEY below with your actual Supabase anon key
 -- You can find it in Supabase Dashboard → Settings → API → anon/public key
@@ -35,7 +35,7 @@ SELECT cron.unschedule('morning-reminders') WHERE EXISTS (
 
 SELECT cron.schedule(
   'morning-reminders',                    -- Job name
-  '30 8 * * 1-5',                         -- Cron schedule: 8:30 AM Monday-Friday (UTC)
+  '30 13 * * 1-5',                        -- Cron schedule: 8:30 AM Eastern Mon–Fri (13:30 UTC)
   $$                                      -- SQL to execute
   SELECT net.http_post(
     url := 'https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-morning-reminders',
@@ -63,6 +63,6 @@ WHERE jobname = 'morning-reminders';
 
 -- Success message
 SELECT '✅ Morning reminders cron job scheduled!' AS status;
-SELECT '📅 Schedule: 8:30 AM Monday-Friday (UTC)' AS schedule;
-SELECT '⚠️  Note: Adjust timezone in cron expression if needed' AS note;
+SELECT '📅 Schedule: 8:30 AM Eastern (Mon–Fri)' AS schedule;
+SELECT '⚠️  Note: Uses 13:30 UTC. Adjust cron if you use another timezone.' AS note;
 SELECT '🔗 Edge Function: send-morning-reminders' AS function_name;

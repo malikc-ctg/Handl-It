@@ -1,22 +1,18 @@
 -- ============================================
--- QUICK SETUP: Morning Reminders Cron
+-- FIX: Morning reminders → 8:30 AM Eastern
 -- ============================================
--- Run this in Supabase Dashboard → SQL Editor
+-- The job was set to 8:30 UTC (3:30 AM Eastern).
+-- This reschedules it to 13:30 UTC = 8:30 AM Eastern.
+-- Run in Supabase Dashboard → SQL Editor
 -- ============================================
 
--- Enable pg_cron extension (if available)
-CREATE EXTENSION IF NOT EXISTS pg_cron;
-
--- Drop existing job if it exists
 SELECT cron.unschedule('morning-reminders') WHERE EXISTS (
   SELECT 1 FROM cron.job WHERE jobname = 'morning-reminders'
 );
 
--- Schedule morning reminders at 8:30 AM Eastern Monday-Friday
--- 13:30 UTC = 8:30 AM Eastern (EST). PST: '30 16', CST: '30 14', UTC: '30 8'
 SELECT cron.schedule(
   'morning-reminders',
-  '30 13 * * 1-5',  -- 8:30 AM Eastern Mon–Fri
+  '30 13 * * 1-5',
   $$
   SELECT net.http_post(
     url := 'https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-morning-reminders',
@@ -29,7 +25,4 @@ SELECT cron.schedule(
   $$
 );
 
--- Verify it was created
-SELECT jobid, schedule, active FROM cron.job WHERE jobname = 'morning-reminders';
-
-SELECT '✅ Morning reminders cron scheduled for 8:30 AM Eastern (Mon–Fri)' AS status;
+SELECT 'Morning reminders rescheduled to 8:30 AM Eastern (Mon–Fri)' AS status;

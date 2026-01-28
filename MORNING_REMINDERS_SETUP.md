@@ -38,10 +38,10 @@ You have two options:
 If your Supabase project has cron support, you can set it up via SQL:
 
 ```sql
--- Run this in Supabase SQL Editor
+-- Run this in Supabase SQL Editor (8:30 AM Eastern Mon–Fri)
 SELECT cron.schedule(
   'morning-reminders',
-  '30 8 * * 1-5',  -- 8:30 AM Monday-Friday (UTC)
+  '30 13 * * 1-5',  -- 8:30 AM Eastern (13:30 UTC)
   $$
   SELECT net.http_post(
     url := 'https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-morning-reminders',
@@ -55,10 +55,10 @@ SELECT cron.schedule(
 );
 ```
 
-**Note**: Adjust the time `'30 8 * * 1-5'` based on your timezone:
-- `'30 8 * * 1-5'` = 8:30 AM UTC (Monday-Friday)
-- For EST (UTC-5): `'30 13 * * 1-5'` = 1:30 PM UTC = 8:30 AM EST
-- For PST (UTC-8): `'30 16 * * 1-5'` = 4:30 PM UTC = 8:30 AM PST
+**Note**: Default is 8:30 AM Eastern (`'30 13 * * 1-5'`). Adjust for other timezones:
+- PST (UTC-8): `'30 16 * * 1-5'` = 8:30 AM PST
+- CST (UTC-6): `'30 14 * * 1-5'` = 8:30 AM CST
+- UTC: `'30 8 * * 1-5'` = 8:30 AM UTC
 
 #### Option B: External Cron Service
 Use a service like:
@@ -67,7 +67,7 @@ Use a service like:
 - **Cron-job.org** (free external cron)
 - **EasyCron** (paid external cron)
 
-Example cron expression: `30 8 * * 1-5` (8:30 AM Monday-Friday)
+Example cron expression: `30 13 * * 1-5` (8:30 AM Eastern Monday-Friday)
 
 The cron job should make a POST request to:
 ```
@@ -104,7 +104,7 @@ Content-Type: application/json
 
 ## How It Works
 
-1. **Cron triggers** the Edge Function at 8:30 AM
+1. **Cron triggers** the Edge Function at 8:30 AM Eastern
 2. **Function checks** if today is Monday-Friday
 3. **If weekday**: Fetches all active users, picks random quote, creates notifications
 4. **If weekend**: Exits early, no notifications created
@@ -114,7 +114,7 @@ Content-Type: application/json
 
 ### Change the Time
 Update the cron schedule expression. Format: `minute hour * * day-of-week`
-- `30 8 * * 1-5` = 8:30 AM Monday-Friday
+- `30 13 * * 1-5` = 8:30 AM Eastern Monday-Friday
 - `0 9 * * 1-5` = 9:00 AM Monday-Friday
 
 ### Change the Quotes

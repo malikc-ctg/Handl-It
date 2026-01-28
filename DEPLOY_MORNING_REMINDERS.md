@@ -32,7 +32,7 @@ You have two options:
 4. **Fill in:**
    - **Title**: NFG Morning Reminders
    - **Address**: `https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/send-morning-reminders`
-   - **Schedule**: `30 8 * * 1-5` (8:30 AM Monday-Friday UTC)
+   - **Schedule**: `30 13 * * 1-5` (8:30 AM Eastern Monday-Friday)
    - **Request method**: POST
    - **Request headers**:
      ```
@@ -44,11 +44,13 @@ You have two options:
 
 **Note:** Replace `YOUR_ANON_KEY_HERE` with your Supabase anon key from Dashboard → Settings → API
 
-#### Timezone Adjustment:
-- The cron expression `30 8 * * 1-5` is 8:30 AM UTC
-- For EST (UTC-5): Use `30 13 * * 1-5` (1:30 PM UTC = 8:30 AM EST)
-- For PST (UTC-8): Use `30 16 * * 1-5` (4:30 PM UTC = 8:30 AM PST)
-- For CST (UTC-6): Use `30 14 * * 1-5` (2:30 PM UTC = 8:30 AM CST)
+#### Timezone:
+- Default: `30 13 * * 1-5` = 8:30 AM Eastern (Mon–Fri)
+- PST: `30 16 * * 1-5` | CST: `30 14 * * 1-5` | UTC: `30 8 * * 1-5`
+
+### Fix: Notifications at 3:30 AM instead of 8:30 AM?
+
+The cron was set to 8:30 **UTC** (3:30 AM Eastern). To fix, run **`FIX_MORNING_REMINDERS_830AM.sql`** in the Supabase SQL Editor. It reschedules the job to **8:30 AM Eastern** (13:30 UTC).
 
 ## 🧪 Step 3: Test the Function
 
@@ -91,6 +93,6 @@ After setup, check:
 ## 📝 Next Steps
 
 Once the cron is set up, the system will automatically:
-- Run every weekday at 8:30 AM
+- Run every weekday at 8:30 AM Eastern
 - Send a random motivational quote to all active users
 - Create notifications that trigger your existing email/push system
