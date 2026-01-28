@@ -269,7 +269,7 @@
     <!-- MAIN CONTENT -->
     <main class="flex-1 overflow-hidden flex flex-col">
       <!-- Sales Dashboard Tabs -->
-      <div class="border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
+      <div id="sales-dashboard-tabs" class="border-b border-nfgray dark:border-gray-700 bg-white dark:bg-gray-800">
         <div class="px-4 md:px-6 flex gap-1 overflow-x-auto">
           <button class="sales-tab active px-4 py-3 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue dark:border-blue-400 whitespace-nowrap" data-tab="dashboard">
             <i data-lucide="layout-dashboard" class="w-4 h-4 inline mr-2"></i> Dashboard
@@ -2635,6 +2635,16 @@
           content.classList.add('hidden');
         }
       });
+      
+      // Show/hide dashboard tabs container (hide for tools tab)
+      const tabsContainer = document.getElementById('sales-dashboard-tabs');
+      if (tabsContainer) {
+        if (targetTabName === 'tools') {
+          tabsContainer.classList.add('hidden');
+        } else {
+          tabsContainer.classList.remove('hidden');
+        }
+      }
       
       // Update sidebar active state
       updateSidebarActiveState(targetTabName);
