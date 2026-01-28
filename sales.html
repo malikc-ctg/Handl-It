@@ -1018,32 +1018,32 @@
           <!-- Statistics Header -->
           <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-6">
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Total</p>
-              <p id="team-total-count" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
+              <p id="team-total-revenue" class="text-2xl font-semibold text-green-600 dark:text-green-400">$0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Active</p>
-              <p id="team-active-count" class="text-2xl font-semibold text-green-600 dark:text-green-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">This Month</p>
+              <p id="team-month-revenue" class="text-2xl font-semibold text-green-600 dark:text-green-400">$0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Pending</p>
-              <p id="team-pending-count" class="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Active Deals</p>
+              <p id="team-active-deals" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Inactive</p>
-              <p id="team-inactive-count" class="text-2xl font-semibold text-gray-600 dark:text-gray-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</p>
+              <p id="team-quotes-sent" class="text-2xl font-semibold text-purple-600 dark:text-purple-400">0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Admins</p>
-              <p id="team-admin-count" class="text-2xl font-semibold text-purple-600 dark:text-purple-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Win Rate</p>
+              <p id="team-win-rate" class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">0%</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Staff</p>
-              <p id="team-staff-count" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Avg Deal Value</p>
+              <p id="team-avg-deal" class="text-2xl font-semibold text-yellow-600 dark:text-yellow-400">$0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Clients</p>
-              <p id="team-client-count" class="text-2xl font-semibold text-indigo-600 dark:text-indigo-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Pipeline Value</p>
+              <p id="team-pipeline-value" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0</p>
             </div>
           </div>
 
@@ -1093,8 +1093,10 @@
               >
                 <option value="name-asc">Name (A-Z)</option>
                 <option value="name-desc">Name (Z-A)</option>
-                <option value="jobs-desc">Most Jobs</option>
-                <option value="sites-desc">Most Sites</option>
+                <option value="revenue-desc">Revenue (High to Low)</option>
+                <option value="revenue-asc">Revenue (Low to High)</option>
+                <option value="winrate-desc">Win Rate (High to Low)</option>
+                <option value="deals-desc">Active Deals (Most)</option>
                 <option value="active-desc">Last Active</option>
               </select>
               
@@ -4822,25 +4824,62 @@
         }
         
         if (!users || users.length === 0) {
-          updateTeamStats(0, 0, 0, 0, 0, 0, 0);
+          updateTeamSalesStats(0, 0, 0, 0, 0, 0, 0);
           renderEmployeeCards([]);
           return;
         }
         
-        // Calculate statistics
-        const total = users.length;
-        const active = users.filter(u => u.status === 'active').length;
-        const pending = users.filter(u => u.status === 'pending' || !u.status).length;
-        const inactive = users.filter(u => u.status === 'inactive').length;
-        const admin = users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
-        const staff = users.filter(u => u.role === 'staff').length;
-        const client = users.filter(u => u.role === 'client').length;
-        
-        updateTeamStats(total, active, pending, inactive, admin, staff, client);
-        
-        // Fetch stats for each employee
+        // Fetch stats for each employee (includes sales data)
         const employeesWithStats = await fetchEmployeeStats(users);
         allTeamEmployees = employeesWithStats;
+        
+        // Calculate team-wide sales statistics
+        const totalRevenue = employeesWithStats.reduce((sum, emp) => sum + (emp.revenue || 0), 0);
+        
+        // This month revenue (closed_won deals this month)
+        const thisMonth = new Date();
+        thisMonth.setDate(1);
+        thisMonth.setHours(0, 0, 0, 0);
+        const { data: thisMonthDeals } = await supabase
+          .from('deals')
+          .select('deal_value, value_estimate, updated_at')
+          .eq('stage', 'closed_won')
+          .gte('updated_at', thisMonth.toISOString());
+        const monthRevenue = (thisMonthDeals || []).reduce((sum, deal) => {
+          return sum + parseFloat(deal.deal_value || deal.value_estimate || 0);
+        }, 0);
+        
+        const activeDeals = employeesWithStats.reduce((sum, emp) => sum + (emp.activeDeals || 0), 0);
+        const quotesSent = employeesWithStats.reduce((sum, emp) => sum + (emp.quotesSent || 0), 0);
+        
+        // Win rate (team average) - get actual won/lost counts
+        const { data: allDealsForWinRate } = await supabase
+          .from('deals')
+          .select('stage')
+          .in('stage', ['closed_won', 'closed_lost']);
+        const totalWon = (allDealsForWinRate || []).filter(d => d.stage === 'closed_won').length;
+        const totalClosed = allDealsForWinRate?.length || 0;
+        const teamWinRate = totalClosed > 0 ? Math.round((totalWon / totalClosed) * 100) : 0;
+        
+        // Average deal value
+        const { data: allClosedWon } = await supabase
+          .from('deals')
+          .select('deal_value, value_estimate')
+          .eq('stage', 'closed_won');
+        const avgDeal = allClosedWon && allClosedWon.length > 0
+          ? allClosedWon.reduce((sum, d) => sum + parseFloat(d.deal_value || d.value_estimate || 0), 0) / allClosedWon.length
+          : 0;
+        
+        // Pipeline value (active deals)
+        const { data: pipelineDeals } = await supabase
+          .from('deals')
+          .select('deal_value, value_estimate')
+          .not('stage', 'in', '(closed_won,closed_lost)');
+        const pipelineValue = (pipelineDeals || []).reduce((sum, deal) => {
+          return sum + parseFloat(deal.deal_value || deal.value_estimate || 0);
+        }, 0);
+        
+        updateTeamSalesStats(totalRevenue, monthRevenue, activeDeals, quotesSent, teamWinRate, avgDeal, pipelineValue);
         
         // Apply filters and render
         applyTeamFilters();
@@ -4857,45 +4896,101 @@
     async function fetchEmployeeStats(users) {
       const userIds = users.map(u => u.id);
       
-      // Fetch jobs for all users
-      const { data: allJobs } = await supabase
-        .from('jobs')
-        .select('id, assigned_worker_id, status')
-        .in('assigned_worker_id', userIds);
+      // Fetch deals for all users (check both assigned_to and assigned_user_id)
+      const { data: allDeals } = await supabase
+        .from('deals')
+        .select('id, assigned_to, assigned_user_id, stage, deal_value, value_estimate')
+        .or(userIds.map(id => `assigned_to.eq.${id},assigned_user_id.eq.${id}`).join(','));
       
-      // Fetch site assignments
-      const { data: sites } = await supabase
-        .from('worker_site_assignments')
-        .select('worker_id')
-        .in('worker_id', userIds);
+      // Fetch quotes via deals
+      const dealIds = allDeals?.map(d => d.id) || [];
+      const { data: allQuotes } = dealIds.length > 0 ? await supabase
+        .from('quotes')
+        .select('id, deal_id, status')
+        .in('deal_id', dealIds) : { data: [] };
+      
+      // Fetch today's clock-in entries
+      const today = new Date().toISOString().split('T')[0];
+      const { data: clockIns } = await supabase
+        .from('time_entries')
+        .select('user_id, clock_in, notes')
+        .gte('clock_in', `${today}T00:00:00`)
+        .is('clock_out', null)
+        .in('user_id', userIds);
       
       // Calculate stats for each user
       return users.map(user => {
-        const userJobs = allJobs?.filter(j => j.assigned_worker_id === user.id) || [];
-        const jobsAssigned = userJobs.length;
-        const jobsCompleted = userJobs.filter(j => j.status === 'completed').length;
+        // Get user's deals (check both assignment columns)
+        const userDeals = allDeals?.filter(d => 
+          (d.assigned_to === user.id || d.assigned_user_id === user.id)
+        ) || [];
         
-        const userSites = sites?.filter(s => s.worker_id === user.id) || [];
-        const sitesAssigned = userSites.length;
+        // Active deals (not closed)
+        const activeDeals = userDeals.filter(d => 
+          d.stage !== 'closed_won' && d.stage !== 'closed_lost'
+        ).length;
+        
+        // Closed won deals
+        const closedWon = userDeals.filter(d => d.stage === 'closed_won');
+        const closedLost = userDeals.filter(d => d.stage === 'closed_lost');
+        
+        // Revenue (sum of deal_value or value_estimate for closed_won)
+        const revenue = closedWon.reduce((sum, deal) => {
+          const value = parseFloat(deal.deal_value || deal.value_estimate || 0);
+          return sum + value;
+        }, 0);
+        
+        // Win rate
+        const totalClosed = closedWon.length + closedLost.length;
+        const winRate = totalClosed > 0 ? Math.round((closedWon.length / totalClosed) * 100) : 0;
+        
+        // Quotes sent (via deals)
+        const userDealIds = userDeals.map(d => d.id);
+        const quotesSent = allQuotes?.filter(q => 
+          userDealIds.includes(q.deal_id) && q.status === 'sent'
+        ).length || 0;
+        
+        // Clock-in status and goal
+        const clockIn = clockIns?.find(c => c.user_id === user.id);
+        const workDuration = clockIn ? calculateWorkDuration(clockIn.clock_in) : null;
+        const goalOfDay = clockIn?.notes || null;
         
         return {
           ...user,
-          jobsAssigned,
-          jobsCompleted,
-          sitesAssigned
+          activeDeals,
+          revenue,
+          winRate,
+          quotesSent,
+          workDuration,
+          goalOfDay,
+          isClockedIn: !!clockIn
         };
       });
     }
     
-    function updateTeamStats(total, active, pending, inactive, admin, staff, client) {
+    // Calculate work duration in "Xh Ym" format
+    function calculateWorkDuration(clockInTime) {
+      const now = new Date();
+      const clockIn = new Date(clockInTime);
+      const diff = now - clockIn;
+      const hours = Math.floor(diff / 3600000);
+      const minutes = Math.floor((diff % 3600000) / 60000);
+      return `${hours}h ${minutes}m`;
+    }
+    
+    function updateTeamSalesStats(totalRevenue, monthRevenue, activeDeals, quotesSent, winRate, avgDeal, pipelineValue) {
+      const formatCurrency = (val) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val || 0);
+      };
+      
       const elements = {
-        'team-total-count': total,
-        'team-active-count': active,
-        'team-pending-count': pending,
-        'team-inactive-count': inactive,
-        'team-admin-count': admin,
-        'team-staff-count': staff,
-        'team-client-count': client
+        'team-total-revenue': formatCurrency(totalRevenue),
+        'team-month-revenue': formatCurrency(monthRevenue),
+        'team-active-deals': activeDeals || 0,
+        'team-quotes-sent': quotesSent || 0,
+        'team-win-rate': `${winRate || 0}%`,
+        'team-avg-deal': formatCurrency(avgDeal),
+        'team-pipeline-value': formatCurrency(pipelineValue)
       };
       
       Object.entries(elements).forEach(([id, value]) => {
@@ -4941,13 +5036,17 @@
             aVal = (a.full_name || a.email || '').toLowerCase();
             bVal = (b.full_name || b.email || '').toLowerCase();
             return sortDir === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
-          case 'jobs':
-            aVal = a.jobsAssigned || 0;
-            bVal = b.jobsAssigned || 0;
+          case 'revenue':
+            aVal = a.revenue || 0;
+            bVal = b.revenue || 0;
             return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-          case 'sites':
-            aVal = a.sitesAssigned || 0;
-            bVal = b.sitesAssigned || 0;
+          case 'winrate':
+            aVal = a.winRate || 0;
+            bVal = b.winRate || 0;
+            return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+          case 'deals':
+            aVal = a.activeDeals || 0;
+            bVal = b.activeDeals || 0;
             return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
           default:
             return 0;
@@ -4965,6 +5064,10 @@
       applyTeamFilters();
     }
     
+    function formatCurrency(val) {
+      return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val || 0);
+    }
+    
     function renderEmployeeCards(employees) {
       const grid = document.getElementById('team-employees-grid');
       if (!grid) return;
@@ -4979,6 +5082,7 @@
         const roleBadge = getRoleBadge(emp.role);
         const statusBadge = getEmployeeStatusBadge(emp.status);
         const avatarUrl = emp.profile_picture || '';
+        const revenueFormatted = formatCurrency(emp.revenue || 0);
         
         return `
           <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl shadow-nfg p-4 hover:shadow-lg transition">
@@ -5001,21 +5105,42 @@
               ${statusBadge}
             </div>
             
-            <!-- Stats -->
+            <!-- Work Duration -->
+            ${emp.isClockedIn ? `
+              <div class="mb-3 pb-3 border-b border-nfgray dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Working</p>
+                <p class="text-sm font-semibold text-green-600 dark:text-green-400">${emp.workDuration || '0h 0m'}</p>
+              </div>
+            ` : `
+              <div class="mb-3 pb-3 border-b border-nfgray dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</p>
+                <p class="text-sm font-semibold text-gray-500 dark:text-gray-400">Not clocked in</p>
+              </div>
+            `}
+            
+            <!-- Sales Stats -->
             <div class="grid grid-cols-3 gap-2 mb-4 pb-4 border-b border-nfgray dark:border-gray-700">
               <div class="text-center">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Jobs</p>
-                <p class="text-lg font-semibold text-gray-900 dark:text-gray-100">${emp.jobsAssigned || 0}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Deals</p>
+                <p class="text-lg font-semibold text-blue-600 dark:text-blue-400">${emp.activeDeals || 0}</p>
               </div>
               <div class="text-center">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Completed</p>
-                <p class="text-lg font-semibold text-green-600 dark:text-green-400">${emp.jobsCompleted || 0}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Revenue</p>
+                <p class="text-lg font-semibold text-green-600 dark:text-green-400">${revenueFormatted}</p>
               </div>
               <div class="text-center">
-                <p class="text-xs text-gray-500 dark:text-gray-400">Sites</p>
-                <p class="text-lg font-semibold text-blue-600 dark:text-blue-400">${emp.sitesAssigned || 0}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Win Rate</p>
+                <p class="text-lg font-semibold text-purple-600 dark:text-purple-400">${emp.winRate || 0}%</p>
               </div>
             </div>
+            
+            <!-- Goal of the Day -->
+            ${emp.goalOfDay ? `
+              <div class="mb-4 pb-4 border-b border-nfgray dark:border-gray-700">
+                <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Goal of the Day</p>
+                <p class="text-sm text-gray-700 dark:text-gray-300 italic">"${emp.goalOfDay}"</p>
+              </div>
+            ` : ''}
             
             <!-- Actions -->
             <div class="flex gap-2">
