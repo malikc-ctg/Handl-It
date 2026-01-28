@@ -3723,7 +3723,14 @@
         return;
       }
 
-      tbody.innerHTML = deals.map(deal => {
+      // Sort by most recent (updated_at or created_at) and limit to 5
+      const sortedDeals = [...deals].sort((a, b) => {
+        const aDate = new Date(a.updated_at || a.created_at || 0);
+        const bDate = new Date(b.updated_at || b.created_at || 0);
+        return bDate - aDate; // Most recent first
+      }).slice(0, 5); // Limit to 5 most recent
+
+      tbody.innerHTML = sortedDeals.map(deal => {
         const lastContact = deal.last_contacted_at ? new Date(deal.last_contacted_at) : null;
         const daysIdle = lastContact ? Math.floor((new Date() - lastContact) / (1000 * 60 * 60 * 24)) : null;
         const isIdle = daysIdle && daysIdle > 7;
