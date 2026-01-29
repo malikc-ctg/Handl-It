@@ -990,10 +990,9 @@
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <!-- Notification Bell (will be injected by notification-center.js) -->
           
-          <button id="create-booking-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition flex-shrink-0"
->
+          <button id="create-booking-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark transition flex-shrink-0">
             <i data-lucide="plus" class="w-4 h-4"></i>
-            <span class="hidden sm:inline text-xs sm:text-sm">New Booking</span>
+            <span class="hidden sm:inline text-xs sm:text-sm">Add</span>
           </button>
         </div>
       </div>
@@ -1213,17 +1212,27 @@
     </main>
   </div>
 
-  <!-- ========== CREATE BOOKING MODAL ========== -->
+  <!-- ========== ADD MODAL (Booking / Task) ========== -->
   <div id="createBookingModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 overflow-y-auto">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl my-8">
-      <div class="border-b border-nfgray p-6 flex items-center justify-between">
-        <h2 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create New Booking</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] my-8 flex flex-col">
+      <div class="border-b border-nfgray dark:border-gray-700 p-4 flex items-center justify-between flex-shrink-0">
+        <h2 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Add</h2>
         <button class="close-modal p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
 
-      <div class="p-6 space-y-4">
+      <!-- Tabs -->
+      <div class="flex border-b border-nfgray dark:border-gray-700 flex-shrink-0">
+        <button type="button" id="add-modal-tab-booking" class="add-modal-tab flex-1 py-3 px-4 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue dark:border-blue-400 bg-nfglight/50 dark:bg-gray-700/50">
+          <i data-lucide="calendar" class="w-4 h-4 inline-block mr-2 align-middle"></i> Booking
+        </button>
+        <button type="button" id="add-modal-tab-task" class="add-modal-tab flex-1 py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent">
+          <i data-lucide="check-square" class="w-4 h-4 inline-block mr-2 align-middle"></i> Task
+        </button>
+      </div>
+
+      <div id="add-modal-booking-panel" class="flex-1 overflow-y-auto min-h-0 p-4 md:p-6 space-y-4">
         <div>
           <label class="block text-sm font-medium mb-1.5">Title *</label>
           <input 
@@ -1358,7 +1367,7 @@
           </div>
 
           <!-- Service List (scrollable) -->
-          <div id="service-list" class="border border-nfgray rounded-xl max-h-48 overflow-y-auto divide-y divide-nfgray">
+          <div id="service-list" class="border border-nfgray dark:border-gray-600 rounded-xl max-h-36 overflow-y-auto divide-y divide-nfgray dark:divide-gray-600">
             <!-- Services will be rendered here -->
           </div>
 
@@ -1369,11 +1378,35 @@
         </div>
 
         <div class="flex gap-3 pt-4">
-          <button class="close-modal flex-1 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium">
+          <button class="close-modal flex-1 py-2.5 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium">
             Cancel
           </button>
           <button id="create-booking-submit" class="flex-1 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium">
             Create Booking
+          </button>
+        </div>
+      </div>
+
+      <!-- Task tab panel -->
+      <div id="add-modal-task-panel" class="hidden flex-1 overflow-y-auto min-h-0 p-4 md:p-6 space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Title *</label>
+          <input id="task-title" type="text" placeholder="e.g. Follow up with client" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Due Date *</label>
+          <input id="task-due-date" type="date" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1.5">Description</label>
+          <textarea id="task-description" rows="3" placeholder="Optional notes" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"></textarea>
+        </div>
+        <div class="flex gap-3 pt-4">
+          <button class="close-modal flex-1 py-2.5 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 font-medium">
+            Cancel
+          </button>
+          <button id="create-task-submit" class="flex-1 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium">
+            Create Task
           </button>
         </div>
       </div>
@@ -1706,7 +1739,7 @@
           }
         }, 100);
         
-        // Hide "New Booking" button
+        // Hide "Add" button
         const createBookingBtn = document.getElementById('create-booking-btn');
         if (createBookingBtn) createBookingBtn.style.display = 'none';
         
@@ -4465,18 +4498,49 @@
       }
     }
 
+    function switchToAddModalTab(tabName) {
+      const bookingPanel = document.getElementById('add-modal-booking-panel');
+      const taskPanel = document.getElementById('add-modal-task-panel');
+      const bookingTab = document.getElementById('add-modal-tab-booking');
+      const taskTab = document.getElementById('add-modal-tab-task');
+      const active = 'add-modal-tab flex-1 py-3 px-4 text-sm font-medium text-nfgblue dark:text-blue-400 border-b-2 border-nfgblue dark:border-blue-400 bg-nfglight/50 dark:bg-gray-700/50';
+      const inactive = 'add-modal-tab flex-1 py-3 px-4 text-sm font-medium text-gray-600 dark:text-gray-400 hover:text-nfgblue dark:hover:text-blue-400 border-b-2 border-transparent';
+      if (tabName === 'booking') {
+        if (bookingPanel) bookingPanel.classList.remove('hidden');
+        if (taskPanel) taskPanel.classList.add('hidden');
+        if (bookingTab) bookingTab.className = active;
+        if (taskTab) taskTab.className = inactive;
+      } else {
+        if (taskPanel) taskPanel.classList.remove('hidden');
+        if (bookingPanel) bookingPanel.classList.add('hidden');
+        if (taskTab) taskTab.className = active;
+        if (bookingTab) bookingTab.className = inactive;
+      }
+      if (window.lucide) lucide.createIcons();
+    }
+
     function openCreateBookingModal(prefilledDate = null) {
       document.getElementById('createBookingModal').classList.remove('hidden');
+      switchToAddModalTab('booking');
       document.getElementById('booking-title').value = '';
       document.getElementById('booking-site').value = '';
       document.getElementById('booking-date').value = prefilledDate || '';
       document.getElementById('booking-description').value = '';
       document.getElementById('booking-emergency').checked = false;
+      document.getElementById('booking-frequency').value = 'single visit';
+      document.getElementById('booking-time-section')?.classList.add('hidden');
+      document.getElementById('booking-recurrence-pattern-section')?.classList.add('hidden');
       document.getElementById('service-category-filter').value = '';
       document.getElementById('service-search').value = '';
       selectedServices.clear();
       renderServices();
       renderSelectedServices();
+      const taskTitle = document.getElementById('task-title');
+      const taskDue = document.getElementById('task-due-date');
+      const taskDesc = document.getElementById('task-description');
+      if (taskTitle) taskTitle.value = '';
+      if (taskDue) taskDue.value = '';
+      if (taskDesc) taskDesc.value = '';
       if (window.lucide) lucide.createIcons();
     }
 
@@ -4489,8 +4553,26 @@
       btn.addEventListener('click', closeModals);
     });
 
+    document.getElementById('add-modal-tab-booking')?.addEventListener('click', () => switchToAddModalTab('booking'));
+    document.getElementById('add-modal-tab-task')?.addEventListener('click', () => switchToAddModalTab('task'));
+
     document.getElementById('create-booking-submit')?.addEventListener('click', createBooking);
     document.getElementById('cancel-booking-btn')?.addEventListener('click', cancelBooking);
+
+    document.getElementById('create-task-submit')?.addEventListener('click', async () => {
+      const title = document.getElementById('task-title')?.value?.trim();
+      const due = document.getElementById('task-due-date')?.value;
+      if (!title) {
+        toast.error('Please enter a task title', 'Task');
+        return;
+      }
+      if (!due) {
+        toast.error('Please select a due date', 'Task');
+        return;
+      }
+      toast.info('Task creation coming soon', 'Task');
+      closeModals();
+    });
 
     // Date selection - show time input when date is selected
     document.getElementById('booking-date')?.addEventListener('change', (e) => {
