@@ -1394,12 +1394,6 @@
           <input id="task-title" type="text" placeholder="e.g. Follow up with client" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1.5">Site *</label>
-          <select id="task-site" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
-            <option value="">Select a site...</option>
-          </select>
-        </div>
-        <div>
           <label class="block text-sm font-medium mb-1.5">Due Date *</label>
           <input id="task-due-date" type="date" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
         </div>
@@ -1420,11 +1414,11 @@
           </div>
         </div>
         <div>
-          <label class="block text-sm font-medium mb-1.5">Share with *</label>
+          <label class="block text-sm font-medium mb-1.5">Share with</label>
           <select id="task-share-with" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
-            <option value="">Select who should see this on their calendar...</option>
+            <option value="">— None —</option>
           </select>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Assigned user will see this task on their calendar.</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional. Assigned user will see this task on their calendar.</p>
         </div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Description</label>
@@ -1822,17 +1816,6 @@
             siteSelect.appendChild(option);
           });
         }
-        // Populate site dropdown (task)
-        const taskSiteSelect = document.getElementById('task-site');
-        if (taskSiteSelect) {
-          taskSiteSelect.innerHTML = '<option value="">Select a site...</option>';
-          sites.forEach(site => {
-            const option = document.createElement('option');
-            option.value = site.id;
-            option.textContent = site.name;
-            taskSiteSelect.appendChild(option);
-          });
-        }
       } catch (error) {
         console.error('Error loading sites:', error);
       }
@@ -1842,22 +1825,24 @@
       const sel = document.getElementById('task-share-with');
       if (!sel) return;
       try {
-        const { data: staff, error } = await supabase
+        const { data: rows, error } = await supabase
           .from('user_profiles')
-          .select('id, full_name, email')
-          .eq('role', 'staff')
+          .select('id, full_name, email, role')
           .order('full_name');
         if (error) throw error;
-        sel.innerHTML = '<option value="">Select who should see this on their calendar...</option>';
-        (staff || []).forEach(u => {
+        const teamRoles = ['admin', 'staff', 'super_admin', 'manager'];
+        let users = (rows || []).filter(u => u.role && teamRoles.includes(String(u.role).toLowerCase()));
+        if (users.length === 0) users = rows || [];
+        sel.innerHTML = '<option value="">— None —</option>';
+        users.forEach(u => {
           const o = document.createElement('option');
           o.value = u.id;
           o.textContent = (u.full_name || u.email || 'Unknown') + (u.email ? ` (${u.email})` : '');
           sel.appendChild(o);
         });
       } catch (e) {
-        console.error('Error loading staff for task share:', e);
-        sel.innerHTML = '<option value="">Failed to load users</option>';
+        console.error('Error loading users for task share:', e);
+        sel.innerHTML = '<option value="">— None —</option><option disabled>Could not load users</option>';
       }
     }
 
@@ -2779,9 +2764,8 @@
     async function createTask() {
       try {
         const title = document.getElementById('task-title')?.value?.trim();
-        const siteId = document.getElementById('task-site')?.value;
         const due = document.getElementById('task-due-date')?.value;
-        const shareWith = document.getElementById('task-share-with')?.value;
+        const shareWith = document.getElementById('task-share-with')?.value || null;
         const isAllDay = document.getElementById('task-all-day')?.checked ?? true;
         const startTime = document.getElementById('task-start-time')?.value || '09:00';
         const endTime = document.getElementById('task-end-time')?.value || '10:00';
@@ -2791,18 +2775,17 @@
           toast.error('Please enter a task title', 'Task');
           return;
         }
-        if (!siteId) {
-          toast.error('Please select a site', 'Task');
-          return;
-        }
         if (!due) {
           toast.error('Please select a due date', 'Task');
           return;
         }
-        if (!shareWith) {
-          toast.error('Please select someone to share with so they see it on their calendar', 'Task');
+
+        const firstSite = (sites && sites.length) ? sites[0] : null;
+        if (!firstSite) {
+          toast.error('Add at least one site to create tasks.', 'Task');
           return;
         }
+        const siteId = firstSite.id;
 
         let scheduledDatetime;
         let estimatedHours = 1;
@@ -2845,15 +2828,16 @@
 
         if (error) throw error;
 
-        try {
-          const { notifyJobAssigned } = await import('./js/notification-triggers.js');
-          const { data: site } = await supabase.from('sites').select('name').eq('id', parseInt(siteId)).single();
-          await notifyJobAssigned(job.id, shareWith, job.title, site?.name || 'Site', scheduledDatetime, !!isAllDay);
-        } catch (notifErr) {
-          console.warn('Task assignment notification failed:', notifErr);
+        if (shareWith) {
+          try {
+            const { notifyJobAssigned } = await import('./js/notification-triggers.js');
+            await notifyJobAssigned(job.id, shareWith, job.title, firstSite.name || 'Site', scheduledDatetime, !!isAllDay);
+          } catch (notifErr) {
+            console.warn('Task assignment notification failed:', notifErr);
+          }
         }
 
-        toast.success('Task created. It will appear on the calendar and on the shared user\'s calendar.', 'Task Created');
+        toast.success(shareWith ? 'Task created. It will appear on your calendar and the shared user\'s calendar.' : 'Task created. It will appear on your calendar.', 'Task Created');
         closeModals();
         await loadJobs();
         if (typeof updateCalendar === 'function') updateCalendar();
@@ -4690,14 +4674,12 @@
       const taskTitle = document.getElementById('task-title');
       const taskDue = document.getElementById('task-due-date');
       const taskDesc = document.getElementById('task-description');
-      const taskSite = document.getElementById('task-site');
       const taskShare = document.getElementById('task-share-with');
       const taskAllDay = document.getElementById('task-all-day');
       const taskTimeSection = document.getElementById('task-time-section');
       if (taskTitle) taskTitle.value = '';
       if (taskDue) taskDue.value = prefilledDate || '';
       if (taskDesc) taskDesc.value = '';
-      if (taskSite) taskSite.value = '';
       if (taskShare) taskShare.value = '';
       if (taskAllDay) taskAllDay.checked = true;
       if (taskTimeSection) taskTimeSection.classList.add('hidden');
