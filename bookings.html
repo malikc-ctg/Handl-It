@@ -4161,8 +4161,41 @@
 
       // Edit/Delete buttons
       if (canEdit) {
-        if (sidebarEditBtn) sidebarEditBtn.classList.remove('hidden');
-        if (sidebarDeleteBtn) sidebarDeleteBtn.classList.remove('hidden');
+        if (sidebarEditBtn) {
+          sidebarEditBtn.classList.remove('hidden');
+          sidebarEditBtn.onclick = () => {
+            closeEventSidebar();
+            if (eventType === 'job') {
+              window.location.href = `jobs.html?job=${eventData.id}`;
+            } else {
+              window.location.href = `bookings.html?booking=${eventData.id}`;
+            }
+          };
+        }
+        if (sidebarDeleteBtn) {
+          sidebarDeleteBtn.classList.remove('hidden');
+          sidebarDeleteBtn.onclick = async () => {
+            const label = eventType === 'job' ? 'task/job' : 'booking';
+            const confirmed = await showConfirm(`Cancel this ${label}? It will be marked as cancelled.`, 'Cancel ' + (eventType === 'job' ? 'Task' : 'Booking'), 'warning');
+            if (!confirmed) return;
+            try {
+              const table = eventType === 'job' ? 'jobs' : 'bookings';
+              const { error } = await supabase
+                .from(table)
+                .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+                .eq('id', eventData.id);
+              if (error) throw error;
+              toast.success(eventType === 'job' ? 'Task cancelled.' : 'Booking cancelled.', 'Done');
+              closeEventSidebar();
+              await loadJobs();
+              if (eventType === 'booking') await loadBookings();
+              if (typeof updateCalendar === 'function') updateCalendar();
+            } catch (e) {
+              console.error('Error cancelling:', e);
+              toast.error('Failed to cancel: ' + (e?.message || e), 'Error');
+            }
+          };
+        }
       } else {
         if (sidebarEditBtn) sidebarEditBtn.classList.add('hidden');
         if (sidebarDeleteBtn) sidebarDeleteBtn.classList.add('hidden');
@@ -4171,7 +4204,6 @@
       // Reschedule button
       if (sidebarRescheduleBtn) {
         sidebarRescheduleBtn.onclick = () => {
-          // Quick reschedule - could open a modal or use inline editing
           toast.info('Reschedule functionality coming soon', 'Info');
         };
       }
