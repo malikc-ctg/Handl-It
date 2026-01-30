@@ -4411,21 +4411,65 @@
     };
 
     // ========================================
-    // ACTIVITY LOGGER
+    // ACTIVITY LOGGER (Contact-Based)
     // ========================================
-    let currentActivityDeal = null;
+    let currentActivityContact = null;
+    let currentActivityDealId = null; // Optional deal reference
     let selectedActivityType = 'call';
     let selectedOutcome = 'contact_made';
 
-    // Open activity logger modal
+    // Open activity logger modal for a CONTACT
+    window.openLogActivityForContact = async (contactId, dealId = null) => {
+      const modal = document.getElementById('log-activity-modal');
+      if (!modal) return;
+
+      // Fetch contact info
+      const { data: contact, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', contactId)
+        .single();
+
+      if (error || !contact) {
+        toast.error('Could not load contact', 'Error');
+        return;
+      }
+
+      currentActivityContact = contact;
+      currentActivityDealId = dealId;
+
+      // Populate modal
+      document.getElementById('activity-deal-id').value = contactId; // Store contact ID
+      document.getElementById('activity-deal-name').textContent = contact.full_name || contact.email || 'Unknown Contact';
+      document.getElementById('activity-attempt-count').textContent = contact.total_contact_attempts || 0;
+      document.getElementById('activity-streak-count').textContent = contact.no_contact_streak || 0;
+
+      // Reset form
+      document.getElementById('activity-notes').value = '';
+      document.getElementById('activity-next-action').value = '';
+      document.getElementById('activity-next-date').value = '';
+
+      // Reset selections
+      selectedActivityType = 'call';
+      selectedOutcome = 'contact_made';
+      updateActivityTypeButtons();
+      updateOutcomeButtons();
+      updateNoContactWarning();
+
+      // Show modal
+      modal.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    };
+
+    // Backwards compatibility - open for deal (finds primary contact)
     window.openLogActivity = async (dealId) => {
       const modal = document.getElementById('log-activity-modal');
       if (!modal) return;
 
-      // Fetch deal info
+      // Fetch deal with primary contact
       const { data: deal, error } = await supabase
         .from('deals')
-        .select('*')
+        .select('*, primary_contact:primary_contact_id(*)')
         .eq('id', dealId)
         .single();
 
@@ -4434,13 +4478,26 @@
         return;
       }
 
-      currentActivityDeal = deal;
+      // If deal has a primary contact, use that
+      if (deal.primary_contact) {
+        currentActivityContact = deal.primary_contact;
+        currentActivityDealId = dealId;
+      } else {
+        // Fallback: create a temporary contact object from deal data
+        currentActivityContact = {
+          id: null, // No contact ID
+          full_name: deal.company_name || deal.title,
+          no_contact_streak: deal.no_contact_streak || 0,
+          total_contact_attempts: deal.total_contact_attempts || 0
+        };
+        currentActivityDealId = dealId;
+      }
 
       // Populate modal
-      document.getElementById('activity-deal-id').value = dealId;
-      document.getElementById('activity-deal-name').textContent = deal.company_name || deal.title || 'Unknown Deal';
-      document.getElementById('activity-attempt-count').textContent = deal.total_contact_attempts || 0;
-      document.getElementById('activity-streak-count').textContent = deal.no_contact_streak || 0;
+      document.getElementById('activity-deal-id').value = currentActivityContact?.id || dealId;
+      document.getElementById('activity-deal-name').textContent = currentActivityContact?.full_name || deal.company_name || deal.title || 'Unknown';
+      document.getElementById('activity-attempt-count').textContent = currentActivityContact?.total_contact_attempts || 0;
+      document.getElementById('activity-streak-count').textContent = currentActivityContact?.no_contact_streak || 0;
 
       // Reset form
       document.getElementById('activity-notes').value = '';
@@ -4502,16 +4559,16 @@
       const warning = document.getElementById('no-contact-warning');
       const warningText = document.getElementById('no-contact-warning-text');
       
-      if (!warning || !currentActivityDeal) return;
+      if (!warning || !currentActivityContact) return;
       
-      const currentStreak = currentActivityDeal.no_contact_streak || 0;
+      const currentStreak = currentActivityContact.no_contact_streak || 0;
       
       if (selectedOutcome === 'no_contact' || selectedOutcome === 'voicemail') {
         const newStreak = currentStreak + 1;
         warning.classList.remove('hidden');
         
         if (newStreak >= 3) {
-          warningText.textContent = `⚠️ This will be attempt ${newStreak} of 3 - Deal will AUTO-CLOSE as LOST!`;
+          warningText.textContent = `⚠️ This will be attempt ${newStreak} of 3 - Contact will be marked as LOST!`;
           warning.classList.remove('bg-red-50', 'dark:bg-red-900/20');
           warning.classList.add('bg-red-100', 'dark:bg-red-900/40');
         } else {
@@ -4524,17 +4581,17 @@
       }
     }
 
-    // Save activity
+    // Save activity (Contact-Based)
     async function saveActivity(e) {
       e.preventDefault();
       
-      const dealId = document.getElementById('activity-deal-id').value;
+      const contactId = currentActivityContact?.id;
       const notes = document.getElementById('activity-notes').value;
       const nextAction = document.getElementById('activity-next-action').value;
       const nextDate = document.getElementById('activity-next-date').value;
 
-      if (!dealId) {
-        toast.error('No deal selected', 'Error');
+      if (!contactId && !currentActivityDealId) {
+        toast.error('No contact or deal selected', 'Error');
         return;
       }
 
@@ -4543,92 +4600,44 @@
       saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
 
       try {
-        // Try to use the database function first
-        const { data: result, error: fnError } = await supabase.rpc('log_sales_activity', {
-          p_deal_id: dealId,
-          p_activity_type: selectedActivityType,
-          p_outcome: selectedOutcome,
-          p_notes: notes || null,
-          p_next_action_date: nextDate || null,
-          p_next_action_type: nextAction || null
-        });
+        // Try to use the database function first (contact-based)
+        if (contactId) {
+          const { data: result, error: fnError } = await supabase.rpc('log_contact_activity', {
+            p_contact_id: contactId,
+            p_activity_type: selectedActivityType,
+            p_outcome: selectedOutcome,
+            p_notes: notes || null,
+            p_next_action_date: nextDate || null,
+            p_next_action_type: nextAction || null,
+            p_deal_id: currentActivityDealId || null
+          });
 
-        if (fnError) {
-          // Fallback to direct insert if function doesn't exist
-          console.log('[Activity] Function not available, using fallback:', fnError);
-          
-          // Calculate new streak
-          const currentStreak = currentActivityDeal?.no_contact_streak || 0;
-          let newStreak = currentStreak;
-          
-          if (selectedOutcome === 'contact_made' || selectedOutcome === 'scheduled') {
-            newStreak = 0;
-          } else if (selectedOutcome === 'no_contact' || selectedOutcome === 'voicemail') {
-            newStreak = currentStreak + 1;
-          }
-
-          // Update deal
-          const updateData = {
-            no_contact_streak: newStreak,
-            total_contact_attempts: (currentActivityDeal?.total_contact_attempts || 0) + 1,
-            last_contact_attempt_at: new Date().toISOString(),
-            last_contact_result: selectedOutcome,
-            last_touch_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          // Auto-close if 3 no-contacts
-          let autoClosed = false;
-          if (newStreak >= 3) {
-            updateData.stage = 'closed_lost';
-            updateData.lost_at = new Date().toISOString();
-            updateData.lost_reason_text = 'No response after 3 contact attempts';
-            autoClosed = true;
-          }
-
-          const { error: updateError } = await supabase
-            .from('deals')
-            .update(updateData)
-            .eq('id', dealId);
-
-          if (updateError) throw updateError;
-
-          // Insert activity record if table exists
-          try {
-            const { data: { user } } = await supabase.auth.getUser();
-            await supabase.from('sales_activities').insert({
-              deal_id: dealId,
-              assigned_user_id: currentActivityDeal?.assigned_user_id || currentActivityDeal?.assigned_to || user?.id,
-              activity_type: selectedActivityType,
-              outcome: selectedOutcome,
-              notes: notes,
-              next_action_date: nextDate || null,
-              next_action_type: nextAction || null
-            });
-          } catch (actErr) {
-            console.log('[Activity] Activities table may not exist yet:', actErr);
-          }
-
-          if (autoClosed) {
-            toast.warning('Deal auto-closed: 3 no-contact attempts', 'Deal Lost');
+          if (fnError) {
+            // Fallback to direct update
+            console.log('[Activity] Function not available, using fallback:', fnError);
+            await saveActivityFallback(contactId, notes, nextAction, nextDate);
           } else {
-            toast.success('Activity logged successfully', 'Success');
+            // Function worked
+            if (result?.auto_lost) {
+              toast.warning('Contact marked as lost: 3 no-contact attempts', 'Contact Lost');
+            } else {
+              toast.success('Activity logged successfully', 'Success');
+            }
           }
         } else {
-          // Function worked
-          if (result?.auto_closed) {
-            toast.warning('Deal auto-closed: 3 no-contact attempts', 'Deal Lost');
-          } else {
-            toast.success('Activity logged successfully', 'Success');
-          }
+          // No contact ID - update deal directly (legacy)
+          await saveActivityFallbackDeal(currentActivityDealId, notes, nextAction, nextDate);
         }
 
         // Close modal
         document.getElementById('log-activity-modal').classList.add('hidden');
         
-        // Refresh deals
+        // Refresh data
         if (window.loadDeals) {
           await window.loadDeals();
+        }
+        if (window.loadContacts) {
+          await window.loadContacts();
         }
 
       } catch (error) {
@@ -4639,6 +4648,104 @@
         saveBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Save Activity';
         if (window.lucide) lucide.createIcons();
       }
+    }
+
+    // Fallback: Direct contact update
+    async function saveActivityFallback(contactId, notes, nextAction, nextDate) {
+      const currentStreak = currentActivityContact?.no_contact_streak || 0;
+      let newStreak = currentStreak;
+      
+      if (selectedOutcome === 'contact_made' || selectedOutcome === 'scheduled') {
+        newStreak = 0;
+      } else if (selectedOutcome === 'no_contact' || selectedOutcome === 'voicemail') {
+        newStreak = currentStreak + 1;
+      }
+
+      // Update contact
+      const updateData = {
+        no_contact_streak: newStreak,
+        total_contact_attempts: (currentActivityContact?.total_contact_attempts || 0) + 1,
+        last_contact_attempt_at: new Date().toISOString(),
+        last_contact_result: selectedOutcome,
+        next_follow_up_date: nextDate || null,
+        next_follow_up_type: nextAction || null,
+        updated_at: new Date().toISOString()
+      };
+
+      // Update last_contacted_at if contact was made
+      if (selectedOutcome === 'contact_made') {
+        updateData.last_contacted_at = new Date().toISOString();
+      }
+
+      // Auto-mark as lost if 3 no-contacts
+      let autoLost = false;
+      if (newStreak >= 3) {
+        updateData.contact_status = 'lost';
+        updateData.lost_at = new Date().toISOString();
+        updateData.lost_reason = 'No response after 3 contact attempts';
+        autoLost = true;
+      }
+
+      const { error: updateError } = await supabase
+        .from('contacts')
+        .update(updateData)
+        .eq('id', contactId);
+
+      if (updateError) throw updateError;
+
+      // Insert activity record if table exists
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        await supabase.from('sales_activities').insert({
+          contact_id: contactId,
+          deal_id: currentActivityDealId || null,
+          assigned_user_id: currentActivityContact?.assigned_user_id || user?.id,
+          activity_type: selectedActivityType,
+          outcome: selectedOutcome,
+          notes: notes,
+          next_action_date: nextDate || null,
+          next_action_type: nextAction || null
+        });
+      } catch (actErr) {
+        console.log('[Activity] Activities table may not exist yet:', actErr);
+      }
+
+      if (autoLost) {
+        toast.warning('Contact marked as lost: 3 no-contact attempts', 'Contact Lost');
+      } else {
+        toast.success('Activity logged successfully', 'Success');
+      }
+    }
+
+    // Fallback: Direct deal update (legacy)
+    async function saveActivityFallbackDeal(dealId, notes, nextAction, nextDate) {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      // Just update the deal's last_touch_at and insert activity
+      await supabase
+        .from('deals')
+        .update({
+          last_touch_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', dealId);
+
+      // Insert activity record
+      try {
+        await supabase.from('sales_activities').insert({
+          deal_id: dealId,
+          assigned_user_id: user?.id,
+          activity_type: selectedActivityType,
+          outcome: selectedOutcome,
+          notes: notes,
+          next_action_date: nextDate || null,
+          next_action_type: nextAction || null
+        });
+      } catch (actErr) {
+        console.log('[Activity] Activities table may not exist yet:', actErr);
+      }
+
+      toast.success('Activity logged successfully', 'Success');
     }
 
     // Activity modal event listeners

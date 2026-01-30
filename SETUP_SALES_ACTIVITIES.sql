@@ -1,40 +1,42 @@
 -- ============================================
 -- SALES ACTIVITIES & 3 NO'S POLICY SETUP
+-- CONTACT-BASED FOLLOW-UP SYSTEM
 -- Run this in Supabase SQL Editor
 -- ============================================
 
 -- ============================================
--- 1. ADD CONTACT TRACKING COLUMNS TO DEALS
+-- 1. ADD CONTACT TRACKING COLUMNS TO CONTACTS
 -- ============================================
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS no_contact_streak INTEGER DEFAULT 0;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS total_contact_attempts INTEGER DEFAULT 0;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS last_contact_attempt_at TIMESTAMPTZ;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS last_contact_result TEXT;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS no_contact_streak INTEGER DEFAULT 0;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS total_contact_attempts INTEGER DEFAULT 0;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_contact_attempt_at TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_contact_result TEXT;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_contacted_at TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS quote_sent_at TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS walkthrough_completed_at TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS walkthrough_scheduled_at TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS contact_status TEXT DEFAULT 'new' CHECK (contact_status IN ('new', 'active', 'nurturing', 'lost', 'converted'));
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS assigned_user_id UUID REFERENCES auth.users(id);
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS next_follow_up_date TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS next_follow_up_type TEXT;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS lost_reason TEXT;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS lost_at TIMESTAMPTZ;
+ALTER TABLE contacts ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;
+
+-- Also add tracking to deals for deal-specific follow-ups
 ALTER TABLE deals ADD COLUMN IF NOT EXISTS quote_sent_at TIMESTAMPTZ;
 ALTER TABLE deals ADD COLUMN IF NOT EXISTS walkthrough_completed_at TIMESTAMPTZ;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS walkthrough_scheduled_at TIMESTAMPTZ;
 ALTER TABLE deals ADD COLUMN IF NOT EXISTS stage_entered_at TIMESTAMPTZ DEFAULT NOW();
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS days_in_current_stage INTEGER DEFAULT 0;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS primary_contact_id UUID;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS account_id UUID;
-
--- Add lost_reason as TEXT if not exists (may already exist as enum)
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-    WHERE table_name = 'deals' AND column_name = 'lost_reason_text') THEN
-    ALTER TABLE deals ADD COLUMN lost_reason_text TEXT;
-  END IF;
-END $$;
 
 -- ============================================
--- 2. CREATE SALES ACTIVITIES TABLE
+-- 2. CREATE SALES ACTIVITIES TABLE (Contact-Centric)
 -- ============================================
 CREATE TABLE IF NOT EXISTS sales_activities (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   company_id UUID,
-  deal_id UUID REFERENCES deals(id) ON DELETE CASCADE,
-  contact_id UUID,
+  contact_id UUID REFERENCES contacts(id) ON DELETE CASCADE, -- PRIMARY: linked to contact
+  deal_id UUID REFERENCES deals(id) ON DELETE SET NULL, -- OPTIONAL: linked to specific deal
+  account_id UUID, -- Optional: linked to account/company
   assigned_user_id UUID REFERENCES auth.users(id), -- User responsible for this activity
   
   -- Activity details
@@ -67,24 +69,27 @@ CREATE TABLE IF NOT EXISTS sales_activities (
 -- ============================================
 -- 3. CREATE INDEXES
 -- ============================================
-CREATE INDEX IF NOT EXISTS idx_deals_no_contact_streak ON deals(no_contact_streak) WHERE no_contact_streak > 0;
-CREATE INDEX IF NOT EXISTS idx_deals_stage_entered ON deals(stage_entered_at);
-CREATE INDEX IF NOT EXISTS idx_deals_last_contact ON deals(last_contact_attempt_at);
-CREATE INDEX IF NOT EXISTS idx_deals_quote_sent ON deals(quote_sent_at) WHERE quote_sent_at IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_deals_walkthrough ON deals(walkthrough_scheduled_at) WHERE walkthrough_scheduled_at IS NOT NULL;
+-- Contact indexes for follow-up tracking
+CREATE INDEX IF NOT EXISTS idx_contacts_no_contact_streak ON contacts(no_contact_streak) WHERE no_contact_streak > 0;
+CREATE INDEX IF NOT EXISTS idx_contacts_last_contact ON contacts(last_contact_attempt_at);
+CREATE INDEX IF NOT EXISTS idx_contacts_next_follow_up ON contacts(next_follow_up_date) WHERE next_follow_up_date IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_contacts_status ON contacts(contact_status);
+CREATE INDEX IF NOT EXISTS idx_contacts_assigned_user ON contacts(assigned_user_id) WHERE assigned_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_contacts_quote_sent ON contacts(quote_sent_at) WHERE quote_sent_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_contacts_walkthrough ON contacts(walkthrough_scheduled_at) WHERE walkthrough_scheduled_at IS NOT NULL;
 
-CREATE INDEX IF NOT EXISTS idx_sales_activities_deal ON sales_activities(deal_id);
+-- Activity indexes
 CREATE INDEX IF NOT EXISTS idx_sales_activities_contact ON sales_activities(contact_id);
+CREATE INDEX IF NOT EXISTS idx_sales_activities_deal ON sales_activities(deal_id);
 CREATE INDEX IF NOT EXISTS idx_sales_activities_created ON sales_activities(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sales_activities_type ON sales_activities(activity_type);
 CREATE INDEX IF NOT EXISTS idx_sales_activities_next_action ON sales_activities(next_action_date) WHERE next_action_date IS NOT NULL;
 CREATE INDEX IF NOT EXISTS idx_sales_activities_assigned ON sales_activities(assigned_user_id);
 CREATE INDEX IF NOT EXISTS idx_sales_activities_created_by ON sales_activities(created_by);
 
--- Index for user-specific deal queries
-CREATE INDEX IF NOT EXISTS idx_deals_assigned_user ON deals(assigned_user_id) WHERE assigned_user_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_deals_assigned_to ON deals(assigned_to) WHERE assigned_to IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_deals_created_by ON deals(created_by) WHERE created_by IS NOT NULL;
+-- Deal indexes (for deal-specific tracking)
+CREATE INDEX IF NOT EXISTS idx_deals_quote_sent ON deals(quote_sent_at) WHERE quote_sent_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_deals_stage_entered ON deals(stage_entered_at);
 
 -- ============================================
 -- 4. ENABLE RLS ON SALES ACTIVITIES
@@ -108,11 +113,10 @@ CREATE POLICY "Users can view their company's activities" ON sales_activities
     OR company_id IN (
       SELECT company_id FROM user_profiles WHERE id = auth.uid()
     )
-    -- Or user owns/is assigned to the related deal
-    OR deal_id IN (
-      SELECT id FROM deals WHERE 
+    -- Or user is assigned to the related contact
+    OR contact_id IN (
+      SELECT id FROM contacts WHERE 
         assigned_user_id = auth.uid() 
-        OR assigned_to = auth.uid()
         OR created_by = auth.uid()
     )
   );
@@ -137,37 +141,38 @@ CREATE POLICY "Users can delete their activities" ON sales_activities
 GRANT ALL ON sales_activities TO authenticated;
 
 -- ============================================
--- 5. FUNCTION: LOG ACTIVITY WITH 3 NO'S LOGIC
+-- 5. FUNCTION: LOG ACTIVITY WITH 3 NO'S LOGIC (Contact-Based)
 -- ============================================
-CREATE OR REPLACE FUNCTION log_sales_activity(
-  p_deal_id UUID,
+CREATE OR REPLACE FUNCTION log_contact_activity(
+  p_contact_id UUID,
   p_activity_type TEXT,
   p_outcome TEXT,
   p_notes TEXT DEFAULT NULL,
   p_next_action_date TIMESTAMPTZ DEFAULT NULL,
   p_next_action_type TEXT DEFAULT NULL,
-  p_duration_minutes INTEGER DEFAULT NULL
+  p_duration_minutes INTEGER DEFAULT NULL,
+  p_deal_id UUID DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
 SECURITY DEFINER
 AS $$
 DECLARE
-  v_deal RECORD;
+  v_contact RECORD;
   v_new_streak INTEGER;
   v_activity_id UUID;
-  v_auto_closed BOOLEAN := FALSE;
+  v_auto_lost BOOLEAN := FALSE;
   v_company_id UUID;
 BEGIN
-  -- Get current deal info
-  SELECT * INTO v_deal FROM deals WHERE id = p_deal_id;
+  -- Get current contact info
+  SELECT * INTO v_contact FROM contacts WHERE id = p_contact_id;
   
-  IF v_deal IS NULL THEN
-    RETURN jsonb_build_object('success', false, 'error', 'Deal not found');
+  IF v_contact IS NULL THEN
+    RETURN jsonb_build_object('success', false, 'error', 'Contact not found');
   END IF;
   
-  -- Get company_id from deal's workspace_id
-  v_company_id := v_deal.workspace_id;
+  -- Get company_id from contact
+  v_company_id := v_contact.company_id;
   
   -- Calculate new streak based on outcome
   IF p_outcome IN ('contact_made', 'completed', 'scheduled') THEN
@@ -175,15 +180,16 @@ BEGIN
     v_new_streak := 0;
   ELSIF p_outcome IN ('no_contact', 'voicemail') THEN
     -- Failed contact - increment streak
-    v_new_streak := COALESCE(v_deal.no_contact_streak, 0) + 1;
+    v_new_streak := COALESCE(v_contact.no_contact_streak, 0) + 1;
   ELSE
     -- Other outcomes - keep current streak
-    v_new_streak := COALESCE(v_deal.no_contact_streak, 0);
+    v_new_streak := COALESCE(v_contact.no_contact_streak, 0);
   END IF;
   
   -- Insert activity record
   INSERT INTO sales_activities (
     company_id,
+    contact_id,
     deal_id,
     assigned_user_id,
     activity_type,
@@ -195,8 +201,9 @@ BEGIN
     created_by
   ) VALUES (
     v_company_id,
+    p_contact_id,
     p_deal_id,
-    COALESCE(v_deal.assigned_user_id, v_deal.assigned_to, auth.uid()), -- Assign to deal owner or current user
+    COALESCE(v_contact.assigned_user_id, auth.uid()),
     p_activity_type,
     p_outcome,
     p_notes,
@@ -207,41 +214,43 @@ BEGIN
   )
   RETURNING id INTO v_activity_id;
   
-  -- Update deal with new tracking info
-  UPDATE deals SET
+  -- Update contact with new tracking info
+  UPDATE contacts SET
     no_contact_streak = v_new_streak,
     total_contact_attempts = COALESCE(total_contact_attempts, 0) + 1,
     last_contact_attempt_at = NOW(),
     last_contact_result = p_outcome,
-    last_touch_at = NOW(),
+    last_contacted_at = CASE WHEN p_outcome = 'contact_made' THEN NOW() ELSE last_contacted_at END,
+    next_follow_up_date = p_next_action_date,
+    next_follow_up_type = p_next_action_type,
     updated_at = NOW()
-  WHERE id = p_deal_id;
+  WHERE id = p_contact_id;
   
-  -- Check if we hit 3 no-contacts and auto-close
-  IF v_new_streak >= 3 AND v_deal.stage NOT IN ('closed_won', 'closed_lost') THEN
-    UPDATE deals SET
-      stage = 'closed_lost',
+  -- Check if we hit 3 no-contacts and auto-mark as lost
+  IF v_new_streak >= 3 AND v_contact.contact_status NOT IN ('lost', 'converted') THEN
+    UPDATE contacts SET
+      contact_status = 'lost',
       lost_at = NOW(),
-      lost_reason_text = 'No response after 3 contact attempts',
+      lost_reason = 'No response after 3 contact attempts',
       updated_at = NOW()
-    WHERE id = p_deal_id;
-    v_auto_closed := TRUE;
+    WHERE id = p_contact_id;
+    v_auto_lost := TRUE;
   END IF;
   
   RETURN jsonb_build_object(
     'success', true,
     'activity_id', v_activity_id,
     'new_streak', v_new_streak,
-    'auto_closed', v_auto_closed,
-    'total_attempts', COALESCE(v_deal.total_contact_attempts, 0) + 1
+    'auto_lost', v_auto_lost,
+    'total_attempts', COALESCE(v_contact.total_contact_attempts, 0) + 1
   );
 END;
 $$;
 
 -- ============================================
--- 6. FUNCTION: GET DEAL ACTIVITIES
+-- 6. FUNCTION: GET CONTACT ACTIVITIES
 -- ============================================
-CREATE OR REPLACE FUNCTION get_deal_activities(p_deal_id UUID, p_limit INTEGER DEFAULT 20)
+CREATE OR REPLACE FUNCTION get_contact_activities(p_contact_id UUID, p_limit INTEGER DEFAULT 20)
 RETURNS TABLE (
   id UUID,
   activity_type TEXT,
@@ -272,15 +281,41 @@ BEGIN
     COALESCE(up.full_name, up.email, 'Unknown') as created_by_name
   FROM sales_activities sa
   LEFT JOIN user_profiles up ON up.id = sa.created_by
-  WHERE sa.deal_id = p_deal_id
+  WHERE sa.contact_id = p_contact_id
   ORDER BY sa.created_at DESC
   LIMIT p_limit;
 END;
 $$;
 
 -- ============================================
--- 7. FUNCTION: UPDATE STAGE TRACKING
+-- 7. FUNCTION: UPDATE CONTACT STATUS TRACKING
 -- ============================================
+CREATE OR REPLACE FUNCTION update_contact_status_tracking()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Track when contact becomes converted
+  IF OLD.contact_status IS DISTINCT FROM NEW.contact_status THEN
+    IF NEW.contact_status = 'converted' AND NEW.converted_at IS NULL THEN
+      NEW.converted_at := NOW();
+    END IF;
+    IF NEW.contact_status = 'lost' AND NEW.lost_at IS NULL THEN
+      NEW.lost_at := NOW();
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+-- Create trigger for contact status tracking
+DROP TRIGGER IF EXISTS contact_status_tracking_trigger ON contacts;
+CREATE TRIGGER contact_status_tracking_trigger
+  BEFORE UPDATE ON contacts
+  FOR EACH ROW
+  EXECUTE FUNCTION update_contact_status_tracking();
+
+-- Also keep deal stage tracking
 CREATE OR REPLACE FUNCTION update_deal_stage_tracking()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -288,13 +323,11 @@ AS $$
 BEGIN
   IF OLD.stage IS DISTINCT FROM NEW.stage THEN
     NEW.stage_entered_at := NOW();
-    NEW.days_in_current_stage := 0;
   END IF;
   RETURN NEW;
 END;
 $$;
 
--- Create trigger for stage tracking
 DROP TRIGGER IF EXISTS deal_stage_tracking_trigger ON deals;
 CREATE TRIGGER deal_stage_tracking_trigger
   BEFORE UPDATE ON deals
@@ -302,83 +335,88 @@ CREATE TRIGGER deal_stage_tracking_trigger
   EXECUTE FUNCTION update_deal_stage_tracking();
 
 -- ============================================
--- 8. VIEW: PRIORITY ACTIONS (User-specific)
+-- 8. VIEW: CONTACT PRIORITY ACTIONS (User-specific)
 -- ============================================
-CREATE OR REPLACE VIEW priority_actions_view AS
-WITH deal_priorities AS (
+CREATE OR REPLACE VIEW contact_priority_actions_view AS
+WITH contact_priorities AS (
   SELECT 
-    d.id as deal_id,
-    d.title as company_name,
-    COALESCE(d.value_estimate, 0) as deal_value,
-    d.stage,
-    d.no_contact_streak,
-    d.total_contact_attempts,
-    d.last_contact_attempt_at,
-    d.last_touch_at,
-    d.quote_sent_at,
-    d.walkthrough_scheduled_at,
-    d.walkthrough_completed_at,
-    d.stage_entered_at,
-    d.workspace_id,
-    d.assigned_user_id,
-    d.assigned_to,
-    d.created_by,
+    c.id as contact_id,
+    COALESCE(c.full_name, c.email, 'Unknown') as contact_name,
+    c.email,
+    c.phone,
+    c.company_name,
+    c.contact_status,
+    c.no_contact_streak,
+    c.total_contact_attempts,
+    c.last_contact_attempt_at,
+    c.last_contacted_at,
+    c.quote_sent_at,
+    c.walkthrough_scheduled_at,
+    c.walkthrough_completed_at,
+    c.next_follow_up_date,
+    c.next_follow_up_type,
+    c.company_id,
+    c.assigned_user_id,
+    c.created_by,
     
     -- Calculate priority level and action
     CASE
       -- P1: Urgent - 2 no contacts (final attempt needed)
-      WHEN d.no_contact_streak = 2 THEN 1
-      -- P1: Quote expiring soon (handled separately)
+      WHEN c.no_contact_streak = 2 THEN 1
+      -- P1: Missed follow-up (scheduled follow-up date passed)
+      WHEN c.next_follow_up_date < NOW() THEN 1
       -- P2: 1 no contact
-      WHEN d.no_contact_streak = 1 THEN 2
+      WHEN c.no_contact_streak = 1 THEN 2
       -- P2: Walkthrough completed but no quote sent
-      WHEN d.walkthrough_completed_at IS NOT NULL 
-           AND d.quote_sent_at IS NULL 
-           AND d.stage NOT IN ('closed_won', 'closed_lost') THEN 2
+      WHEN c.walkthrough_completed_at IS NOT NULL 
+           AND c.quote_sent_at IS NULL 
+           AND c.contact_status NOT IN ('lost', 'converted') THEN 2
+      -- P2: Quote sent, follow up needed (3-7 days)
+      WHEN c.quote_sent_at IS NOT NULL 
+           AND c.quote_sent_at > NOW() - INTERVAL '7 days'
+           AND c.contact_status NOT IN ('lost', 'converted') THEN 2
       -- P3: Idle > 7 days
-      WHEN d.last_touch_at < NOW() - INTERVAL '7 days' 
-           AND d.stage NOT IN ('closed_won', 'closed_lost') THEN 3
-      -- P3: Stuck in stage > 14 days
-      WHEN d.stage_entered_at < NOW() - INTERVAL '14 days'
-           AND d.stage NOT IN ('closed_won', 'closed_lost') THEN 3
-      -- P3: No contact attempts on new deal
-      WHEN d.total_contact_attempts = 0 
-           AND d.stage NOT IN ('closed_won', 'closed_lost') THEN 3
+      WHEN c.last_contacted_at < NOW() - INTERVAL '7 days' 
+           AND c.contact_status NOT IN ('lost', 'converted') THEN 3
+      -- P3: No contact attempts on new contact
+      WHEN COALESCE(c.total_contact_attempts, 0) = 0 
+           AND c.contact_status NOT IN ('lost', 'converted') THEN 3
       ELSE 4
     END as priority_level,
     
     CASE
-      WHEN d.no_contact_streak = 2 THEN 'FINAL ATTEMPT - 2 no contacts in a row'
-      WHEN d.no_contact_streak = 1 THEN 'Follow up - 1 no contact'
-      WHEN d.walkthrough_completed_at IS NOT NULL AND d.quote_sent_at IS NULL THEN 'Send quote after walkthrough'
-      WHEN d.last_touch_at < NOW() - INTERVAL '7 days' THEN 'Re-engage - idle ' || EXTRACT(DAY FROM NOW() - d.last_touch_at)::INTEGER || ' days'
-      WHEN d.stage_entered_at < NOW() - INTERVAL '14 days' THEN 'Stuck in stage - move forward or disqualify'
-      WHEN d.total_contact_attempts = 0 THEN 'New deal - make first contact'
-      ELSE 'Review deal'
+      WHEN c.no_contact_streak = 2 THEN 'FINAL ATTEMPT - 2 no contacts in a row'
+      WHEN c.next_follow_up_date < NOW() THEN 'Missed follow-up - ' || c.next_follow_up_type
+      WHEN c.no_contact_streak = 1 THEN 'Follow up - 1 no contact (attempt 2 of 3)'
+      WHEN c.walkthrough_completed_at IS NOT NULL AND c.quote_sent_at IS NULL THEN 'Send quote after walkthrough'
+      WHEN c.quote_sent_at IS NOT NULL AND c.quote_sent_at > NOW() - INTERVAL '3 days' THEN 'Quote follow-up - Day ' || EXTRACT(DAY FROM NOW() - c.quote_sent_at)::INTEGER
+      WHEN c.quote_sent_at IS NOT NULL THEN 'Quote follow-up needed'
+      WHEN c.last_contacted_at < NOW() - INTERVAL '7 days' THEN 'Re-engage - idle ' || EXTRACT(DAY FROM NOW() - c.last_contacted_at)::INTEGER || ' days'
+      WHEN COALESCE(c.total_contact_attempts, 0) = 0 THEN 'New contact - make first contact'
+      ELSE 'Review contact'
     END as action_reason
     
-  FROM deals d
-  WHERE d.stage NOT IN ('closed_won', 'closed_lost')
-    -- Filter by user assignment (user sees only their deals)
+  FROM contacts c
+  WHERE c.contact_status NOT IN ('lost', 'converted')
+    -- Filter by user assignment (user sees only their contacts)
     AND (
-      d.assigned_user_id = auth.uid()
-      OR d.assigned_to = auth.uid()
-      OR d.created_by = auth.uid()
-      -- Or user is admin/manager in the same workspace
+      c.assigned_user_id = auth.uid()
+      OR c.created_by = auth.uid()
+      -- Or user is admin/manager in the same company
       OR EXISTS (
         SELECT 1 FROM user_profiles up 
         WHERE up.id = auth.uid() 
-        AND up.company_id = d.workspace_id 
+        AND up.company_id = c.company_id 
         AND up.role IN ('admin', 'owner', 'manager')
       )
     )
 )
-SELECT * FROM deal_priorities
+SELECT * FROM contact_priorities
 WHERE priority_level <= 3
-ORDER BY priority_level, deal_value DESC;
+ORDER BY priority_level, last_contact_attempt_at ASC NULLS FIRST;
 
 -- Grant access to view
-GRANT SELECT ON priority_actions_view TO authenticated;
+GRANT SELECT ON contact_priority_actions_view TO authenticated;
 
 -- ============================================
 -- DONE
