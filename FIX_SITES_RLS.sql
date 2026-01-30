@@ -39,6 +39,12 @@ ALTER TABLE sites ENABLE ROW LEVEL SECURITY;
 -- ALL authenticated users (admins) can see ALL sites
 -- =============================================
 
+-- Drop new policies if they exist (in case of re-run)
+DROP POLICY IF EXISTS "All users can view all sites" ON sites;
+DROP POLICY IF EXISTS "All users can create sites" ON sites;
+DROP POLICY IF EXISTS "All users can update sites" ON sites;
+DROP POLICY IF EXISTS "All users can delete sites" ON sites;
+
 -- SELECT: All authenticated users can view ALL sites
 CREATE POLICY "All users can view all sites"
 ON sites FOR SELECT
