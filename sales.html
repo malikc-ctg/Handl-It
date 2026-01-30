@@ -4966,6 +4966,11 @@
         .is('clock_out', null)
         .in('user_id', userIds);
       
+      // Fetch all sites (for portfolio size calculation)
+      const { data: allSites } = await supabase
+        .from('sites')
+        .select('id, created_by, assigned_worker_id');
+      
       // Calculate stats for each user
       return users.map(user => {
         // Get user's deals - check BOTH created_by (owner) AND assigned_user_id
@@ -4997,9 +5002,12 @@
         const totalClosed = closedWon.length + closedLost.length;
         const winRate = totalClosed > 0 ? Math.round((closedWon.length / totalClosed) * 100) : 0;
         
-        // Portfolio size (unique sites from deals)
-        const uniqueSiteIds = new Set(userDeals.map(d => d.site_id).filter(Boolean));
-        const portfolioSize = uniqueSiteIds.size;
+        // Portfolio size (sites created by or assigned to user)
+        const userSites = allSites?.filter(s => 
+          s.created_by === user.id || 
+          s.assigned_worker_id === user.id
+        ) || [];
+        const portfolioSize = userSites.length;
         
         // Clock-in status and goal
         const clockIn = clockIns?.find(c => c.user_id === user.id);
