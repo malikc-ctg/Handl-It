@@ -7,14 +7,21 @@
 export const QUOTE_CONFIG = {
   // Base monthly prices (ex-HST) for 4 visits/mo, 1200-1600 sqft band (baseline)
   basePrices: {
+    // Commercial
     commercial_office: 349,
+    industrial: 699,
+    restaurant: 599,
+    // Healthcare
     physio_chiro: 499,
     medical_clinic: 549,
     dental: 529,
     optical: 499,
-    industrial: 699,
+    // Residential
+    residential_home: 179,           // Per visit for recurring, monthly = visits × this
     residential_common_area: 499,
-    restaurant: 599
+    // Real Estate
+    realtor: 249,                    // Base per-clean price (one-time jobs)
+    property_manager: 199            // Base per-unit turnover price
   },
 
   // Sqft bands with multipliers

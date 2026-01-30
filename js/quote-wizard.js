@@ -754,6 +754,59 @@ function getTouchpointData(serviceType) {
       // Estimate rooms from seating
       data.num_treatment_rooms = Math.ceil(data.seating_capacity / 50);
       break;
+      
+    case 'residential_home':
+      data.num_bedrooms = parseInt(document.getElementById('quote-num-bedrooms')?.value) || 0;
+      data.num_bathrooms = parseInt(document.getElementById('quote-num-bathrooms')?.value) || 0;
+      data.num_floors = parseInt(document.getElementById('quote-num-home-floors')?.value) || 1;
+      data.has_basement = document.getElementById('quote-has-basement')?.checked || false;
+      data.has_garage = document.getElementById('quote-has-garage')?.checked || false;
+      data.has_pets = document.getElementById('quote-has-pets')?.checked || false;
+      // Map to standard calculation fields
+      data.num_washrooms = data.num_bathrooms;
+      data.num_treatment_rooms = data.num_bedrooms;
+      data.has_kitchen = true;
+      break;
+      
+    case 'realtor':
+      data.num_bedrooms = parseInt(document.getElementById('quote-num-bedrooms-realtor')?.value) || 0;
+      data.num_bathrooms = parseInt(document.getElementById('quote-num-bathrooms-realtor')?.value) || 0;
+      data.cleaning_type = document.getElementById('quote-realtor-cleaning-type')?.value || 'move_out';
+      data.is_vacant = document.getElementById('quote-is-vacant')?.checked || false;
+      data.appliance_cleaning = document.getElementById('quote-appliance-cleaning')?.checked || false;
+      data.window_cleaning = document.getElementById('quote-window-cleaning')?.checked || false;
+      // Map to standard calculation fields
+      data.num_washrooms = data.num_bathrooms;
+      data.num_treatment_rooms = data.num_bedrooms;
+      data.has_kitchen = data.appliance_cleaning;
+      // Deep clean and move-out require more work
+      if (data.cleaning_type === 'deep_clean' || data.cleaning_type === 'move_out') {
+        data.deep_clean_multiplier = 1.5;
+      }
+      break;
+      
+    case 'property_manager':
+      data.num_units = parseInt(document.getElementById('quote-num-units')?.value) || 1;
+      data.avg_bedrooms = parseFloat(document.getElementById('quote-avg-bedrooms')?.value) || 2;
+      data.pm_service_type = document.getElementById('quote-pm-service-type')?.value || 'turnover';
+      data.turnovers_per_month = parseInt(document.getElementById('quote-turnovers-per-month')?.value) || 2;
+      data.has_common_areas = document.getElementById('quote-has-common-areas')?.checked || false;
+      data.priority_response = document.getElementById('quote-priority-response')?.checked || false;
+      // Map to standard calculation fields based on service type
+      if (data.pm_service_type === 'turnover') {
+        data.num_treatment_rooms = Math.ceil(data.avg_bedrooms * data.turnovers_per_month);
+        data.num_washrooms = data.turnovers_per_month;
+      } else if (data.pm_service_type === 'common_areas') {
+        data.num_treatment_rooms = Math.ceil(data.num_units / 10);
+        data.has_reception = true;
+      } else {
+        // Full service
+        data.num_treatment_rooms = Math.ceil(data.avg_bedrooms * data.turnovers_per_month) + Math.ceil(data.num_units / 10);
+        data.num_washrooms = data.turnovers_per_month + 2;
+        data.has_reception = true;
+      }
+      data.has_kitchen = true;
+      break;
   }
   
   return data;

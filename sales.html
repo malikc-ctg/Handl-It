@@ -2137,14 +2137,25 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service Type <span class="text-red-500">*</span></label>
                 <select id="quote-service-type" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
                   <option value="">Select service type...</option>
-                  <option value="commercial_office">Commercial Office</option>
-                  <option value="medical_clinic">Medical Clinic</option>
-                  <option value="physio_chiro">Physio/Chiro</option>
-                  <option value="dental">Dental</option>
-                  <option value="optical">Optical</option>
-                  <option value="industrial">Industrial</option>
-                  <option value="residential_common_area">Residential Common Area</option>
-                  <option value="restaurant">Restaurant</option>
+                  <optgroup label="Commercial">
+                    <option value="commercial_office">Commercial Office</option>
+                    <option value="industrial">Industrial/Warehouse</option>
+                    <option value="restaurant">Restaurant</option>
+                  </optgroup>
+                  <optgroup label="Healthcare">
+                    <option value="medical_clinic">Medical Clinic</option>
+                    <option value="physio_chiro">Physio/Chiro</option>
+                    <option value="dental">Dental</option>
+                    <option value="optical">Optical</option>
+                  </optgroup>
+                  <optgroup label="Residential">
+                    <option value="residential_home">Residential Home</option>
+                    <option value="residential_common_area">Condo/Apartment Common Area</option>
+                  </optgroup>
+                  <optgroup label="Real Estate">
+                    <option value="realtor">Realtor (Move-in/Move-out)</option>
+                    <option value="property_manager">Property Manager</option>
+                  </optgroup>
                 </select>
               </div>
               <div>
@@ -2363,6 +2374,115 @@
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bar Area</label>
                   <div class="flex items-center h-10">
                     <input type="checkbox" id="quote-has-bar" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Residential Home -->
+              <div id="touchpoints-residential_home" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bedrooms</label>
+                  <input type="number" id="quote-num-bedrooms" min="0" max="10" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0" value="0">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bathrooms</label>
+                  <input type="number" id="quote-num-bathrooms" min="0" max="10" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0" value="0">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Floors/Levels</label>
+                  <input type="number" id="quote-num-home-floors" min="1" max="5" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="1" value="1">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Basement</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-has-basement" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Garage</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-has-garage" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Pets in Home</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-has-pets" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Realtor (Move-in/Move-out) -->
+              <div id="touchpoints-realtor" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bedrooms</label>
+                  <input type="number" id="quote-num-bedrooms-realtor" min="0" max="10" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0" value="0">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Bathrooms</label>
+                  <input type="number" id="quote-num-bathrooms-realtor" min="0" max="10" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="0" value="0">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Cleaning Type</label>
+                  <select id="quote-realtor-cleaning-type" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                    <option value="move_out">Move-Out Clean</option>
+                    <option value="move_in">Move-In Clean</option>
+                    <option value="showing_prep">Showing Prep</option>
+                    <option value="deep_clean">Deep Clean</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Property Vacant</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-is-vacant" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded" checked>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Appliance Cleaning</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-appliance-cleaning" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded" checked>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Window Cleaning</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-window-cleaning" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Property Manager -->
+              <div id="touchpoints-property_manager" class="hidden grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Total Units</label>
+                  <input type="number" id="quote-num-units" min="1" max="500" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="1" value="1">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Avg Bedrooms/Unit</label>
+                  <input type="number" id="quote-avg-bedrooms" min="0" max="5" step="0.5" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="2" value="2">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service Type</label>
+                  <select id="quote-pm-service-type" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                    <option value="turnover">Unit Turnover</option>
+                    <option value="common_areas">Common Areas Only</option>
+                    <option value="full_service">Full Service (Units + Common)</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Est. Turnovers/Month</label>
+                  <input type="number" id="quote-turnovers-per-month" min="0" max="50" class="quote-touchpoint w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="2" value="2">
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Common Areas</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-has-common-areas" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded" checked>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Priority Response</label>
+                  <div class="flex items-center h-10">
+                    <input type="checkbox" id="quote-priority-response" class="quote-touchpoint w-5 h-5 border border-nfgray dark:border-gray-600 rounded">
                   </div>
                 </div>
               </div>
