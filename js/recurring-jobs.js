@@ -180,8 +180,6 @@ async function copyTasksToNewJob(sourceJobId, targetJobId) {
   }
 }
 
-import { logger, reportError } from './logger.js'
-
 /**
  * Check if a job should create next instance and do it
  * Called when a job status changes to 'completed'
