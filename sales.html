@@ -1370,6 +1370,83 @@
     </div>
   </div>
 
+  <!-- Employee Details Modal -->
+  <div id="employee-detail-modal" class="hidden fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <div id="emp-detail-avatar" class="w-12 h-12 rounded-full bg-nfgblue flex items-center justify-center text-white font-bold"></div>
+          <div>
+            <h3 id="emp-detail-name" class="text-lg font-semibold text-gray-900 dark:text-white"></h3>
+            <p id="emp-detail-email" class="text-sm text-gray-500 dark:text-gray-400"></p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('employee-detail-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 text-gray-500">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      
+      <div class="flex-1 overflow-y-auto p-4">
+        <!-- Stats Summary -->
+        <div class="grid grid-cols-4 gap-4 mb-6">
+          <div class="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-blue-600 dark:text-blue-400" id="emp-detail-deals">0</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Active Deals</p>
+          </div>
+          <div class="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-green-600 dark:text-green-400" id="emp-detail-revenue">$0</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Revenue</p>
+          </div>
+          <div class="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-purple-600 dark:text-purple-400" id="emp-detail-winrate">0%</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Win Rate</p>
+          </div>
+          <div class="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 text-center">
+            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="emp-detail-quotes">0</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Quotes Sent</p>
+          </div>
+        </div>
+        
+        <!-- Employee Info -->
+        <div class="mb-6 grid grid-cols-2 gap-4">
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Role</p>
+            <p id="emp-detail-role" class="font-medium text-gray-900 dark:text-white"></p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Status</p>
+            <p id="emp-detail-status" class="font-medium text-gray-900 dark:text-white"></p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Phone</p>
+            <p id="emp-detail-phone" class="font-medium text-gray-900 dark:text-white"></p>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Today's Goal</p>
+            <p id="emp-detail-goal" class="font-medium text-gray-900 dark:text-white italic"></p>
+          </div>
+        </div>
+        
+        <!-- Deals List -->
+        <div>
+          <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3 flex items-center gap-2">
+            <i data-lucide="briefcase" class="w-4 h-4"></i>
+            Deals
+          </h4>
+          <div id="emp-detail-deals-list" class="space-y-2">
+            <!-- Deals will be rendered here -->
+          </div>
+        </div>
+      </div>
+      
+      <div class="p-4 border-t border-nfgray dark:border-gray-700 flex justify-end gap-2">
+        <button onclick="document.getElementById('employee-detail-modal')?.classList.add('hidden')" class="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Tools & Resources Modals -->
   
   <!-- ROI Calculator Modal -->
@@ -5096,9 +5173,103 @@
       return badges[status] || '<span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">' + (status || 'Unknown') + '</span>';
     }
     
-    function viewEmployeeDetails(userId) {
-      // Navigate to settings page with user management
-      window.location.href = './settings.html#user-management';
+    async function viewEmployeeDetails(userId) {
+      // Find employee in cached data
+      const employee = allTeamEmployees.find(e => e.id === userId);
+      if (!employee) {
+        toast.error('Employee not found', 'Error');
+        return;
+      }
+      
+      const modal = document.getElementById('employee-detail-modal');
+      if (!modal) return;
+      
+      // Populate header
+      const initials = getInitials(employee.full_name || employee.email);
+      const avatarEl = document.getElementById('emp-detail-avatar');
+      if (employee.profile_picture) {
+        avatarEl.innerHTML = `<img src="${employee.profile_picture}" class="w-12 h-12 rounded-full object-cover">`;
+      } else {
+        avatarEl.innerHTML = initials;
+        avatarEl.className = 'w-12 h-12 rounded-full bg-nfgblue flex items-center justify-center text-white font-bold';
+      }
+      
+      document.getElementById('emp-detail-name').textContent = employee.full_name || 'No name';
+      document.getElementById('emp-detail-email').textContent = employee.email;
+      
+      // Populate stats
+      document.getElementById('emp-detail-deals').textContent = employee.activeDeals || 0;
+      document.getElementById('emp-detail-revenue').textContent = formatCurrency(employee.revenue || 0);
+      document.getElementById('emp-detail-winrate').textContent = (employee.winRate || 0) + '%';
+      document.getElementById('emp-detail-quotes').textContent = employee.quotesSent || 0;
+      
+      // Populate info
+      document.getElementById('emp-detail-role').textContent = (employee.role || 'Unknown').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+      document.getElementById('emp-detail-status').textContent = (employee.status || 'Unknown').replace(/\b\w/g, l => l.toUpperCase());
+      document.getElementById('emp-detail-phone').textContent = employee.phone || 'Not provided';
+      document.getElementById('emp-detail-goal').textContent = employee.goalOfDay || 'No goal set today';
+      
+      // Fetch and render employee's deals
+      const dealsListEl = document.getElementById('emp-detail-deals-list');
+      dealsListEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Loading deals...</p>';
+      
+      try {
+        const { data: deals, error } = await supabase
+          .from('deals')
+          .select('*')
+          .or(`created_by.eq.${userId},assigned_user_id.eq.${userId},assigned_to.eq.${userId}`)
+          .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!deals || deals.length === 0) {
+          dealsListEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">No deals found</p>';
+        } else {
+          dealsListEl.innerHTML = deals.map(deal => {
+            const value = parseFloat(deal.deal_value || deal.value_estimate || 0);
+            const stageColors = {
+              'prospecting': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
+              'qualification': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+              'proposal': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
+              'negotiation': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
+              'closed_won': 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
+              'closed_lost': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+            };
+            const stageColor = stageColors[deal.stage] || 'bg-gray-100 text-gray-700';
+            const stageLabel = (deal.stage || 'unknown').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            return `
+              <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 flex items-center justify-between cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600/50 transition" onclick="openDealFromTeam('${deal.id}')">
+                <div class="flex-1">
+                  <p class="font-medium text-gray-900 dark:text-white">${deal.title || 'Untitled Deal'}</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">${new Date(deal.created_at).toLocaleDateString()}</p>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-sm font-semibold text-green-600 dark:text-green-400">${formatCurrency(value)}</span>
+                  <span class="px-2 py-1 text-xs font-medium rounded-full ${stageColor}">${stageLabel}</span>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      } catch (error) {
+        console.error('[Team] Error loading employee deals:', error);
+        dealsListEl.innerHTML = '<p class="text-sm text-red-500">Failed to load deals</p>';
+      }
+      
+      // Show modal
+      modal.classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+    
+    // Open deal from team modal
+    function openDealFromTeam(dealId) {
+      document.getElementById('employee-detail-modal')?.classList.add('hidden');
+      if (window.sales && typeof window.sales.openDealDetail === 'function') {
+        window.sales.openDealDetail(dealId);
+      } else if (window.openDeal) {
+        window.openDeal(dealId);
+      }
     }
   </script>
   <script type="module" src="./js/auth.js"></script>

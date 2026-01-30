@@ -1415,10 +1415,10 @@
         </div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Share with</label>
-          <select id="task-share-with" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none">
-            <option value="">— None —</option>
-          </select>
-          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional. Assigned user will see this task on their calendar.</p>
+          <div id="task-share-with-list" class="max-h-32 overflow-y-auto border border-nfgray dark:border-gray-600 rounded-xl p-2 space-y-1">
+            <p class="text-sm text-gray-400">Loading team...</p>
+          </div>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Optional. Selected users will see this task on their calendar.</p>
         </div>
         <div>
           <label class="block text-sm font-medium mb-1.5">Description</label>
@@ -1824,8 +1824,8 @@
     }
 
     async function loadStaffForTaskShare() {
-      const sel = document.getElementById('task-share-with');
-      if (!sel) return;
+      const listEl = document.getElementById('task-share-with-list');
+      if (!listEl) return;
       try {
         const { data: rows, error } = await supabase
           .from('user_profiles')
@@ -1835,16 +1835,19 @@
         const teamRoles = ['admin', 'staff', 'super_admin', 'manager'];
         let users = (rows || []).filter(u => u.role && teamRoles.includes(String(u.role).toLowerCase()));
         if (users.length === 0) users = rows || [];
-        sel.innerHTML = '<option value="">— None —</option>';
-        users.forEach(u => {
-          const o = document.createElement('option');
-          o.value = u.id;
-          o.textContent = (u.full_name || u.email || 'Unknown') + (u.email ? ` (${u.email})` : '');
-          sel.appendChild(o);
-        });
+        if (users.length === 0) {
+          listEl.innerHTML = '<p class="text-sm text-gray-400">No team members found</p>';
+          return;
+        }
+        listEl.innerHTML = users.map(u => `
+          <label class="flex items-center gap-2 p-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer">
+            <input type="checkbox" class="task-share-checkbox rounded border-gray-300 text-nfgblue focus:ring-nfgblue" value="${u.id}" />
+            <span class="text-sm">${u.full_name || u.email || 'Unknown'}</span>
+          </label>
+        `).join('');
       } catch (e) {
         console.error('Error loading users for task share:', e);
-        sel.innerHTML = '<option value="">— None —</option><option disabled>Could not load users</option>';
+        listEl.innerHTML = '<p class="text-sm text-red-500">Could not load users</p>';
       }
     }
 
@@ -2782,7 +2785,8 @@
       try {
         const title = document.getElementById('task-title')?.value?.trim();
         const due = document.getElementById('task-due-date')?.value;
-        const shareWith = document.getElementById('task-share-with')?.value || null;
+        const checkboxes = document.querySelectorAll('.task-share-checkbox:checked');
+        const sharedWith = Array.from(checkboxes).map(cb => cb.value).filter(Boolean);
         const isAllDay = document.getElementById('task-all-day')?.checked ?? true;
         const startTime = document.getElementById('task-start-time')?.value || '09:00';
         const endTime = document.getElementById('task-end-time')?.value || '10:00';
@@ -2820,7 +2824,7 @@
           due_datetime: dueDatetime,
           is_all_day: !!isAllDay,
           estimated_hours: estimatedHours,
-          assigned_to: shareWith || null,
+          shared_with: sharedWith.length > 0 ? sharedWith : null,
           created_by: currentUser.id,
           status: 'pending',
         };
@@ -2833,7 +2837,10 @@
 
         if (error) throw error;
 
-        toast.success(shareWith ? 'Task created. It will appear on your calendar and the shared user\'s calendar.' : 'Task created. It will appear on your calendar.', 'Task Created');
+        const msg = sharedWith.length > 0
+          ? `Task created and shared with ${sharedWith.length} user${sharedWith.length > 1 ? 's' : ''}.`
+          : 'Task created. It will appear on your calendar.';
+        toast.success(msg, 'Task Created');
         closeModals();
         await loadTasks();
         if (typeof updateCalendar === 'function') updateCalendar();
@@ -4040,9 +4047,13 @@
           .single();
         if (error) throw error;
         if (!task) return null;
-        if (task.assigned_to) {
-          const { data: u } = await supabase.from('user_profiles').select('id, full_name, email').eq('id', task.assigned_to).single();
-          if (u) task.assigned_user = u;
+        task.shared_users = [];
+        if (task.shared_with && task.shared_with.length > 0) {
+          const { data: users } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .in('id', task.shared_with);
+          if (users) task.shared_users = users;
         }
         return task;
       } catch (e) {
@@ -4117,14 +4128,25 @@
         if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
         const primaryContent = sidebar.querySelector('#sidebar-primary-staff-content');
         const primaryIcon = sidebar.querySelector('#sidebar-primary-staff .w-8.h-8');
+        const sharedUsers = eventData.shared_users || [];
         if (primaryContent) {
-          primaryContent.innerHTML = eventData.assigned_user
-            ? `<span class="text-sm text-gray-700 dark:text-gray-300">Assigned to ${eventData.assigned_user.full_name || eventData.assigned_user.email || 'Unknown'}</span>`
-            : '<span class="text-sm text-gray-500 dark:text-gray-400">—</span>';
+          if (sharedUsers.length === 0) {
+            primaryContent.innerHTML = '<span class="text-sm text-gray-500 dark:text-gray-400">Not shared</span>';
+          } else if (sharedUsers.length === 1) {
+            primaryContent.innerHTML = `<span class="text-sm text-gray-700 dark:text-gray-300">Shared with ${sharedUsers[0].full_name || sharedUsers[0].email || 'Unknown'}</span>`;
+          } else {
+            primaryContent.innerHTML = `<span class="text-sm text-gray-700 dark:text-gray-300">Shared with ${sharedUsers.length} people</span>`;
+          }
         }
-        if (primaryIcon) primaryIcon.innerHTML = '<span class="text-xs font-semibold text-gray-500 dark:text-gray-400">?</span>';
+        if (primaryIcon) primaryIcon.innerHTML = `<span class="text-xs font-semibold text-gray-500 dark:text-gray-400">${sharedUsers.length || '—'}</span>`;
         const staffListEl = sidebar.querySelector('#sidebar-staff-list');
-        if (staffListEl) staffListEl.innerHTML = '';
+        if (staffListEl) {
+          if (sharedUsers.length > 1) {
+            staffListEl.innerHTML = sharedUsers.map(u => `<p class="text-sm text-gray-600 dark:text-gray-300">• ${u.full_name || u.email}</p>`).join('');
+          } else {
+            staffListEl.innerHTML = '';
+          }
+        }
         const allStaffSec = sidebar.querySelector('#sidebar-all-staff-section');
         if (allStaffSec) allStaffSec.classList.add('hidden');
         if (sidebarViewDetailsBtn) {
@@ -4761,19 +4783,18 @@
       const taskTitle = document.getElementById('task-title');
       const taskDue = document.getElementById('task-due-date');
       const taskDesc = document.getElementById('task-description');
-      const taskShare = document.getElementById('task-share-with');
       const taskAllDay = document.getElementById('task-all-day');
       const taskTimeSection = document.getElementById('task-time-section');
       if (taskTitle) taskTitle.value = '';
       if (taskDue) taskDue.value = prefilledDate || '';
       if (taskDesc) taskDesc.value = '';
-      if (taskShare) taskShare.value = '';
       if (taskAllDay) taskAllDay.checked = true;
       if (taskTimeSection) taskTimeSection.classList.add('hidden');
       const taskStart = document.getElementById('task-start-time');
       const taskEnd = document.getElementById('task-end-time');
       if (taskStart) taskStart.value = '09:00';
       if (taskEnd) taskEnd.value = '10:00';
+      document.querySelectorAll('.task-share-checkbox').forEach(cb => cb.checked = false);
       loadStaffForTaskShare();
       if (window.lucide) lucide.createIcons();
     }
