@@ -1256,7 +1256,7 @@ export function openQuoteBuilder() {
 
   quoteLineItems = { good: [], better: [], best: [] };
   renderQuoteBuilder();
-  document.getElementById('quote-builder-modal').classList.remove('hidden');
+  document.getElementById('quote-builder-modal')?.classList.remove('hidden');
 }
 
 function renderQuoteBuilder() {
@@ -1705,7 +1705,7 @@ export async function saveNextAction() {
     if (error) throw error;
 
     toast.success('Next action saved', 'Success');
-    document.getElementById('post-call-panel').classList.add('hidden');
+    document.getElementById('post-call-panel')?.classList.add('hidden');
     
     // Refresh deal
     await openDealDetail(currentDeal.id);
@@ -1719,12 +1719,12 @@ export async function saveNextAction() {
 // MODAL FUNCTIONS
 // ==========================================
 function closeCreateDealModal() {
-  document.getElementById('create-deal-modal').classList.add('hidden');
+  document.getElementById('create-deal-modal')?.classList.add('hidden');
   document.getElementById('create-deal-form').reset();
 }
 
 function closeQuoteBuilderModal() {
-  document.getElementById('quote-builder-modal').classList.add('hidden');
+  document.getElementById('quote-builder-modal')?.classList.add('hidden');
   // Note: The new quote wizard uses closeWizard() from quote-wizard.js instead
   // This function is kept for backward compatibility but the wizard handles its own cleanup
 }
@@ -1735,10 +1735,10 @@ function closeQuoteBuilderModal() {
 async function setupEventListeners() {
   // Create deal button
   document.getElementById('create-deal-btn')?.addEventListener('click', () => {
-    document.getElementById('create-deal-modal').classList.remove('hidden');
+    document.getElementById('create-deal-modal')?.classList.remove('hidden');
   });
   document.getElementById('create-first-deal-btn')?.addEventListener('click', () => {
-    document.getElementById('create-deal-modal').classList.remove('hidden');
+    document.getElementById('create-deal-modal')?.classList.remove('hidden');
   });
 
   // Close modals
@@ -1774,9 +1774,9 @@ async function setupEventListeners() {
 
   // Back to queue
   document.getElementById('back-to-queue-btn')?.addEventListener('click', () => {
-    document.getElementById('deal-queue-view').classList.remove('hidden');
-    document.getElementById('deal-detail-view').classList.add('hidden');
-    document.getElementById('back-to-queue-btn').classList.add('hidden');
+    document.getElementById('deal-queue-view')?.classList.remove('hidden');
+    document.getElementById('deal-detail-view')?.classList.add('hidden');
+    document.getElementById('back-to-queue-btn')?.classList.add('hidden');
     currentDeal = null;
   });
 
