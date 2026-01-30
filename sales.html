@@ -923,8 +923,8 @@
               <p id="team-active-deals" class="text-2xl font-semibold text-blue-600 dark:text-blue-400">0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
-              <p class="text-sm text-gray-500 dark:text-gray-400">Quotes Sent</p>
-              <p id="team-quotes-sent" class="text-2xl font-semibold text-purple-600 dark:text-purple-400">0</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Portfolio Size</p>
+              <p id="team-portfolio-size" class="text-2xl font-semibold text-purple-600 dark:text-purple-400">0</p>
             </div>
             <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
               <p class="text-sm text-gray-500 dark:text-gray-400">Win Rate</p>
@@ -1466,8 +1466,8 @@
             <p class="text-xs text-gray-600 dark:text-gray-400">Win Rate</p>
           </div>
           <div class="bg-orange-50 dark:bg-orange-900/20 rounded-xl p-4 text-center">
-            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="emp-detail-quotes">0</p>
-            <p class="text-xs text-gray-600 dark:text-gray-400">Quotes Sent</p>
+            <p class="text-2xl font-bold text-orange-600 dark:text-orange-400" id="emp-detail-portfolio">0</p>
+            <p class="text-xs text-gray-600 dark:text-gray-400">Portfolio Size</p>
           </div>
         </div>
         
@@ -4879,7 +4879,7 @@
         }, 0);
         
         const activeDeals = employeesWithStats.reduce((sum, emp) => sum + (emp.activeDeals || 0), 0);
-        const quotesSent = employeesWithStats.reduce((sum, emp) => sum + (emp.quotesSent || 0), 0);
+        const portfolioSize = employeesWithStats.reduce((sum, emp) => sum + (emp.portfolioSize || 0), 0);
         
         // Win rate (team average) - get actual won/lost counts
         const { data: allDealsForWinRate } = await supabase
@@ -4908,7 +4908,7 @@
           return sum + parseFloat(deal.deal_value || deal.value_estimate || 0);
         }, 0);
         
-        updateTeamSalesStats(totalRevenue, monthRevenue, activeDeals, quotesSent, teamWinRate, avgDeal, pipelineValue);
+        updateTeamSalesStats(totalRevenue, monthRevenue, activeDeals, portfolioSize, teamWinRate, avgDeal, pipelineValue);
         
         // Apply filters and render
         applyTeamFilters();
@@ -4997,11 +4997,9 @@
         const totalClosed = closedWon.length + closedLost.length;
         const winRate = totalClosed > 0 ? Math.round((closedWon.length / totalClosed) * 100) : 0;
         
-        // Quotes sent (via deals)
-        const userDealIds = userDeals.map(d => d.id);
-        const quotesSent = allQuotes?.filter(q => 
-          userDealIds.includes(q.deal_id) && q.status === 'sent'
-        ).length || 0;
+        // Portfolio size (unique sites from deals)
+        const uniqueSiteIds = new Set(userDeals.map(d => d.site_id).filter(Boolean));
+        const portfolioSize = uniqueSiteIds.size;
         
         // Clock-in status and goal
         const clockIn = clockIns?.find(c => c.user_id === user.id);
@@ -5013,7 +5011,7 @@
           activeDeals,
           revenue,
           winRate,
-          quotesSent,
+          portfolioSize,
           workDuration,
           goalOfDay,
           isClockedIn: !!clockIn
@@ -5031,7 +5029,7 @@
       return `${hours}h ${minutes}m`;
     }
     
-    function updateTeamSalesStats(totalRevenue, monthRevenue, activeDeals, quotesSent, winRate, avgDeal, pipelineValue) {
+    function updateTeamSalesStats(totalRevenue, monthRevenue, activeDeals, portfolioSize, winRate, avgDeal, pipelineValue) {
       const formatCurrency = (val) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(val || 0);
       };
@@ -5040,7 +5038,7 @@
         'team-total-revenue': formatCurrency(totalRevenue),
         'team-month-revenue': formatCurrency(monthRevenue),
         'team-active-deals': activeDeals || 0,
-        'team-quotes-sent': quotesSent || 0,
+        'team-portfolio-size': portfolioSize || 0,
         'team-win-rate': `${winRate || 0}%`,
         'team-avg-deal': formatCurrency(avgDeal),
         'team-pipeline-value': formatCurrency(pipelineValue)
@@ -5265,7 +5263,7 @@
       document.getElementById('emp-detail-deals').textContent = employee.activeDeals || 0;
       document.getElementById('emp-detail-revenue').textContent = formatCurrency(employee.revenue || 0);
       document.getElementById('emp-detail-winrate').textContent = (employee.winRate || 0) + '%';
-      document.getElementById('emp-detail-quotes').textContent = employee.quotesSent || 0;
+      document.getElementById('emp-detail-portfolio').textContent = employee.portfolioSize || 0;
       
       // Populate info
       document.getElementById('emp-detail-role').textContent = (employee.role || 'Unknown').replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
