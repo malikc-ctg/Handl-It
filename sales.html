@@ -1426,9 +1426,9 @@
     </div>
   </div>
 
-  <!-- Contact Detail Modal (View Mode) -->
-  <div id="contact-detail-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-nfgray dark:border-gray-700">
+  <!-- Contact Detail Modal (View Mode) - Enhanced with Sales Flow -->
+  <div id="contact-detail-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4 overflow-y-auto">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl border border-nfgray dark:border-gray-700 my-4">
       <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
         <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Contact Details</h3>
         <button id="contact-detail-close" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
@@ -1436,54 +1436,109 @@
         </button>
       </div>
       <div class="p-6">
-        <!-- Contact Avatar & Name -->
-        <div class="text-center mb-6">
-          <div class="w-20 h-20 bg-nfglight dark:bg-gray-700 rounded-full mx-auto flex items-center justify-center mb-3">
-            <i data-lucide="user" class="w-10 h-10 text-nfgblue dark:text-blue-400"></i>
-          </div>
-          <h4 id="detail-contact-name" class="text-xl font-semibold text-gray-900 dark:text-white"></h4>
-          <p id="detail-contact-title" class="text-sm text-gray-500 dark:text-gray-400"></p>
-        </div>
-        
-        <!-- Contact Info -->
-        <div class="space-y-4">
-          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
-            <i data-lucide="building" class="w-5 h-5 text-gray-500"></i>
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Company</p>
-              <p id="detail-contact-company" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Left Column: Contact Info -->
+          <div>
+            <!-- Contact Avatar & Name -->
+            <div class="text-center mb-4">
+              <div class="w-16 h-16 bg-nfglight dark:bg-gray-700 rounded-full mx-auto flex items-center justify-center mb-2">
+                <i data-lucide="user" class="w-8 h-8 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <h4 id="detail-contact-name" class="text-lg font-semibold text-gray-900 dark:text-white"></h4>
+              <p id="detail-contact-title" class="text-sm text-gray-500 dark:text-gray-400"></p>
+            </div>
+            
+            <!-- Sales Status Badge -->
+            <div id="detail-contact-status-section" class="mb-4 text-center">
+              <span id="detail-contact-status" class="px-3 py-1 text-sm font-medium rounded-full bg-blue-100 text-blue-800">New</span>
+              <span id="detail-contact-streak" class="ml-2 px-2 py-1 text-xs font-bold rounded hidden"></span>
+            </div>
+            
+            <!-- Contact Info -->
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-2 bg-nfglight dark:bg-gray-700 rounded-lg">
+                <i data-lucide="building" class="w-4 h-4 text-gray-500"></i>
+                <div class="flex-1">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Company</p>
+                  <p id="detail-contact-company" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-2 bg-nfglight dark:bg-gray-700 rounded-lg">
+                <i data-lucide="phone" class="w-4 h-4 text-gray-500"></i>
+                <div class="flex-1">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Phone</p>
+                  <p id="detail-contact-phone" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-2 bg-nfglight dark:bg-gray-700 rounded-lg">
+                <i data-lucide="mail" class="w-4 h-4 text-gray-500"></i>
+                <div class="flex-1">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
+                  <p id="detail-contact-email" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+                </div>
+              </div>
+              <div class="flex items-center gap-3 p-2 bg-nfglight dark:bg-gray-700 rounded-lg">
+                <i data-lucide="map-pin" class="w-4 h-4 text-gray-500"></i>
+                <div class="flex-1">
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Location</p>
+                  <p id="detail-contact-location" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-3 gap-2 mt-4">
+              <div class="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p id="detail-contact-attempts" class="text-lg font-bold text-nfgblue">0</p>
+                <p class="text-xs text-gray-500">Attempts</p>
+              </div>
+              <div class="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p id="detail-contact-connected" class="text-lg font-bold text-green-600">0</p>
+                <p class="text-xs text-gray-500">Connected</p>
+              </div>
+              <div class="text-center p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p id="detail-contact-days" class="text-lg font-bold text-gray-600">—</p>
+                <p class="text-xs text-gray-500">Days Idle</p>
+              </div>
+            </div>
+            
+            <!-- Next Follow-up -->
+            <div id="detail-next-followup-section" class="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg hidden">
+              <p class="text-xs text-yellow-600 dark:text-yellow-400 font-medium">NEXT FOLLOW-UP</p>
+              <p id="detail-next-followup" class="text-sm font-semibold text-yellow-800 dark:text-yellow-200"></p>
             </div>
           </div>
-          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
-            <i data-lucide="phone" class="w-5 h-5 text-gray-500"></i>
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Phone</p>
-              <p id="detail-contact-phone" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+          
+          <!-- Right Column: Activity Timeline -->
+          <div>
+            <div class="flex items-center justify-between mb-3">
+              <h5 class="font-semibold text-gray-900 dark:text-white">Activity Timeline</h5>
+              <button id="detail-log-activity-btn" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i> Log Activity
+              </button>
             </div>
-          </div>
-          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
-            <i data-lucide="mail" class="w-5 h-5 text-gray-500"></i>
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
-              <p id="detail-contact-email" class="text-sm font-medium text-gray-900 dark:text-white"></p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
-            <i data-lucide="map-pin" class="w-5 h-5 text-gray-500"></i>
-            <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Location</p>
-              <p id="detail-contact-location" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+            
+            <!-- Timeline -->
+            <div id="detail-activity-timeline" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+              <div class="text-center py-8 text-gray-400">
+                <i data-lucide="clock" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
+                <p class="text-sm">No activities yet</p>
+                <p class="text-xs">Click "Log Activity" to record your first call</p>
+              </div>
             </div>
           </div>
         </div>
         
         <!-- Action Buttons -->
-        <div class="flex gap-3 mt-6">
+        <div class="flex gap-3 mt-6 pt-4 border-t border-nfgray dark:border-gray-700">
+          <button id="detail-call-btn" class="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium transition flex items-center justify-center gap-2">
+            <i data-lucide="phone" class="w-4 h-4"></i> Call
+          </button>
           <button id="contact-detail-edit-btn" class="flex-1 px-4 py-2.5 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition flex items-center justify-center gap-2">
             <i data-lucide="edit" class="w-4 h-4"></i> Edit
           </button>
           <button id="contact-detail-delete-btn" class="px-4 py-2.5 border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-medium transition flex items-center justify-center gap-2">
-            <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
           </button>
         </div>
       </div>
@@ -4820,6 +4875,19 @@
         }
         if (window.loadContacts) {
           await window.loadContacts();
+        }
+        
+        // Refresh contact detail modal if open
+        const detailModal = document.getElementById('contact-detail-modal');
+        if (detailModal && !detailModal.classList.contains('hidden') && contactId) {
+          if (window.accountsDirectory?.openContactDetailModal) {
+            await window.accountsDirectory.openContactDetailModal(contactId);
+          }
+        }
+        
+        // Refresh dashboard priority actions
+        if (typeof loadDashboardData === 'function') {
+          loadDashboardData();
         }
 
       } catch (error) {

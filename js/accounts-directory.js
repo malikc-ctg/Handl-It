@@ -402,32 +402,25 @@ function closeAccountDrawer() {
   currentAccount = null;
 }
 
-// Open contact detail modal (view mode)
+// Open contact detail modal (view mode) - Enhanced with Sales Flow
 async function openContactDetailModal(contactId) {
   try {
-    const allItems = window.allAccountsAndContacts || { contacts: [] };
-    let contact = allItems.contacts.find(c => c.id === contactId);
+    // Fetch fresh data from database to get all tracking fields
+    const { data: contact, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .eq('id', contactId)
+      .single();
     
-    if (!contact) {
-      // Try to fetch from database if not in cache
-      const { data, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .eq('id', contactId)
-        .single();
-      
-      if (error || !data) {
-        toast.error('Contact not found', 'Error');
-        return;
-      }
-      contact = data;
+    if (error || !contact) {
+      toast.error('Contact not found', 'Error');
+      return;
     }
     
     // Populate the detail modal
     const modal = document.getElementById('contact-detail-modal');
     if (!modal) {
       console.error('[Accounts] Contact detail modal not found');
-      // Fallback to edit modal
       await openEditContactModal(contactId);
       return;
     }
@@ -440,7 +433,7 @@ async function openContactDetailModal(contactId) {
     const title = contact.title || '';
     const address = contact.street_address || contact.address || '';
     
-    // Update modal content
+    // Update basic info
     document.getElementById('detail-contact-name').textContent = fullName;
     document.getElementById('detail-contact-title').textContent = title || 'No title';
     document.getElementById('detail-contact-company').textContent = company || 'No company';
@@ -466,8 +459,101 @@ async function openContactDetailModal(contactId) {
       }
     }
     
-    // Store contact ID for edit/delete actions
+    // === SALES STATUS ===
+    const statusEl = document.getElementById('detail-contact-status');
+    const statusBadges = {
+      new: { class: 'bg-blue-100 text-blue-800', text: 'New' },
+      active: { class: 'bg-green-100 text-green-800', text: 'Active' },
+      nurturing: { class: 'bg-purple-100 text-purple-800', text: 'Nurturing' },
+      lost: { class: 'bg-red-100 text-red-800', text: 'Lost' },
+      converted: { class: 'bg-green-500 text-white', text: 'Converted' }
+    };
+    const contactStatus = contact.contact_status || 'new';
+    const badge = statusBadges[contactStatus] || statusBadges.new;
+    if (statusEl) {
+      statusEl.className = `px-3 py-1 text-sm font-medium rounded-full ${badge.class}`;
+      statusEl.textContent = badge.text;
+    }
+    
+    // === NO-CONTACT STREAK ===
+    const streakEl = document.getElementById('detail-contact-streak');
+    const streak = contact.no_contact_streak || 0;
+    if (streakEl) {
+      if (streak >= 2) {
+        streakEl.className = 'ml-2 px-2 py-1 text-xs font-bold rounded bg-red-500 text-white animate-pulse';
+        streakEl.textContent = '⚠️ 2/3 - FINAL ATTEMPT';
+        streakEl.classList.remove('hidden');
+      } else if (streak === 1) {
+        streakEl.className = 'ml-2 px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-700';
+        streakEl.textContent = '1/3 no-contact';
+        streakEl.classList.remove('hidden');
+      } else {
+        streakEl.classList.add('hidden');
+      }
+    }
+    
+    // === QUICK STATS ===
+    const attemptsEl = document.getElementById('detail-contact-attempts');
+    const connectedEl = document.getElementById('detail-contact-connected');
+    const daysEl = document.getElementById('detail-contact-days');
+    
+    if (attemptsEl) attemptsEl.textContent = contact.total_contact_attempts || 0;
+    
+    // Calculate days idle
+    const lastTouch = contact.last_contacted_at || contact.last_contact_attempt_at || contact.created_at;
+    if (daysEl && lastTouch) {
+      const days = Math.floor((new Date() - new Date(lastTouch)) / (1000 * 60 * 60 * 24));
+      daysEl.textContent = days;
+    } else if (daysEl) {
+      daysEl.textContent = '—';
+    }
+    
+    // === NEXT FOLLOW-UP ===
+    const followupSection = document.getElementById('detail-next-followup-section');
+    const followupEl = document.getElementById('detail-next-followup');
+    if (contact.next_follow_up_date && followupSection && followupEl) {
+      const followupDate = new Date(contact.next_follow_up_date);
+      const isOverdue = followupDate < new Date();
+      followupSection.classList.remove('hidden');
+      followupEl.textContent = `${contact.next_follow_up_type || 'Call'}: ${followupDate.toLocaleDateString()} ${followupDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+      if (isOverdue) {
+        followupSection.className = 'mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg';
+        followupEl.textContent = `OVERDUE - ${followupEl.textContent}`;
+      }
+    } else if (followupSection) {
+      followupSection.classList.add('hidden');
+    }
+    
+    // === LOAD ACTIVITY TIMELINE ===
+    await loadContactActivityTimeline(contactId, contact);
+    
+    // === SETUP CALL BUTTON ===
+    const callBtn = document.getElementById('detail-call-btn');
+    if (callBtn) {
+      if (phone) {
+        callBtn.onclick = () => window.open(`tel:${phone}`, '_self');
+        callBtn.disabled = false;
+        callBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+      } else {
+        callBtn.disabled = true;
+        callBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        callBtn.onclick = null;
+      }
+    }
+    
+    // === SETUP LOG ACTIVITY BUTTON ===
+    const logBtn = document.getElementById('detail-log-activity-btn');
+    if (logBtn) {
+      logBtn.onclick = () => {
+        if (window.openLogActivityForContact) {
+          window.openLogActivityForContact(contactId);
+        }
+      };
+    }
+    
+    // Store contact ID and phone for actions
     modal.dataset.contactId = contactId;
+    modal.dataset.contactPhone = phone;
     
     // Show modal
     modal.classList.remove('hidden');
@@ -475,6 +561,120 @@ async function openContactDetailModal(contactId) {
   } catch (error) {
     console.error('[Accounts] Error opening contact detail modal:', error);
     toast.error('Failed to load contact details', 'Error');
+  }
+}
+
+// Load activity timeline for a contact
+async function loadContactActivityTimeline(contactId, contact) {
+  const timelineEl = document.getElementById('detail-activity-timeline');
+  if (!timelineEl) return;
+  
+  try {
+    // Try to load activities from sales_activities table
+    const { data: activities, error } = await supabase
+      .from('sales_activities')
+      .select('*')
+      .eq('contact_id', contactId)
+      .order('created_at', { ascending: false })
+      .limit(20);
+    
+    // Count connected calls
+    const connectedEl = document.getElementById('detail-contact-connected');
+    if (connectedEl && activities) {
+      const connected = activities.filter(a => a.outcome === 'connected' || a.outcome === 'scheduled_callback').length;
+      connectedEl.textContent = connected;
+    }
+    
+    if (error || !activities || activities.length === 0) {
+      // No activities - show empty state with contact created date
+      const createdDate = contact.created_at ? new Date(contact.created_at).toLocaleDateString() : 'Unknown';
+      timelineEl.innerHTML = `
+        <div class="relative pl-6 pb-4 border-l-2 border-green-300">
+          <div class="absolute -left-2 top-0 w-4 h-4 bg-green-500 rounded-full"></div>
+          <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+            <p class="text-xs text-green-600 dark:text-green-400 font-medium">CONTACT CREATED</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300">${createdDate}</p>
+          </div>
+        </div>
+        <div class="text-center py-4 text-gray-400">
+          <p class="text-sm">No call activities yet</p>
+          <p class="text-xs">Click "Log Activity" to record your first call</p>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+      return;
+    }
+    
+    // Render activities
+    const outcomeIcons = {
+      connected: { icon: 'check-circle', color: 'green', label: 'Connected' },
+      no_answer: { icon: 'phone-missed', color: 'red', label: 'No Answer' },
+      voicemail: { icon: 'voicemail', color: 'yellow', label: 'Left Voicemail' },
+      scheduled_callback: { icon: 'calendar', color: 'blue', label: 'Callback Scheduled' },
+      not_interested: { icon: 'x-circle', color: 'gray', label: 'Not Interested' },
+      wrong_number: { icon: 'phone-off', color: 'gray', label: 'Wrong Number' }
+    };
+    
+    const activityTypeIcons = {
+      call: 'phone',
+      email: 'mail',
+      meeting: 'users',
+      walkthrough: 'clipboard-check',
+      quote: 'file-text',
+      note: 'sticky-note'
+    };
+    
+    let html = '';
+    
+    activities.forEach((activity, index) => {
+      const outcome = outcomeIcons[activity.outcome] || { icon: 'activity', color: 'gray', label: activity.outcome };
+      const typeIcon = activityTypeIcons[activity.activity_type] || 'activity';
+      const date = new Date(activity.created_at);
+      const isLast = index === activities.length - 1;
+      
+      html += `
+        <div class="relative pl-6 pb-4 ${!isLast ? 'border-l-2 border-gray-200 dark:border-gray-600' : ''}">
+          <div class="absolute -left-2 top-0 w-4 h-4 bg-${outcome.color}-500 rounded-full flex items-center justify-center">
+            <i data-lucide="${outcome.icon}" class="w-2.5 h-2.5 text-white"></i>
+          </div>
+          <div class="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+            <div class="flex items-center justify-between mb-1">
+              <span class="text-xs font-medium text-${outcome.color}-600 dark:text-${outcome.color}-400 uppercase flex items-center gap-1">
+                <i data-lucide="${typeIcon}" class="w-3 h-3"></i>
+                ${activity.activity_type || 'Call'} - ${outcome.label}
+              </span>
+              <span class="text-xs text-gray-400">${date.toLocaleDateString()} ${date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+            ${activity.notes ? `<p class="text-sm text-gray-600 dark:text-gray-300">${escapeHtml(activity.notes)}</p>` : ''}
+            ${activity.next_action_date ? `<p class="text-xs text-blue-600 mt-1"><i data-lucide="calendar" class="w-3 h-3 inline"></i> Follow-up: ${new Date(activity.next_action_date).toLocaleDateString()}</p>` : ''}
+          </div>
+        </div>
+      `;
+    });
+    
+    // Add contact created entry at the end
+    if (contact.created_at) {
+      html += `
+        <div class="relative pl-6">
+          <div class="absolute -left-2 top-0 w-4 h-4 bg-green-500 rounded-full"></div>
+          <div class="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg">
+            <p class="text-xs text-green-600 dark:text-green-400 font-medium">CONTACT CREATED</p>
+            <p class="text-sm text-gray-700 dark:text-gray-300">${new Date(contact.created_at).toLocaleDateString()}</p>
+          </div>
+        </div>
+      `;
+    }
+    
+    timelineEl.innerHTML = html;
+    if (window.lucide) lucide.createIcons();
+    
+  } catch (error) {
+    console.warn('[Accounts] Could not load activity timeline:', error);
+    timelineEl.innerHTML = `
+      <div class="text-center py-4 text-gray-400">
+        <p class="text-sm">Could not load activities</p>
+      </div>
+    `;
   }
 }
 
