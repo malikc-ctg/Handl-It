@@ -257,15 +257,38 @@ function renderAccounts() {
     const company = contact.company_name || '';
     const city = contact.city || '';
     const title = contact.title || '';
-    const createdDate = contact.created_at ? new Date(contact.created_at).toLocaleDateString() : '—';
+    const lastTouch = contact.last_contacted_at ? new Date(contact.last_contacted_at).toLocaleDateString() : (contact.created_at ? new Date(contact.created_at).toLocaleDateString() : '—');
+    
+    // No-contact streak badge
+    const noContactStreak = contact.no_contact_streak || 0;
+    let streakBadge = '';
+    if (noContactStreak >= 2) {
+      streakBadge = `<span class="px-1.5 py-0.5 text-xs font-bold rounded bg-red-500 text-white animate-pulse ml-1" title="2 no-contacts - final attempt!">⚠️ 2/3</span>`;
+    } else if (noContactStreak === 1) {
+      streakBadge = `<span class="px-1.5 py-0.5 text-xs font-medium rounded bg-yellow-100 text-yellow-700 ml-1" title="1 no-contact">1/3</span>`;
+    }
+    
+    // Contact status badge
+    const statusBadges = {
+      new: '<span class="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">New</span>',
+      active: '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Active</span>',
+      nurturing: '<span class="px-2 py-1 text-xs font-medium rounded-full bg-purple-100 text-purple-800">Nurturing</span>',
+      lost: '<span class="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Lost</span>',
+      converted: '<span class="px-2 py-1 text-xs font-medium rounded-full bg-green-500 text-white">Converted</span>'
+    };
+    const contactStatus = contact.contact_status || 'new';
+    const statusBadge = statusBadges[contactStatus] || statusBadges.new;
 
     return `
-      <tr class="contact-row hover:bg-nfglight cursor-pointer border-b border-nfgray" data-contact-id="${contact.id}" data-type="contact">
+      <tr class="contact-row hover:bg-nfglight cursor-pointer border-b border-nfgray ${noContactStreak >= 2 ? 'bg-red-50 dark:bg-red-900/10' : noContactStreak === 1 ? 'bg-yellow-50 dark:bg-yellow-900/10' : ''}" data-contact-id="${contact.id}" data-type="contact">
         <td class="px-4 py-3">
           <div class="flex items-center gap-2">
             <i data-lucide="user" class="w-4 h-4 text-gray-400"></i>
             <div>
-              <div class="font-medium text-nfgblue dark:text-blue-400">${escapeHtml(fullName)}</div>
+              <div class="font-medium text-nfgblue dark:text-blue-400 flex items-center">
+                ${escapeHtml(fullName)}
+                ${streakBadge}
+              </div>
               ${city ? `<div class="text-sm text-gray-500">${escapeHtml(city)}</div>` : ''}
             </div>
           </div>
@@ -283,37 +306,56 @@ function renderAccounts() {
           <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">Contact</span>
         </td>
         <td class="px-4 py-3">
-          <span class="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">—</span>
+          ${statusBadge}
         </td>
         <td class="px-4 py-3 text-sm text-gray-600">${escapeHtml(company || '—')}</td>
-        <td class="px-4 py-3 text-sm text-gray-500">${createdDate}</td>
+        <td class="px-4 py-3 text-sm text-gray-500">${lastTouch}</td>
         <td class="px-4 py-3">
-          <div class="relative">
-            <button class="contact-actions-btn p-1 rounded hover:bg-nfgray" data-contact-id="${contact.id}" type="button">
-              <i data-lucide="more-vertical" class="w-4 h-4"></i>
+          <div class="flex items-center gap-1">
+            <button 
+              class="log-activity-btn p-1.5 rounded bg-green-100 hover:bg-green-200 text-green-700" 
+              data-contact-id="${contact.id}" 
+              type="button"
+              title="Log Activity"
+              onclick="window.openLogActivityForContact && window.openLogActivityForContact('${contact.id}'); event.stopPropagation();">
+              <i data-lucide="phone-call" class="w-4 h-4"></i>
             </button>
-            <!-- Dropdown Menu -->
-            <div 
-              class="contact-actions-menu fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
-              data-contact-id="${contact.id}">
-              <button 
-                class="contact-action-btn edit-contact-btn w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5 whitespace-nowrap"
-                data-action="edit" 
-                data-contact-id="${contact.id}"
-                type="button"
-                onclick="window.accountsDirectory?.handleContactAction('edit', '${contact.id}'); event.stopPropagation();">
-                <i data-lucide="edit" class="w-4 h-4 flex-shrink-0"></i>
-                <span class="flex-1">Edit</span>
+            <div class="relative">
+              <button class="contact-actions-btn p-1 rounded hover:bg-nfgray" data-contact-id="${contact.id}" type="button">
+                <i data-lucide="more-vertical" class="w-4 h-4"></i>
               </button>
-              <button 
-                class="contact-action-btn delete-contact-btn w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
-                data-action="delete" 
-                data-contact-id="${contact.id}"
-                type="button"
-                onclick="window.accountsDirectory?.handleContactAction('delete', '${contact.id}'); event.stopPropagation();">
-                <i data-lucide="trash-2" class="w-4 h-4 flex-shrink-0"></i>
-                <span class="flex-1">Delete</span>
-              </button>
+              <!-- Dropdown Menu -->
+              <div 
+                class="contact-actions-menu fixed bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl py-1 min-w-[150px] z-[9999] hidden"
+                data-contact-id="${contact.id}">
+                <button 
+                  class="contact-action-btn log-activity-menu-btn w-full text-left px-4 py-2.5 text-sm font-medium text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                  data-action="log-activity" 
+                  data-contact-id="${contact.id}"
+                  type="button"
+                  onclick="window.openLogActivityForContact && window.openLogActivityForContact('${contact.id}'); event.stopPropagation();">
+                  <i data-lucide="phone-call" class="w-4 h-4 flex-shrink-0"></i>
+                  <span class="flex-1">Log Activity</span>
+                </button>
+                <button 
+                  class="contact-action-btn edit-contact-btn w-full text-left px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                  data-action="edit" 
+                  data-contact-id="${contact.id}"
+                  type="button"
+                  onclick="window.accountsDirectory?.handleContactAction('edit', '${contact.id}'); event.stopPropagation();">
+                  <i data-lucide="edit" class="w-4 h-4 flex-shrink-0"></i>
+                  <span class="flex-1">Edit</span>
+                </button>
+                <button 
+                  class="contact-action-btn delete-contact-btn w-full text-left px-4 py-2.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5 whitespace-nowrap"
+                  data-action="delete" 
+                  data-contact-id="${contact.id}"
+                  type="button"
+                  onclick="window.accountsDirectory?.handleContactAction('delete', '${contact.id}'); event.stopPropagation();">
+                  <i data-lucide="trash-2" class="w-4 h-4 flex-shrink-0"></i>
+                  <span class="flex-1">Delete</span>
+                </button>
+              </div>
             </div>
           </div>
         </td>

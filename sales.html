@@ -3167,17 +3167,18 @@
       try {
         console.log('[Dashboard] Loading dashboard data...');
         
-        // Load all data in parallel
-        const [dealsData, quotesData] = await Promise.all([
+        // Load all data in parallel (including contacts for priority actions)
+        const [dealsData, quotesData, contactsData] = await Promise.all([
           loadDealsForDashboard(),
-          loadQuotesForDashboard()
+          loadQuotesForDashboard(),
+          loadContactsForPriorityActions()
         ]);
 
         // Calculate and render KPIs
         calculateAndRenderKPIs(dealsData, quotesData);
 
-        // Generate and render priority actions
-        generatePriorityActions(dealsData, quotesData);
+        // Generate and render priority actions (from contacts AND deals)
+        generatePriorityActions(dealsData, quotesData, contactsData);
 
         // Render active deals table
         renderActiveDealsTable(dealsData);
@@ -3190,6 +3191,43 @@
       } catch (error) {
         console.error('[Dashboard] Error loading dashboard data:', error);
         toast.error('Failed to load dashboard data', 'Error');
+      }
+    }
+    
+    // Load contacts for priority actions
+    async function loadContactsForPriorityActions() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role, company_id')
+          .eq('id', user.id)
+          .single();
+
+        // Build query for contacts
+        let query = supabase
+          .from('contacts')
+          .select('*')
+          .not('contact_status', 'in', '("lost","converted")')
+          .order('last_contact_attempt_at', { ascending: true, nullsFirst: true });
+
+        // Filter by assigned user if rep
+        if (profile && profile.role === 'rep') {
+          query = query.or(`assigned_user_id.eq.${user.id},created_by.eq.${user.id}`);
+        }
+
+        const { data, error } = await query.limit(100);
+        if (error) {
+          console.warn('[Dashboard] Error loading contacts for priority:', error);
+          return [];
+        }
+        
+        return data || [];
+      } catch (error) {
+        console.warn('[Dashboard] Could not load contacts:', error);
+        return [];
       }
     }
 
@@ -3405,8 +3443,8 @@
       document.getElementById('kpi-idle-deals').textContent = idleDeals;
     }
 
-    // Generate priority actions with 3 No's policy
-    function generatePriorityActions(deals, quotes) {
+    // Generate priority actions with 3 No's policy (Contact-Based)
+    function generatePriorityActions(deals, quotes, contacts = []) {
       const actions = [];
       const now = new Date();
       const today = now.toDateString();
@@ -3417,27 +3455,153 @@
         return Math.floor((now - new Date(date)) / (1000 * 60 * 60 * 24));
       };
 
-      // === P1: URGENT (Red) ===
+      // ========================================
+      // CONTACT-BASED PRIORITY ACTIONS
+      // ========================================
       
-      // 3 No's Policy: 2 no-contacts (FINAL ATTEMPT)
-      deals.forEach(d => {
-        if (d.stage?.includes('closed')) return;
-        const streak = d.no_contact_streak || 0;
+      // === P1: URGENT - Contact needs final attempt (2/3) ===
+      contacts.forEach(c => {
+        const streak = c.no_contact_streak || 0;
+        const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+        
         if (streak === 2) {
           actions.push({
-            type: 'final_attempt',
+            type: 'contact_final_attempt',
             priorityLevel: 1,
             priority: 0,
-            company: d.company_name || d.title || 'Unknown',
-            dealValue: getDealValue(d),
+            company: contactName,
+            companyName: c.company_name,
             reason: '🚨 FINAL ATTEMPT - 2 no-contacts in a row',
-            lastActivity: d.last_contact_attempt_at || d.last_touch_at || d.updated_at,
-            dealId: d.id,
+            lastActivity: c.last_contact_attempt_at || c.updated_at,
+            contactId: c.id,
             streak: streak,
-            color: 'red'
+            color: 'red',
+            phone: c.phone || c.normalized_phone,
+            email: c.email
           });
         }
       });
+      
+      // === P1: URGENT - Missed follow-up ===
+      contacts.forEach(c => {
+        if (c.next_follow_up_date) {
+          const followUpDate = new Date(c.next_follow_up_date);
+          if (followUpDate < now) {
+            const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+            actions.push({
+              type: 'contact_missed_followup',
+              priorityLevel: 1,
+              priority: 5,
+              company: contactName,
+              companyName: c.company_name,
+              reason: `📞 Missed follow-up: ${c.next_follow_up_type || 'Call'}`,
+              lastActivity: c.last_contact_attempt_at || c.updated_at,
+              contactId: c.id,
+              color: 'red',
+              phone: c.phone || c.normalized_phone,
+              email: c.email
+            });
+          }
+        }
+      });
+      
+      // === P2: HIGH - 1 no-contact (attempt 2 of 3) ===
+      contacts.forEach(c => {
+        const streak = c.no_contact_streak || 0;
+        if (streak === 1) {
+          const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+          actions.push({
+            type: 'contact_follow_up',
+            priorityLevel: 2,
+            priority: 100,
+            company: contactName,
+            companyName: c.company_name,
+            reason: '📱 Follow up - 1 no-contact (attempt 2 of 3)',
+            lastActivity: c.last_contact_attempt_at || c.updated_at,
+            contactId: c.id,
+            streak: streak,
+            color: 'orange',
+            phone: c.phone || c.normalized_phone,
+            email: c.email
+          });
+        }
+      });
+      
+      // === P2: HIGH - Quote sent, needs follow-up ===
+      contacts.forEach(c => {
+        if (c.quote_sent_at) {
+          const daysSinceQuote = daysSince(c.quote_sent_at);
+          if (daysSinceQuote >= 1 && daysSinceQuote <= 7) {
+            const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+            let followUpText = '';
+            if (daysSinceQuote <= 1) followUpText = 'Day 1: Check quote received';
+            else if (daysSinceQuote <= 3) followUpText = 'Day 3: Any questions?';
+            else followUpText = 'Day 7: Final quote follow-up';
+            
+            actions.push({
+              type: 'contact_quote_followup',
+              priorityLevel: 2,
+              priority: 100 + daysSinceQuote,
+              company: contactName,
+              companyName: c.company_name,
+              reason: `📄 ${followUpText}`,
+              lastActivity: c.quote_sent_at,
+              contactId: c.id,
+              color: 'orange',
+              phone: c.phone || c.normalized_phone,
+              email: c.email
+            });
+          }
+        }
+      });
+      
+      // === P3: MEDIUM - New contacts never contacted ===
+      contacts.forEach(c => {
+        if ((c.total_contact_attempts || 0) === 0 && !c.last_contacted_at) {
+          const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+          actions.push({
+            type: 'contact_new',
+            priorityLevel: 3,
+            priority: 200,
+            company: contactName,
+            companyName: c.company_name,
+            reason: '🆕 New contact - make first call',
+            lastActivity: c.created_at,
+            contactId: c.id,
+            color: 'yellow',
+            phone: c.phone || c.normalized_phone,
+            email: c.email
+          });
+        }
+      });
+      
+      // === P3: MEDIUM - Idle contacts (>7 days no activity) ===
+      contacts.forEach(c => {
+        if (c.total_contact_attempts > 0) {
+          const lastTouch = c.last_contacted_at || c.last_contact_attempt_at;
+          const days = daysSince(lastTouch);
+          if (days >= 7 && days < 30) {
+            const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+            actions.push({
+              type: 'contact_idle',
+              priorityLevel: 3,
+              priority: 200 + days,
+              company: contactName,
+              companyName: c.company_name,
+              reason: `💤 Re-engage - idle ${days} days`,
+              lastActivity: lastTouch,
+              contactId: c.id,
+              color: 'yellow',
+              phone: c.phone || c.normalized_phone,
+              email: c.email
+            });
+          }
+        }
+      });
+
+      // ========================================
+      // DEAL-BASED PRIORITY ACTIONS (Legacy)
+      // ========================================
 
       // Quotes expiring soon (<48h)
       quotes.forEach(q => {
@@ -3656,19 +3820,37 @@
         blue: 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/10'
       };
 
-      actionsList.innerHTML = actions.slice(0, 12).map(action => `
+      actionsList.innerHTML = actions.slice(0, 12).map(action => {
+        // Determine if this is a contact or deal action
+        const isContact = !!action.contactId;
+        const valueDisplay = action.dealValue ? `$${Number(action.dealValue).toLocaleString()}` : (action.companyName || '');
+        
+        return `
         <div class="p-4 hover:bg-nfglight dark:hover:bg-gray-700 transition ${colorClasses[action.color] || ''}">
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <div class="flex items-center gap-2 mb-1">
                 <span class="font-semibold text-nfgblue dark:text-blue-400">${action.company}</span>
-                <span class="text-sm text-gray-600 dark:text-gray-400">$${Number(action.dealValue).toLocaleString()}</span>
+                ${valueDisplay ? `<span class="text-sm text-gray-600 dark:text-gray-400">${valueDisplay}</span>` : ''}
                 ${action.streak ? `<span class="px-2 py-0.5 text-xs font-medium rounded-full ${action.streak >= 2 ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'}">${action.streak}/3 no-contact</span>` : ''}
               </div>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-1">${action.reason}</p>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Last activity: ${action.lastActivity ? new Date(action.lastActivity).toLocaleString() : 'Never'}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Last activity: ${action.lastActivity ? new Date(action.lastActivity).toLocaleString() : 'Never'}
+                ${action.phone ? ` • <a href="tel:${action.phone}" class="text-nfgblue hover:underline">${action.phone}</a>` : ''}
+              </p>
             </div>
             <div class="flex gap-2 ml-4">
+              ${isContact ? `
+                <button onclick="window.openLogActivityForContact && window.openLogActivityForContact('${action.contactId}')" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition flex items-center gap-1" title="Log Activity">
+                  <i data-lucide="phone" class="w-3.5 h-3.5"></i>
+                  Log
+                </button>
+                ${action.phone ? `<a href="tel:${action.phone}" class="px-3 py-1.5 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-xs font-medium transition flex items-center gap-1">
+                  <i data-lucide="phone-call" class="w-3.5 h-3.5"></i>
+                  Call
+                </a>` : ''}
+              ` : ''}
               ${action.dealId ? `
                 <button onclick="window.openLogActivity('${action.dealId}')" class="px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium transition" title="Log Activity">
                   <i data-lucide="phone" class="w-3.5 h-3.5"></i>
@@ -3680,7 +3862,7 @@
             </div>
           </div>
         </div>
-      `).join('');
+      `}).join('');
 
       if (window.lucide) lucide.createIcons();
     }
