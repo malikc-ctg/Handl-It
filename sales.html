@@ -2105,137 +2105,30 @@
     </div>
   </div>
 
-  <!-- Quote Builder Modal (3-Step Wizard) -->
+  <!-- Simple Quote Calculator Modal -->
   <div id="quote-builder-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-5xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
       <!-- Header -->
       <div class="p-6 border-b border-nfgray dark:border-gray-700 flex-shrink-0">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Create Quote</h3>
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-semibold text-nfgblue dark:text-blue-400">Quote Calculator</h3>
           <button id="close-quote-builder-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
             <i data-lucide="x" class="w-5 h-5"></i>
           </button>
         </div>
-        <!-- Step Indicator -->
-        <div class="flex items-center justify-between">
-          <div class="flex items-center flex-1">
-            <div class="flex items-center">
-              <div id="wizard-step-1-indicator" class="w-8 h-8 rounded-full bg-nfgblue text-white flex items-center justify-center font-semibold text-sm">1</div>
-              <span class="ml-2 text-sm font-medium text-nfgblue dark:text-blue-400">Account Type</span>
-            </div>
-            <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
-            <div class="flex items-center">
-              <div id="wizard-step-2-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">2</div>
-              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Context</span>
-            </div>
-            <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
-            <div class="flex items-center">
-              <div id="wizard-step-3-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">3</div>
-              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Pricing</span>
-            </div>
-            <div class="flex-1 h-0.5 bg-nfgray dark:bg-gray-700 mx-4"></div>
-            <div class="flex items-center">
-              <div id="wizard-step-4-indicator" class="w-8 h-8 rounded-full bg-gray-300 dark:bg-gray-600 text-gray-600 dark:text-gray-300 flex items-center justify-center font-semibold text-sm">4</div>
-              <span class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400">Terms</span>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Step Content (scrollable) -->
+      <!-- Quote Form Content (scrollable) -->
       <div class="flex-1 overflow-y-auto p-6">
-        <!-- Step 1: Account Type Selection -->
-        <div id="wizard-step-1" class="wizard-step space-y-4">
-          <div class="text-center py-8">
-            <h4 class="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Select Account Type</h4>
-            <p class="text-gray-600 dark:text-gray-400 mb-8">Choose whether this quote is for a new account or an existing account</p>
-            <div class="grid grid-cols-2 gap-6 max-w-2xl mx-auto">
-              <button type="button" id="account-type-new" class="account-type-btn p-8 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue dark:hover:border-blue-400 rounded-xl bg-white dark:bg-gray-800 transition cursor-pointer text-center">
-                <div class="text-4xl mb-4">✨</div>
-                <h5 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">New Account</h5>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Create a quote for a new customer</p>
-              </button>
-              <button type="button" id="account-type-existing" class="account-type-btn p-8 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue dark:hover:border-blue-400 rounded-xl bg-white dark:bg-gray-800 transition cursor-pointer text-center">
-                <div class="text-4xl mb-4">🏢</div>
-                <h5 class="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Existing Account</h5>
-                <p class="text-sm text-gray-600 dark:text-gray-400">Create a quote for an existing customer</p>
-              </button>
-            </div>
+        <div class="space-y-6">
+          <!-- Quote Title -->
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quote Title</label>
+            <input type="text" id="simple-quote-title" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g., Office Cleaning - ABC Corp">
           </div>
-        </div>
 
-        <!-- Step 2: Context -->
-        <div id="wizard-step-2" class="wizard-step hidden space-y-4">
-          <!-- Account Selection (conditional based on account type) -->
-          <div id="existing-account-fields" class="hidden">
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account (Site) <span class="text-red-500">*</span></label>
-            <select id="quote-account-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-              <option value="">Select an account...</option>
-            </select>
-          </div>
-          <div id="new-account-fields" class="hidden space-y-4">
-            <div class="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg mb-4">
-              <p class="text-sm text-blue-900 dark:text-blue-100 font-medium">New Account Information</p>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Account Name <span class="text-red-500">*</span></label>
-              <input type="text" id="new-account-name" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Company or Site Name" required>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Address <span class="text-red-500">*</span></label>
-              <input type="text" id="new-account-address" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Street Address" required>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">City</label>
-                <input type="text" id="new-account-city" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="City">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Province/State</label>
-                <input type="text" id="new-account-province" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Province/State">
-              </div>
-            </div>
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Postal Code</label>
-                <input type="text" id="new-account-postal-code" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="A1A 1A1">
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Phone</label>
-                <input type="tel" id="new-account-phone" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="(555) 123-4567">
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Contact Email</label>
-              <input type="email" id="new-account-email" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="contact@example.com">
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Primary Contact</label>
-            <select id="quote-contact-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-              <option value="">Select a contact...</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Deal (Optional)</label>
-            <select id="quote-deal-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-              <option value="">Link to a deal...</option>
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quote Type <span class="text-red-500">*</span></label>
-            <select id="quote-type-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-              <option value="standard" selected>Standard Quote</option>
-              <option value="walkthrough_required">Walkthrough Request (Send Welcome Email)</option>
-            </select>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Walkthrough Required: Client must complete a site walkthrough before final quote</p>
-          </div>
-        </div>
-
-        <!-- Step 3: Pricing + Scope (dynamic based on quote type) -->
-        <div id="wizard-step-3" class="wizard-step hidden space-y-6">
-          <!-- QUOTE ENGINE FORM (Standard Quote Only) -->
-          <div id="quote-engine-form-section" class="hidden border border-nfgray dark:border-gray-700 rounded-xl p-6 bg-nfglight dark:bg-gray-700/50 space-y-6">
+          <!-- QUOTE ENGINE FORM -->
+          <div class="border border-nfgray dark:border-gray-700 rounded-xl p-6 bg-nfglight dark:bg-gray-700/50 space-y-6">
             <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Quote Calculation</h4>
             
             <!-- Service Type & Basic Info -->
@@ -2337,7 +2230,7 @@
             </div>
 
             <!-- Real-time Quote Calculation Display -->
-            <div id="quote-calculation-result" class="hidden border-t border-nfgray dark:border-gray-700 pt-4 mt-4">
+            <div id="quote-calculation-result" class="border-t border-nfgray dark:border-gray-700 pt-4 mt-4">
               <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-lg p-4 space-y-3">
                 <h5 class="font-semibold text-nfgblue dark:text-blue-400">Calculated Quote</h5>
                 <div class="grid grid-cols-2 gap-4">
@@ -2359,132 +2252,20 @@
                   <p id="calc-total" class="text-2xl font-bold text-nfgblue dark:text-blue-400">$0.00</p>
                 </div>
                 <div id="calc-assumptions" class="text-xs text-gray-500 dark:text-gray-400 mt-2"></div>
-                <div id="calc-walkthrough-warning" class="hidden mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded text-sm text-yellow-800 dark:text-yellow-200">
-                  ⚠️ Walkthrough recommended for accurate pricing
-                </div>
               </div>
             </div>
-          </div>
-
-          <!-- For Walkthrough Required: Scope Summary Only -->
-          <div id="walkthrough-scope-section" class="space-y-4">
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Booking Date <span class="text-red-500">*</span></label>
-                <input type="date" id="quote-walkthrough-booking-date" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Booking Time <span class="text-red-500">*</span></label>
-                <input type="time" id="quote-walkthrough-booking-time" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-              </div>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Service Schedule Summary <span class="text-red-500">*</span></label>
-              <textarea id="quote-service-schedule" rows="4" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g., Weekly cleaning on Mondays and Thursdays, 2 hours per visit"></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Scope Summary <span class="text-red-500">*</span></label>
-              <textarea id="quote-scope-summary" rows="4" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Describe what services will be included..."></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Assumptions</label>
-              <textarea id="quote-assumptions" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Any assumptions about the work..."></textarea>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Exclusions</label>
-              <textarea id="quote-exclusions" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="What is NOT included..."></textarea>
-            </div>
-            <!-- Optional Range Estimate -->
-            <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4 bg-nfglight dark:bg-gray-700/50">
-              <label class="flex items-center mb-2">
-                <input type="checkbox" id="include-range-estimate" class="mr-2">
-                <span class="text-sm font-medium text-gray-700 dark:text-gray-300">Include Non-Binding Range Estimate</span>
-              </label>
-              <div id="range-estimate-fields" class="hidden mt-3 grid grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Low Estimate ($)</label>
-                  <input type="number" id="quote-range-low" step="0.01" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
-                </div>
-                <div>
-                  <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">High Estimate ($)</label>
-                  <input type="number" id="quote-range-high" step="0.01" min="0" class="w-full px-3 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- For Standard Quote: Line Items Builder -->
-          <div id="binding-line-items-section" class="hidden space-y-4">
-            <div class="flex justify-between items-center">
-              <h4 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Line Items</h4>
-              <button type="button" id="add-line-item-btn" class="px-3 py-1.5 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg transition">
-                + Add Line Item
-              </button>
-            </div>
-            <div id="quote-line-items-list" class="space-y-3">
-              <!-- Line items will be dynamically added here -->
-            </div>
-            <div class="border-t border-nfgray dark:border-gray-700 pt-4 mt-4">
-              <div class="flex justify-end">
-                <div class="text-right">
-                  <div class="text-sm text-gray-600 dark:text-gray-400">Subtotal</div>
-                  <div id="quote-subtotal" class="text-xl font-semibold text-gray-900 dark:text-gray-100">$0.00</div>
-                  <div class="text-sm text-gray-600 dark:text-gray-400 mt-1">Tax (13% HST)</div>
-                  <div id="quote-tax" class="text-lg text-gray-900 dark:text-gray-100">$0.00</div>
-                  <div class="text-lg font-semibold text-nfgblue dark:text-blue-400 mt-2">Total</div>
-                  <div id="quote-total" class="text-2xl font-semibold text-nfgblue dark:text-blue-400">$0.00</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Step 4: Terms + Send -->
-        <div id="wizard-step-4" class="wizard-step hidden space-y-4">
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Billing Frequency</label>
-              <select id="quote-billing-frequency" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-                <option value="monthly" selected>Monthly</option>
-                <option value="weekly">Weekly</option>
-                <option value="biweekly">Bi-Weekly</option>
-                <option value="one_time">One-Time</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Proposed Start Date</label>
-            <input type="date" id="quote-start-date" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiry (Days) <span class="text-red-500">*</span></label>
-            <input type="number" id="quote-expiry-days" min="1" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="7" value="7" required>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">Quote will expire after this many days</p>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Internal Notes (Not shown to client)</label>
-            <textarea id="quote-internal-notes" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Internal notes only..."></textarea>
           </div>
         </div>
       </div>
 
-      <!-- Footer with Navigation Buttons -->
+      <!-- Footer with Simple Buttons -->
       <div class="p-6 border-t border-nfgray dark:border-gray-700 flex-shrink-0 flex justify-between items-center">
         <button type="button" id="wizard-cancel-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
           Cancel
         </button>
         <div class="flex gap-3">
-          <button type="button" id="wizard-back-btn" class="hidden px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
-            ← Back
-          </button>
-          <button type="button" id="wizard-save-draft-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg font-medium transition">
-            Save Draft
-          </button>
-          <button type="button" id="wizard-next-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
-            Next →
-          </button>
-          <button type="button" id="wizard-send-btn" class="hidden px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
-            Create Quote
+          <button type="button" id="wizard-save-draft-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition">
+            <i data-lucide="save" class="w-4 h-4 inline mr-1"></i> Save Quote
           </button>
         </div>
       </div>
@@ -4660,16 +4441,23 @@
         });
       }
       
-      // Setup new quote button
+      // Setup new quote buttons
       const newQuoteBtnTab = document.getElementById('new-quote-btn-tab');
+      const newQuoteBtn = document.getElementById('new-quote-btn');
+      
+      const openQuoteModal = () => {
+        if (window.quoteWizard && typeof window.quoteWizard.openQuoteWizard === 'function') {
+          window.quoteWizard.openQuoteWizard();
+        } else {
+          if (toast) toast.error('Quote calculator not loaded', 'Error');
+        }
+      };
+      
       if (newQuoteBtnTab) {
-        newQuoteBtnTab.addEventListener('click', async () => {
-          if (window.quoteWizard && typeof window.quoteWizard.openQuoteWizard === 'function') {
-            window.quoteWizard.openQuoteWizard();
-          } else {
-            if (toast) toast.error('Quote wizard not loaded', 'Error');
-          }
-        });
+        newQuoteBtnTab.addEventListener('click', openQuoteModal);
+      }
+      if (newQuoteBtn) {
+        newQuoteBtn.addEventListener('click', openQuoteModal);
       }
 
       // Setup quote detail modal close button

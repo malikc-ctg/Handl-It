@@ -130,11 +130,65 @@ export function openQuoteWizard() {
   const modal = document.getElementById('quote-builder-modal');
   if (modal) {
     modal.classList.remove('hidden');
-    populateDropdowns();
-    updateWizardUI();
+    // Reset simple quote form
+    const titleInput = document.getElementById('simple-quote-title');
+    if (titleInput) titleInput.value = '';
+    // Reset quote engine fields
+    resetQuoteEngineForm();
+    // Setup quote engine listeners for auto-calculation
+    setupQuoteEngineListeners();
   }
   
   if (window.lucide) lucide.createIcons();
+}
+
+// Reset the quote engine form to defaults
+function resetQuoteEngineForm() {
+  const fields = {
+    'quote-service-type': '',
+    'quote-sqft-estimate': '',
+    'quote-frequency-per-month': '4',
+    'quote-urgency-days': '30',
+    'quote-num-washrooms': '0',
+    'quote-num-treatment-rooms': '0',
+    'quote-flooring': 'mostly_hard',
+    'quote-notes': ''
+  };
+  
+  for (const [id, value] of Object.entries(fields)) {
+    const el = document.getElementById(id);
+    if (el) el.value = value;
+  }
+  
+  // Reset checkboxes
+  const checkboxes = {
+    'quote-has-reception': false,
+    'quote-has-kitchen': false,
+    'quote-after-hours': false,
+    'quote-supplies-included': true,
+    'quote-high-touch-disinfection': false
+  };
+  
+  for (const [id, checked] of Object.entries(checkboxes)) {
+    const el = document.getElementById(id);
+    if (el) el.checked = checked;
+  }
+  
+  // Reset calculation display
+  const calcResult = document.getElementById('quote-calculation-result');
+  if (calcResult) {
+    const monthly = calcResult.querySelector('#calc-monthly-ex-hst');
+    const perVisit = calcResult.querySelector('#calc-per-visit');
+    const hst = calcResult.querySelector('#calc-hst');
+    const total = calcResult.querySelector('#calc-total');
+    const assumptions = calcResult.querySelector('#calc-assumptions');
+    
+    if (monthly) monthly.textContent = '$0.00';
+    if (perVisit) perVisit.textContent = '$0.00';
+    if (hst) hst.textContent = '$0.00';
+    if (total) total.textContent = '$0.00';
+    if (assumptions) assumptions.textContent = '';
+  }
 }
 
 // Close wizard
@@ -632,13 +686,6 @@ function setupQuoteEngineListeners() {
 
 // Calculate quote using Quote Engine v2
 function calculateQuoteFromEngine() {
-  const quoteType = wizardData.quote_type || 'standard';
-  
-  // Only calculate for standard quotes
-  if (quoteType !== 'standard') {
-    return;
-  }
-
   // Get form inputs
   const serviceType = document.getElementById('quote-service-type')?.value;
   const sqftEstimate = parseFloat(document.getElementById('quote-sqft-estimate')?.value) || null;
@@ -878,54 +925,105 @@ function updateLineItemsTotals() {
   if (totalEl) totalEl.textContent = `$${total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
-// Handle save draft
+// Handle save draft (simplified - saves quote calculation only)
 async function handleSaveDraft() {
-  saveCurrentStepData();
-
   try {
-    // Create quote if not exists
-    if (!currentQuoteId) {
-      const quote = await quotesModule.createQuote({
-        account_id: wizardData.account_id,
-        primary_contact_id: wizardData.primary_contact_id,
-        deal_id: wizardData.deal_id,
-        quote_type: wizardData.quote_type
-      });
-      currentQuoteId = quote.id;
+    // Get the quote title
+    const titleInput = document.getElementById('simple-quote-title');
+    const title = titleInput?.value?.trim() || 'Untitled Quote';
+    
+    // Gather quote engine data
+    const serviceType = document.getElementById('quote-service-type')?.value;
+    const sqft = parseInt(document.getElementById('quote-sqft-estimate')?.value) || 0;
+    const frequency = parseInt(document.getElementById('quote-frequency-per-month')?.value) || 4;
+    const urgency = parseInt(document.getElementById('quote-urgency-days')?.value) || 30;
+    const washrooms = parseInt(document.getElementById('quote-num-washrooms')?.value) || 0;
+    const treatmentRooms = parseInt(document.getElementById('quote-num-treatment-rooms')?.value) || 0;
+    const hasReception = document.getElementById('quote-has-reception')?.checked || false;
+    const hasKitchen = document.getElementById('quote-has-kitchen')?.checked || false;
+    const flooring = document.getElementById('quote-flooring')?.value || 'mostly_hard';
+    const afterHours = document.getElementById('quote-after-hours')?.checked || false;
+    const suppliesIncluded = document.getElementById('quote-supplies-included')?.checked || true;
+    const highTouchDisinfection = document.getElementById('quote-high-touch-disinfection')?.checked || false;
+    const notes = document.getElementById('quote-notes')?.value || '';
+    
+    // Get calculated values from display
+    const monthlyExHst = parseFloat(document.getElementById('calc-monthly-ex-hst')?.textContent?.replace(/[^0-9.]/g, '')) || 0;
+    const perVisit = parseFloat(document.getElementById('calc-per-visit')?.textContent?.replace(/[^0-9.]/g, '')) || 0;
+    const hst = parseFloat(document.getElementById('calc-hst')?.textContent?.replace(/[^0-9.]/g, '')) || 0;
+    const total = parseFloat(document.getElementById('calc-total')?.textContent?.replace(/[^0-9.]/g, '')) || 0;
+
+    if (!serviceType) {
+      toast.error('Please select a service type', 'Error');
+      return;
+    }
+    
+    if (monthlyExHst === 0) {
+      toast.error('Please fill in quote details to calculate pricing', 'Error');
+      return;
     }
 
-    // Extract booking date/time from revision_data (they're only needed for email, not DB storage)
-    const { booking_date: _bookingDate, booking_time: _bookingTime, ...revisionDataForDB } = wizardData.revision_data || {};
+    // Create quote without account (simplified)
+    const quote = await quotesModule.createQuote({
+      account_id: null,
+      primary_contact_id: null,
+      deal_id: null,
+      quote_type: 'standard'
+    });
+    currentQuoteId = quote.id;
 
-    // Save revision as draft
+    // Save revision with calculation data
     const revisionData = {
-      ...revisionDataForDB,
-      revision_type: wizardData.quote_type === 'walkthrough_required' ? 'walkthrough_proposal' : 'final_quote',
-      is_binding: wizardData.quote_type === 'standard',
-      // Include quote engine calculation data if available
-      quote_engine_version: wizardData.quote_calculation?.engine_version || null,
-      quote_calculation_inputs: wizardData.quote_calculation?.inputs || null,
-      quote_calculation_outputs: wizardData.quote_calculation?.result || null
+      revision_type: 'final_quote',
+      is_binding: true,
+      scope_summary: title,
+      assumptions: notes,
+      quote_engine_version: '2.0',
+      quote_calculation_inputs: {
+        service_type: serviceType,
+        sqft_estimate: sqft,
+        frequency_per_month: frequency,
+        urgency_days: urgency,
+        num_washrooms: washrooms,
+        num_treatment_rooms: treatmentRooms,
+        has_reception: hasReception,
+        has_kitchen: hasKitchen,
+        flooring: flooring,
+        after_hours: afterHours,
+        supplies_included: suppliesIncluded,
+        high_touch_disinfection: highTouchDisinfection
+      },
+      quote_calculation_outputs: {
+        monthly_price_ex_hst: monthlyExHst,
+        per_visit_price: perVisit,
+        hst_amount: hst,
+        monthly_price_inc_hst: total
+      }
     };
 
-    // Use line items from quote engine if available, otherwise use manual line items
-    const lineItemsToSave = wizardData.quote_calculation?.result?.line_items || wizardData.line_items;
+    // Create a line item for the service
+    const lineItems = [{
+      description: title || `${serviceType} Cleaning Service`,
+      quantity: frequency,
+      unit_price: perVisit,
+      line_total: monthlyExHst
+    }];
 
-    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, lineItemsToSave);
+    await quotesModule.saveRevision(currentQuoteId, 1, revisionData, lineItems);
 
-    toast.success('Quote saved as draft', 'Success');
+    toast.success('Quote saved successfully', 'Success');
     closeWizard();
     
-    // Reload quotes list if on quotes tab
-    if (typeof loadQuotes === 'function') {
-      await loadQuotes();
+    // Reload quotes list
+    if (window.loadQuotes && typeof window.loadQuotes === 'function') {
+      await window.loadQuotes();
+    } else {
+      // Try dispatching a custom event
+      window.dispatchEvent(new CustomEvent('quotes-updated'));
     }
-    
-    // Reload deals if on deals tab (since quote auto-creates a deal)
-    await refreshDealsIfOnDealsTab();
   } catch (error) {
-    console.error('[Quote Wizard] Error saving draft:', error);
-    toast.error('Failed to save draft', 'Error');
+    console.error('[Quote Wizard] Error saving quote:', error);
+    toast.error('Failed to save quote: ' + (error.message || error), 'Error');
   }
 }
 
