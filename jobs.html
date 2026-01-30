@@ -677,108 +677,194 @@
     </div>
   </div>
 
-  <!-- Create Job Modal -->
-  <div id="createJobModal" class="hidden fixed inset-0 bg-black/40 items-center justify-center p-4 z-50">
-    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-nfg border border-nfgray w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-      <div class="p-4 border-b border-nfgray flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800">
-        <h4 class="text-nfgblue dark:text-blue-400 font-semibold text-lg">Create New Job</h4>
-        <button data-action="close-modal" data-target="createJobModal" class="p-1 rounded-lg hover:bg-nfglight dark:hover:bg-gray-600 dark:bg-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
+  <!-- Create Job Modal - Redesigned -->
+  <div id="createJobModal" class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center p-4 z-50">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <!-- Header -->
+      <div class="p-5 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 bg-nfgblue/10 rounded-xl flex items-center justify-center">
+            <i data-lucide="briefcase" class="w-5 h-5 text-nfgblue"></i>
+          </div>
+          <div>
+            <h4 class="text-lg font-semibold text-gray-900 dark:text-white">Create New Job</h4>
+            <p class="text-xs text-gray-500">Fill in the details below</p>
+          </div>
+        </div>
+        <button data-action="close-modal" data-target="createJobModal" class="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition">
+          <i data-lucide="x" class="w-5 h-5 text-gray-500"></i>
         </button>
       </div>
-      <form id="create-job-form" class="p-6 space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1.5">Job Title <span class="text-red-500">*</span></label>
-          <input type="text" name="title" required placeholder="e.g., Office Deep Clean" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+      
+      <form id="create-job-form" class="p-5">
+        <!-- Job Title -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i data-lucide="tag" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+            Job Title <span class="text-red-500">*</span>
+          </label>
+          <input 
+            type="text" 
+            name="title" 
+            required 
+            placeholder="e.g., Weekly Office Cleaning" 
+            class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition" 
+          />
         </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1.5">Site <span class="text-red-500">*</span></label>
-          <select name="site_id" id="job-site-select" required data-custom-dropdown="true" data-placeholder="Select a site">
-            <option value="">Select a site</option>
+        <!-- Site Selection -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i data-lucide="building-2" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+            Site <span class="text-red-500">*</span>
+          </label>
+          <select 
+            name="site_id" 
+            id="job-site-select" 
+            required 
+            class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition appearance-none cursor-pointer"
+          >
+            <option value="">-- Select a site --</option>
           </select>
+          <p id="no-sites-warning" class="text-xs text-amber-600 mt-1.5 hidden">
+            <i data-lucide="alert-triangle" class="w-3 h-3 inline"></i>
+            No sites found. <a href="sites.html" class="underline">Add a site first</a>
+          </p>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <!-- Job Type & Frequency Row -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label class="block text-sm font-medium mb-1.5">Job Type <span class="text-red-500">*</span></label>
-            <select name="job_type" required data-custom-dropdown="true" data-placeholder="Select job type">
-              <option value="cleaning">Cleaning</option>
-              <option value="maintenance">Maintenance</option>
-              <option value="repair">Repair</option>
-              <option value="inspection">Inspection</option>
-              <option value="emergency">Emergency</option>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <i data-lucide="layers" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+              Job Type <span class="text-red-500">*</span>
+            </label>
+            <select 
+              name="job_type" 
+              required 
+              class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition appearance-none cursor-pointer"
+            >
+              <option value="cleaning">🧹 Cleaning</option>
+              <option value="maintenance">🔧 Maintenance</option>
+              <option value="repair">🛠️ Repair</option>
+              <option value="inspection">🔍 Inspection</option>
+              <option value="emergency">🚨 Emergency</option>
             </select>
           </div>
           <div>
-            <label class="block text-sm font-medium mb-1.5">Frequency</label>
-            <select name="frequency" id="job-frequency-select" data-custom-dropdown="true" data-placeholder="Select frequency">
-              <option value="single visit" selected>Single Visit</option>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <i data-lucide="repeat" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+              Frequency
+            </label>
+            <select 
+              name="frequency" 
+              id="job-frequency-select" 
+              class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition appearance-none cursor-pointer"
+            >
+              <option value="single visit" selected>One-time</option>
               <option value="recurring">Recurring</option>
             </select>
           </div>
         </div>
         
         <!-- Recurrence Pattern (only shown for recurring jobs) -->
-        <div id="recurrence-pattern-section" class="hidden">
-          <label class="block text-sm font-medium mb-1.5">Recurrence Pattern <span class="text-red-500">*</span></label>
-          <select name="recurrence_pattern" data-custom-dropdown="true" data-placeholder="How often should this job repeat?">
-            <option value="weekly" selected>Weekly</option>
-            <option value="biweekly">Every 2 Weeks</option>
-            <option value="monthly">Monthly</option>
+        <div id="recurrence-pattern-section" class="hidden mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+          <label class="block text-sm font-medium text-blue-700 dark:text-blue-300 mb-2">
+            <i data-lucide="calendar-clock" class="w-4 h-4 inline mr-1"></i>
+            Repeat Every
+          </label>
+          <select 
+            name="recurrence_pattern" 
+            class="w-full border border-blue-200 dark:border-blue-700 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none bg-white dark:bg-gray-700 dark:text-white transition appearance-none cursor-pointer"
+          >
+            <option value="weekly" selected>Week</option>
+            <option value="biweekly">2 Weeks</option>
+            <option value="monthly">Month</option>
           </select>
-          <p class="text-xs text-gray-500 mt-1.5">
-            📅 The next instance will automatically be created when this job is completed.
+          <p class="text-xs text-blue-600 dark:text-blue-400 mt-2">
+            📅 Next job auto-creates when this one completes
           </p>
         </div>
 
+        <!-- Date & Time Row -->
+        <div class="grid grid-cols-2 gap-3 mb-4">
           <div>
-            <label class="block text-sm font-medium mb-1.5">Scheduled Date</label>
-          <input type="date" name="scheduled_date" id="job-scheduled-date" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <i data-lucide="calendar" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+              Scheduled Date
+            </label>
+            <input 
+              type="date" 
+              name="scheduled_date" 
+              id="job-scheduled-date" 
+              class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition" 
+            />
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <i data-lucide="clock" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+              Est. Hours
+            </label>
+            <input 
+              type="number" 
+              name="estimated_hours" 
+              min="0" 
+              step="0.5" 
+              placeholder="4" 
+              class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition" 
+            />
+          </div>
+        </div>
 
         <!-- Time Selection (shown after date is selected) -->
-        <div id="job-time-section" class="hidden">
-          <label class="block text-sm font-medium mb-1.5">Scheduled Time</label>
-          <div class="flex items-center gap-4">
+        <div id="job-time-section" class="hidden mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i data-lucide="clock" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+            Scheduled Time
+          </label>
+          <div class="flex items-center gap-3">
             <input 
               type="time" 
               name="scheduled_time" 
               id="job-scheduled-time" 
-              class="flex-1 border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none"
+              class="flex-1 border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition"
             />
-            <label class="flex items-center gap-2 cursor-pointer">
+            <label class="flex items-center gap-2 cursor-pointer bg-gray-100 dark:bg-gray-700 px-3 py-3 rounded-xl">
               <input 
                 type="checkbox" 
                 id="job-all-day" 
-                class="w-4 h-4 text-nfgblue border-nfgray rounded focus:ring-nfgblue"
+                class="w-4 h-4 text-nfgblue border-gray-300 rounded focus:ring-nfgblue"
                 checked
               />
-              <span class="text-sm text-gray-600 dark:text-gray-400">All Day</span>
+              <span class="text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap">All Day</span>
             </label>
           </div>
-          <p class="text-xs text-gray-500 mt-1.5">
-            Select a specific time or leave as "All Day" for the entire day
-          </p>
         </div>
 
-          <div>
-            <label class="block text-sm font-medium mb-1.5">Estimated Hours</label>
-            <input type="number" name="estimated_hours" min="0" step="0.5" placeholder="4" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" />
+        <!-- Description -->
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <i data-lucide="file-text" class="w-4 h-4 inline mr-1 text-gray-400"></i>
+            Description
+          </label>
+          <textarea 
+            name="description" 
+            rows="2" 
+            placeholder="Add any additional details or instructions..." 
+            class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition resize-none"
+          ></textarea>
         </div>
 
-        <div>
-          <label class="block text-sm font-medium mb-1.5">Description</label>
-          <textarea name="description" rows="3" placeholder="Add job details..." class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none resize-none"></textarea>
-        </div>
+        <!-- Error Message -->
+        <div id="job-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3 mb-4"></div>
 
-        <div id="job-form-error" class="hidden text-red-600 text-sm bg-red-50 border border-red-200 rounded-xl p-3"></div>
-
-        <div class="flex items-center justify-end gap-3 pt-2 border-t border-nfgray dark:border-gray-700">
-          <button type="button" data-action="close-modal" data-target="createJobModal" class="px-5 py-2.5 rounded-xl border border-nfgray hover:bg-nfglight font-medium transition">
+        <!-- Action Buttons -->
+        <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-100 dark:border-gray-700">
+          <button type="button" data-action="close-modal" data-target="createJobModal" class="px-5 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-gray-700 dark:text-gray-300 transition">
             Cancel
           </button>
-          <button type="submit" id="submit-job-btn" class="px-5 py-2.5 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium transition">
+          <button type="submit" id="submit-job-btn" class="px-6 py-2.5 rounded-xl bg-nfgblue hover:bg-nfgdark text-white font-medium transition flex items-center gap-2">
+            <i data-lucide="plus" class="w-4 h-4"></i>
             Create Job
           </button>
         </div>
@@ -3340,17 +3426,29 @@
     async function loadSitesDropdown() {
       const sites = await getSites();
       const select = document.getElementById('job-site-select');
+      const warningEl = document.getElementById('no-sites-warning');
+      
       if (select) {
-        select.innerHTML = '<option value="">Select a site</option>' + 
-          sites.map(site => `<option value="${site.id}">${site.name}</option>`).join('');
-        
-        // Reinitialize custom dropdown for this select
+        // Remove any custom dropdown wrapper that might be interfering
         const wrapper = select.previousElementSibling;
         if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
           wrapper.remove();
         }
         select.style.display = '';
-        new NFGDropdown(select);
+        
+        if (!sites || sites.length === 0) {
+          select.innerHTML = '<option value="">-- No sites available --</option>';
+          if (warningEl) warningEl.classList.remove('hidden');
+        } else {
+          select.innerHTML = '<option value="">-- Select a site --</option>' + 
+            sites.map(site => {
+              const address = site.address ? ` (${site.address})` : '';
+              return `<option value="${site.id}">${site.name}${address}</option>`;
+            }).join('');
+          if (warningEl) warningEl.classList.add('hidden');
+        }
+        
+        console.log('[Jobs] Loaded', sites?.length || 0, 'sites into dropdown');
       }
     }
 
@@ -3836,43 +3934,23 @@
       
       // Listen for create job modal opening to reload sites dropdown
       window.addEventListener('createJobModalOpened', async () => {
+        console.log('[Jobs] Create job modal opened, loading sites...');
         await loadSitesDropdown();
         
-        // Initialize Job Type dropdown
-        const jobTypeSelect = document.querySelector('#createJobModal select[name="job_type"]');
-        if (jobTypeSelect) {
-          // Clean up existing wrapper if any
-          let wrapper = jobTypeSelect.previousElementSibling;
-          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
-            wrapper.remove();
-          }
-          jobTypeSelect.style.display = '';
-          new NFGDropdown(jobTypeSelect);
-        }
+        // Reset form when modal opens
+        const form = document.getElementById('create-job-form');
+        if (form) form.reset();
         
-        // Initialize Frequency dropdown
-        const frequencySelect = document.getElementById('job-frequency-select');
-        if (frequencySelect) {
-          // Clean up existing wrapper if any
-          let wrapper = frequencySelect.previousElementSibling;
-          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
-            wrapper.remove();
-          }
-          frequencySelect.style.display = '';
-          new NFGDropdown(frequencySelect);
-        }
+        // Hide recurrence section initially
+        const recurrenceSection = document.getElementById('recurrence-pattern-section');
+        if (recurrenceSection) recurrenceSection.classList.add('hidden');
         
-        // Initialize Recurrence Pattern dropdown (if visible)
-        const recurrenceSelect = document.querySelector('#createJobModal select[name="recurrence_pattern"]');
-        if (recurrenceSelect) {
-          // Clean up existing wrapper if any
-          let wrapper = recurrenceSelect.previousElementSibling;
-          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
-            wrapper.remove();
-          }
-          recurrenceSelect.style.display = '';
-          new NFGDropdown(recurrenceSelect);
-        }
+        // Hide time section initially
+        const timeSection = document.getElementById('job-time-section');
+        if (timeSection) timeSection.classList.add('hidden');
+        
+        // Update icons
+        if (window.lucide) lucide.createIcons();
       });
       
       console.log('[Jobs] ✅ Initialization complete');
