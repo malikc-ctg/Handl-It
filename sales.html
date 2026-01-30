@@ -1311,6 +1311,70 @@
     </div>
   </div>
 
+  <!-- Contact Detail Modal (View Mode) -->
+  <div id="contact-detail-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Contact Details</h3>
+        <button id="contact-detail-close" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-6">
+        <!-- Contact Avatar & Name -->
+        <div class="text-center mb-6">
+          <div class="w-20 h-20 bg-nfglight dark:bg-gray-700 rounded-full mx-auto flex items-center justify-center mb-3">
+            <i data-lucide="user" class="w-10 h-10 text-nfgblue dark:text-blue-400"></i>
+          </div>
+          <h4 id="detail-contact-name" class="text-xl font-semibold text-gray-900 dark:text-white"></h4>
+          <p id="detail-contact-title" class="text-sm text-gray-500 dark:text-gray-400"></p>
+        </div>
+        
+        <!-- Contact Info -->
+        <div class="space-y-4">
+          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
+            <i data-lucide="building" class="w-5 h-5 text-gray-500"></i>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Company</p>
+              <p id="detail-contact-company" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
+            <i data-lucide="phone" class="w-5 h-5 text-gray-500"></i>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Phone</p>
+              <p id="detail-contact-phone" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
+            <i data-lucide="mail" class="w-5 h-5 text-gray-500"></i>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Email</p>
+              <p id="detail-contact-email" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+            </div>
+          </div>
+          <div class="flex items-center gap-3 p-3 bg-nfglight dark:bg-gray-700 rounded-xl">
+            <i data-lucide="map-pin" class="w-5 h-5 text-gray-500"></i>
+            <div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">Location</p>
+              <p id="detail-contact-location" class="text-sm font-medium text-gray-900 dark:text-white"></p>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="flex gap-3 mt-6">
+          <button id="contact-detail-edit-btn" class="flex-1 px-4 py-2.5 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition flex items-center justify-center gap-2">
+            <i data-lucide="edit" class="w-4 h-4"></i> Edit
+          </button>
+          <button id="contact-detail-delete-btn" class="px-4 py-2.5 border border-red-300 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl font-medium transition flex items-center justify-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4"></i> Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Edit Contact Modal -->
   <div id="edit-contact-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">

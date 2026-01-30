@@ -360,6 +360,88 @@ function closeAccountDrawer() {
   currentAccount = null;
 }
 
+// Open contact detail modal (view mode)
+async function openContactDetailModal(contactId) {
+  try {
+    const allItems = window.allAccountsAndContacts || { contacts: [] };
+    let contact = allItems.contacts.find(c => c.id === contactId);
+    
+    if (!contact) {
+      // Try to fetch from database if not in cache
+      const { data, error } = await supabase
+        .from('contacts')
+        .select('*')
+        .eq('id', contactId)
+        .single();
+      
+      if (error || !data) {
+        toast.error('Contact not found', 'Error');
+        return;
+      }
+      contact = data;
+    }
+    
+    // Populate the detail modal
+    const modal = document.getElementById('contact-detail-modal');
+    if (!modal) {
+      console.error('[Accounts] Contact detail modal not found');
+      // Fallback to edit modal
+      await openEditContactModal(contactId);
+      return;
+    }
+    
+    const fullName = contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown';
+    const phone = contact.normalized_phone || contact.phone || '';
+    const email = contact.email || '';
+    const company = contact.company_name || '';
+    const city = contact.city || '';
+    const title = contact.title || '';
+    const address = contact.street_address || contact.address || '';
+    
+    // Update modal content
+    document.getElementById('detail-contact-name').textContent = fullName;
+    document.getElementById('detail-contact-title').textContent = title || 'No title';
+    document.getElementById('detail-contact-company').textContent = company || 'No company';
+    document.getElementById('detail-contact-location').textContent = [city, address].filter(Boolean).join(', ') || 'No location';
+    
+    // Phone
+    const phoneEl = document.getElementById('detail-contact-phone');
+    if (phoneEl) {
+      if (phone) {
+        phoneEl.innerHTML = `<a href="tel:${phone}" class="text-nfgblue hover:underline">${escapeHtml(phone)}</a>`;
+      } else {
+        phoneEl.textContent = 'No phone';
+      }
+    }
+    
+    // Email
+    const emailEl = document.getElementById('detail-contact-email');
+    if (emailEl) {
+      if (email) {
+        emailEl.innerHTML = `<a href="mailto:${email}" class="text-nfgblue hover:underline">${escapeHtml(email)}</a>`;
+      } else {
+        emailEl.textContent = 'No email';
+      }
+    }
+    
+    // Store contact ID for edit/delete actions
+    modal.dataset.contactId = contactId;
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  } catch (error) {
+    console.error('[Accounts] Error opening contact detail modal:', error);
+    toast.error('Failed to load contact details', 'Error');
+  }
+}
+
+// Close contact detail modal
+function closeContactDetailModal() {
+  const modal = document.getElementById('contact-detail-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
 // Open edit contact modal
 async function openEditContactModal(contactId) {
   try {
@@ -663,6 +745,25 @@ function setupEventListeners() {
     document.getElementById('create-account-modal')?.classList.add('hidden');
   });
 
+  // Contact detail modal handlers
+  document.getElementById('contact-detail-close')?.addEventListener('click', closeContactDetailModal);
+  document.getElementById('contact-detail-edit-btn')?.addEventListener('click', async () => {
+    const modal = document.getElementById('contact-detail-modal');
+    const contactId = modal?.dataset.contactId;
+    if (contactId) {
+      closeContactDetailModal();
+      await openEditContactModal(contactId);
+    }
+  });
+  document.getElementById('contact-detail-delete-btn')?.addEventListener('click', async () => {
+    const modal = document.getElementById('contact-detail-modal');
+    const contactId = modal?.dataset.contactId;
+    if (contactId) {
+      closeContactDetailModal();
+      await handleContactAction('delete', contactId);
+    }
+  });
+
   // Edit contact modal handlers
   document.getElementById('edit-contact-close')?.addEventListener('click', closeEditContactModal);
   document.getElementById('edit-contact-cancel')?.addEventListener('click', closeEditContactModal);
@@ -745,9 +846,18 @@ function setupEventListeners() {
 
   // Account row click
   document.getElementById('accounts-table-body')?.addEventListener('click', (e) => {
-    const row = e.target.closest('.account-row');
-    if (row && !e.target.closest('button, a')) {
-      openAccountDrawer(row.dataset.accountId);
+    // Handle account row click
+    const accountRow = e.target.closest('.account-row');
+    if (accountRow && !e.target.closest('button, a')) {
+      openAccountDrawer(accountRow.dataset.accountId);
+      return;
+    }
+    
+    // Handle contact row click
+    const contactRow = e.target.closest('.contact-row');
+    if (contactRow && !e.target.closest('button, a')) {
+      openContactDetailModal(contactRow.dataset.contactId);
+      return;
     }
   });
 
@@ -1335,6 +1445,8 @@ const accountsDirectoryModule = {
   loadAccounts,
   openAccountDrawer,
   closeAccountDrawer,
+  openContactDetailModal,
+  closeContactDetailModal,
   handleAccountAction,
   handleContactAction
 };
