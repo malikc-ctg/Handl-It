@@ -278,12 +278,12 @@ export const QUOTE_CONFIG = {
     },
 
     residential_common_area: {
-      // Lower touchpoint scores for residential
+      // Lower touchpoint scores for residential common areas
       touchpointScores: {
         washroom: 0.05,
-        treatment_room: 0.00,  // Not applicable
-        reception: 0.03,
-        kitchen: 0.04,
+        treatment_room: 0.02,  // Elevators count as touchpoints
+        reception: 0.04,  // Lobby
+        kitchen: 0.03,  // Party room/kitchen
         high_touch_disinfection: 0.04
       },
       touchpointMax: 0.25,
@@ -294,7 +294,30 @@ export const QUOTE_CONFIG = {
         { maxVisits: 12, multiplier: 2.00 },
         { maxVisits: 16, multiplier: 2.45 },
         { maxVisits: 20, multiplier: 2.85 }
-      ]
+      ],
+      // Condo/apartment common areas scale by floors/size
+      sqftBands: [
+        { min: 0, max: 1500, multiplier: 0.90, walkthroughRequired: false },
+        { min: 1501, max: 2500, multiplier: 1.00, walkthroughRequired: false },
+        { min: 2501, max: 4000, multiplier: 1.15, walkthroughRequired: true },
+        { min: 4001, max: 6000, multiplier: 1.30, walkthroughRequired: true },
+        { min: 6001, max: 10000, multiplier: 1.50, walkthroughRequired: true }
+      ],
+      complexityFactors: {
+        flooring: {
+          mostly_hard: 0.00,
+          mixed: 0.03,
+          mostly_carpet: 0.05
+        },
+        after_hours: 0.03,
+        supplies_included: 0.04,
+        urgency: {
+          '0-2': 0.05,
+          '3-7': 0.02,
+          '8+': 0.00
+        }
+      },
+      complexityMax: 0.20
     },
 
     restaurant: {
