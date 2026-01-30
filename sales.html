@@ -4784,10 +4784,10 @@
     async function fetchEmployeeStats(users) {
       const userIds = users.map(u => u.id);
       
-      // Fetch ALL deals - only select columns that definitely exist
+      // Fetch ALL deals with all columns using * (to capture created_by, assigned_user_id, etc.)
       const { data: allDeals, error: dealsError } = await supabase
         .from('deals')
-        .select('id, assigned_user_id, stage, deal_value, value_estimate');
+        .select('*');
       
       if (dealsError) {
         console.error('[Team] Error fetching deals:', dealsError);
@@ -4796,12 +4796,17 @@
       // Debug: Log deal info
       if (allDeals && allDeals.length > 0) {
         console.log('[Team] Total deals found:', allDeals.length);
-        console.log('[Team] Sample deal:', allDeals[0]);
+        console.log('[Team] Sample deal columns:', Object.keys(allDeals[0]));
+        console.log('[Team] Sample deal owner fields:', {
+          created_by: allDeals[0].created_by,
+          assigned_user_id: allDeals[0].assigned_user_id,
+          assigned_to: allDeals[0].assigned_to
+        });
         console.log('[Team] User IDs to match:', userIds);
         
-        // Check how many deals have assigned_user_id set
-        const assignedDeals = allDeals.filter(d => d.assigned_user_id);
-        console.log('[Team] Deals with assigned_user_id:', assignedDeals.length);
+        // Check how many deals have owner set
+        const ownedDeals = allDeals.filter(d => d.created_by || d.assigned_user_id);
+        console.log('[Team] Deals with owner (created_by OR assigned_user_id):', ownedDeals.length);
       }
       
       // Fetch quotes via deals
@@ -4822,9 +4827,11 @@
       
       // Calculate stats for each user
       return users.map(user => {
-        // Get user's deals (check assigned_user_id)
+        // Get user's deals - check BOTH created_by (owner) AND assigned_user_id
         const userDeals = allDeals?.filter(d => 
-          d.assigned_user_id === user.id
+          d.created_by === user.id || 
+          d.assigned_user_id === user.id ||
+          d.assigned_to === user.id
         ) || [];
         
         // Debug: Log deals found for this user
