@@ -1266,16 +1266,61 @@
 
     // Fetch sites from Supabase
     async function getSites() {
-      const { data, error } = await supabase
+      console.log('[Jobs] Fetching sites from database...');
+      
+      // Get current user if not already loaded
+      if (!currentUser) {
+        const { data: { user } } = await supabase.auth.getUser();
+        currentUser = user;
+      }
+      
+      if (!currentUser) {
+        console.error('[Jobs] No user logged in');
+        return [];
+      }
+      
+      // Check user role
+      if (!currentUserProfile) {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('role, company_id')
+          .eq('id', currentUser.id)
+          .single();
+        currentUserProfile = profile || { role: 'client' };
+      }
+      
+      let query = supabase
         .from('sites')
         .select('*')
         .order('name', { ascending: true });
       
+      // Staff might only see sites they're assigned to
+      // Admin/Client see sites they created or have access to
+      // RLS should handle this, but we can also filter by created_by as fallback
+      
+      const { data, error } = await query;
+      
       if (error) {
-        console.error('Error fetching sites:', error);
-        // Fallback to localStorage if sites table doesn't exist yet
-        return JSON.parse(localStorage.getItem('nfg_sites') || '[]');
+        console.error('[Jobs] Error fetching sites:', error);
+        
+        // Try with created_by filter if RLS blocks general access
+        console.log('[Jobs] Trying with created_by filter...');
+        const { data: filteredData, error: filteredError } = await supabase
+          .from('sites')
+          .select('*')
+          .eq('created_by', currentUser.id)
+          .order('name', { ascending: true });
+        
+        if (filteredError) {
+          console.error('[Jobs] Filtered query also failed:', filteredError);
+          return [];
+        }
+        
+        console.log('[Jobs] Sites loaded (filtered):', filteredData?.length || 0);
+        return filteredData || [];
       }
+      
+      console.log('[Jobs] Sites loaded from DB:', data?.length || 0, 'sites');
       return data || [];
     }
 
