@@ -1277,72 +1277,22 @@
         return [];
       }
       
-      // Check user role
-      if (!currentUserProfile) {
-        const { data: profile } = await supabase
-          .from('user_profiles')
-          .select('role, company_id')
-          .eq('id', currentUser.id)
-          .single();
-        currentUserProfile = profile || { role: 'client' };
+      // Simply fetch ALL sites that RLS allows the user to see
+      // This is the most reliable approach
+      console.log('[Jobs] Fetching all accessible sites for user:', currentUser.id);
+      
+      const { data: sites, error } = await supabase
+        .from('sites')
+        .select('id, name, address')
+        .order('name', { ascending: true });
+      
+      if (error) {
+        console.error('[Jobs] Error fetching sites:', error.message, error);
+        return [];
       }
       
-      console.log('[Jobs] User role:', currentUserProfile?.role);
-      
-      let sites = [];
-      
-      // Staff users: Get sites they're assigned to
-      if (currentUserProfile && currentUserProfile.role === 'staff') {
-        console.log('[Jobs] Fetching sites for staff user via assignments...');
-        
-        const { data: assignments, error: assignError } = await supabase
-          .from('worker_site_assignments')
-          .select('site_id')
-          .eq('worker_id', currentUser.id);
-        
-        if (assignError) {
-          console.error('[Jobs] Error fetching assignments:', assignError);
-          return [];
-        }
-        
-        if (!assignments || assignments.length === 0) {
-          console.warn('[Jobs] No site assignments found for staff');
-          return [];
-        }
-        
-        const siteIds = assignments.map(a => a.site_id);
-        const { data: fetchedSites, error } = await supabase
-          .from('sites')
-          .select('*')
-          .in('id', siteIds)
-          .order('name', { ascending: true });
-        
-        if (error) {
-          console.error('[Jobs] Error fetching assigned sites:', error);
-          return [];
-        }
-        
-        sites = fetchedSites || [];
-      } else {
-        // Admin/Client: Fetch sites they created
-        console.log('[Jobs] Fetching sites created by user:', currentUser.id);
-        
-        const { data: fetchedSites, error } = await supabase
-          .from('sites')
-          .select('*')
-          .eq('created_by', currentUser.id)
-          .order('name', { ascending: true });
-        
-        if (error) {
-          console.error('[Jobs] Error fetching sites:', error);
-          return [];
-        }
-        
-        sites = fetchedSites || [];
-      }
-      
-      console.log('[Jobs] Sites loaded:', sites?.length || 0, 'sites');
-      return sites;
+      console.log('[Jobs] Sites loaded:', sites?.length || 0, 'sites', sites);
+      return sites || [];
     }
 
     // Get job tasks from Supabase
@@ -3490,31 +3440,45 @@
 
     // Load sites for dropdown
     async function loadSitesDropdown() {
-      const sites = await getSites();
-      const select = document.getElementById('job-site-select');
-      const warningEl = document.getElementById('no-sites-warning');
+      console.log('[Jobs] loadSitesDropdown called');
       
-      if (select) {
-        // Remove any custom dropdown wrapper that might be interfering
-        const wrapper = select.previousElementSibling;
-        if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
-          wrapper.remove();
-        }
-        select.style.display = '';
+      try {
+        const sites = await getSites();
+        console.log('[Jobs] getSites returned:', sites);
         
-        if (!sites || sites.length === 0) {
-          select.innerHTML = '<option value="">-- No sites available --</option>';
-          if (warningEl) warningEl.classList.remove('hidden');
-        } else {
-          select.innerHTML = '<option value="">-- Select a site --</option>' + 
-            sites.map(site => {
+        const select = document.getElementById('job-site-select');
+        const warningEl = document.getElementById('no-sites-warning');
+        
+        console.log('[Jobs] Select element found:', !!select);
+        
+        if (select) {
+          // Remove any custom dropdown wrapper that might be interfering
+          const wrapper = select.previousElementSibling;
+          if (wrapper && wrapper.classList.contains('nfg-select-wrapper')) {
+            wrapper.remove();
+          }
+          select.style.display = '';
+          
+          if (!sites || sites.length === 0) {
+            select.innerHTML = '<option value="">-- No sites available --</option>';
+            if (warningEl) warningEl.classList.remove('hidden');
+            console.log('[Jobs] No sites found, showing warning');
+          } else {
+            const optionsHtml = sites.map(site => {
               const address = site.address ? ` (${site.address})` : '';
               return `<option value="${site.id}">${site.name}${address}</option>`;
             }).join('');
-          if (warningEl) warningEl.classList.add('hidden');
+            select.innerHTML = '<option value="">-- Select a site --</option>' + optionsHtml;
+            if (warningEl) warningEl.classList.add('hidden');
+            console.log('[Jobs] Added', sites.length, 'sites to dropdown');
+          }
+          
+          console.log('[Jobs] Dropdown HTML:', select.innerHTML.substring(0, 200));
         }
         
         console.log('[Jobs] Loaded', sites?.length || 0, 'sites into dropdown');
+      } catch (error) {
+        console.error('[Jobs] Error in loadSitesDropdown:', error);
       }
     }
 
