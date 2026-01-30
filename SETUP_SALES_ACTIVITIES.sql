@@ -35,6 +35,7 @@ CREATE TABLE IF NOT EXISTS sales_activities (
   company_id UUID,
   deal_id UUID REFERENCES deals(id) ON DELETE CASCADE,
   contact_id UUID,
+  assigned_user_id UUID REFERENCES auth.users(id), -- User responsible for this activity
   
   -- Activity details
   activity_type TEXT NOT NULL CHECK (activity_type IN (
@@ -77,6 +78,13 @@ CREATE INDEX IF NOT EXISTS idx_sales_activities_contact ON sales_activities(cont
 CREATE INDEX IF NOT EXISTS idx_sales_activities_created ON sales_activities(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sales_activities_type ON sales_activities(activity_type);
 CREATE INDEX IF NOT EXISTS idx_sales_activities_next_action ON sales_activities(next_action_date) WHERE next_action_date IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_sales_activities_assigned ON sales_activities(assigned_user_id);
+CREATE INDEX IF NOT EXISTS idx_sales_activities_created_by ON sales_activities(created_by);
+
+-- Index for user-specific deal queries
+CREATE INDEX IF NOT EXISTS idx_deals_assigned_user ON deals(assigned_user_id) WHERE assigned_user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_deals_assigned_to ON deals(assigned_to) WHERE assigned_to IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_deals_created_by ON deals(created_by) WHERE created_by IS NOT NULL;
 
 -- ============================================
 -- 4. ENABLE RLS ON SALES ACTIVITIES
@@ -92,14 +100,20 @@ DROP POLICY IF EXISTS "Users can delete their activities" ON sales_activities;
 -- Create RLS policies
 CREATE POLICY "Users can view their company's activities" ON sales_activities
   FOR SELECT USING (
-    company_id IN (
+    -- User created the activity
+    created_by = auth.uid()
+    -- Or user is assigned to the activity
+    OR assigned_user_id = auth.uid()
+    -- Or user is in the same company
+    OR company_id IN (
       SELECT company_id FROM user_profiles WHERE id = auth.uid()
     )
-    OR created_by = auth.uid()
+    -- Or user owns/is assigned to the related deal
     OR deal_id IN (
-      SELECT id FROM deals WHERE workspace_id IN (
-        SELECT company_id FROM user_profiles WHERE id = auth.uid()
-      )
+      SELECT id FROM deals WHERE 
+        assigned_user_id = auth.uid() 
+        OR assigned_to = auth.uid()
+        OR created_by = auth.uid()
     )
   );
 
@@ -111,6 +125,7 @@ CREATE POLICY "Users can create activities" ON sales_activities
 CREATE POLICY "Users can update their activities" ON sales_activities
   FOR UPDATE USING (
     created_by = auth.uid()
+    OR assigned_user_id = auth.uid()
   );
 
 CREATE POLICY "Users can delete their activities" ON sales_activities
@@ -170,6 +185,7 @@ BEGIN
   INSERT INTO sales_activities (
     company_id,
     deal_id,
+    assigned_user_id,
     activity_type,
     outcome,
     notes,
@@ -180,6 +196,7 @@ BEGIN
   ) VALUES (
     v_company_id,
     p_deal_id,
+    COALESCE(v_deal.assigned_user_id, v_deal.assigned_to, auth.uid()), -- Assign to deal owner or current user
     p_activity_type,
     p_outcome,
     p_notes,
@@ -285,7 +302,7 @@ CREATE TRIGGER deal_stage_tracking_trigger
   EXECUTE FUNCTION update_deal_stage_tracking();
 
 -- ============================================
--- 8. VIEW: PRIORITY ACTIONS
+-- 8. VIEW: PRIORITY ACTIONS (User-specific)
 -- ============================================
 CREATE OR REPLACE VIEW priority_actions_view AS
 WITH deal_priorities AS (
@@ -303,6 +320,9 @@ WITH deal_priorities AS (
     d.walkthrough_completed_at,
     d.stage_entered_at,
     d.workspace_id,
+    d.assigned_user_id,
+    d.assigned_to,
+    d.created_by,
     
     -- Calculate priority level and action
     CASE
@@ -339,6 +359,19 @@ WITH deal_priorities AS (
     
   FROM deals d
   WHERE d.stage NOT IN ('closed_won', 'closed_lost')
+    -- Filter by user assignment (user sees only their deals)
+    AND (
+      d.assigned_user_id = auth.uid()
+      OR d.assigned_to = auth.uid()
+      OR d.created_by = auth.uid()
+      -- Or user is admin/manager in the same workspace
+      OR EXISTS (
+        SELECT 1 FROM user_profiles up 
+        WHERE up.id = auth.uid() 
+        AND up.company_id = d.workspace_id 
+        AND up.role IN ('admin', 'owner', 'manager')
+      )
+    )
 )
 SELECT * FROM deal_priorities
 WHERE priority_level <= 3
