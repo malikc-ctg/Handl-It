@@ -969,14 +969,17 @@ function displayQuoteCalculation(result) {
   // Display assumptions
   const assumptionsEl = document.getElementById('calc-assumptions');
   if (assumptionsEl) {
-    let assumptionsText = `Up to ${result.assumptions.sqft_cap.toLocaleString()} sq ft`;
-    if (result.assumptions.supplies_included) {
-      assumptionsText += ', supplies included';
+    let assumptionsText = '';
+    if (result.assumptions?.sqft_cap) {
+      assumptionsText = `Up to ${result.assumptions.sqft_cap.toLocaleString()} sq ft`;
     }
-    if (result.assumptions.healthcare_disinfection) {
-      assumptionsText += ', healthcare-focused disinfection';
+    if (result.assumptions?.supplies_included) {
+      assumptionsText += assumptionsText ? ', supplies included' : 'Supplies included';
     }
-    assumptionsEl.textContent = assumptionsText;
+    if (result.assumptions?.healthcare_disinfection) {
+      assumptionsText += assumptionsText ? ', healthcare-focused disinfection' : 'Healthcare-focused disinfection';
+    }
+    assumptionsEl.textContent = assumptionsText || 'Standard service';
   }
 
   // Display walkthrough recommendation

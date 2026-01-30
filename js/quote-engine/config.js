@@ -76,14 +76,21 @@ export const QUOTE_CONFIG = {
 
   // Minimum monthly floors (same as base prices or higher)
   minimumMonthly: {
+    // Commercial
     commercial_office: 349,
+    industrial: 699,
+    restaurant: 599,
+    // Healthcare
     physio_chiro: 499,
     medical_clinic: 549,
     dental: 529,
     optical: 499,
-    industrial: 699,
+    // Residential
+    residential_home: 149,
     residential_common_area: 499,
-    restaurant: 599
+    // Real Estate
+    realtor: 199,
+    property_manager: 149
   },
 
   // HST rate (Ontario default)
@@ -331,6 +338,132 @@ export const QUOTE_CONFIG = {
         { min: 1601, max: 2200, multiplier: 1.10, walkthroughRequired: true },
         { min: 2201, max: 3000, multiplier: 1.20, walkthroughRequired: true }
       ]
+    },
+
+    residential_home: {
+      // Residential homes - bedrooms/bathrooms are primary factors
+      touchpointScores: {
+        washroom: 0.07,  // Bathrooms are key
+        treatment_room: 0.04,  // Bedrooms
+        reception: 0.00,  // Not applicable
+        kitchen: 0.06,  // Kitchen is significant
+        high_touch_disinfection: 0.03
+      },
+      touchpointMax: 0.30,
+      // Residential cleaning typically bi-weekly or weekly
+      frequencyMultipliers: [
+        { maxVisits: 2, multiplier: 0.85 },   // Bi-weekly
+        { maxVisits: 4, multiplier: 1.00 },   // Weekly
+        { maxVisits: 8, multiplier: 1.85 },   // Twice weekly
+        { maxVisits: 12, multiplier: 2.60 }   // 3x weekly
+      ],
+      // Residential sqft bands
+      sqftBands: [
+        { min: 0, max: 1000, multiplier: 0.85, walkthroughRequired: false },
+        { min: 1001, max: 1500, multiplier: 1.00, walkthroughRequired: false },
+        { min: 1501, max: 2200, multiplier: 1.15, walkthroughRequired: false },
+        { min: 2201, max: 3000, multiplier: 1.30, walkthroughRequired: false },
+        { min: 3001, max: 4500, multiplier: 1.50, walkthroughRequired: true }
+      ],
+      complexityFactors: {
+        flooring: {
+          mostly_hard: 0.00,
+          mixed: 0.03,
+          mostly_carpet: 0.05
+        },
+        after_hours: 0.00,  // Not typically applicable
+        supplies_included: 0.04,
+        urgency: {
+          '0-2': 0.05,
+          '3-7': 0.02,
+          '8+': 0.00
+        }
+      }
+    },
+
+    realtor: {
+      // Realtor move-in/move-out - one-time deep cleans
+      touchpointScores: {
+        washroom: 0.08,  // Bathrooms critical for showings
+        treatment_room: 0.04,  // Bedrooms
+        reception: 0.00,  // Not applicable
+        kitchen: 0.08,  // Appliance cleaning often required
+        high_touch_disinfection: 0.04
+      },
+      touchpointMax: 0.35,
+      // One-time jobs - frequency less relevant, but can handle recurring turnovers
+      frequencyMultipliers: [
+        { maxVisits: 1, multiplier: 1.00 },   // One-time
+        { maxVisits: 2, multiplier: 1.90 },   // Two jobs/month
+        { maxVisits: 4, multiplier: 3.60 },   // Four jobs/month
+        { maxVisits: 8, multiplier: 6.80 }    // High volume realtor
+      ],
+      // Realtor sqft bands
+      sqftBands: [
+        { min: 0, max: 1000, multiplier: 0.80, walkthroughRequired: false },
+        { min: 1001, max: 1500, multiplier: 1.00, walkthroughRequired: false },
+        { min: 1501, max: 2200, multiplier: 1.20, walkthroughRequired: false },
+        { min: 2201, max: 3000, multiplier: 1.40, walkthroughRequired: true },
+        { min: 3001, max: 5000, multiplier: 1.70, walkthroughRequired: true }
+      ],
+      // Deep cleans have higher complexity
+      complexityFactors: {
+        flooring: {
+          mostly_hard: 0.00,
+          mixed: 0.04,
+          mostly_carpet: 0.08
+        },
+        after_hours: 0.00,
+        supplies_included: 0.05,
+        urgency: {
+          '0-2': 0.10,  // Rush jobs common for closings
+          '3-7': 0.05,
+          '8+': 0.00
+        }
+      },
+      complexityMax: 0.30
+    },
+
+    property_manager: {
+      // Property managers - volume-based pricing
+      touchpointScores: {
+        washroom: 0.06,
+        treatment_room: 0.03,  // Bedrooms per unit
+        reception: 0.02,  // Common areas/lobby
+        kitchen: 0.05,
+        high_touch_disinfection: 0.03
+      },
+      touchpointMax: 0.25,
+      // Volume discounts for multiple units
+      frequencyMultipliers: [
+        { maxVisits: 2, multiplier: 1.00 },   // 1-2 turnovers
+        { maxVisits: 4, multiplier: 1.80 },   // 3-4 turnovers
+        { maxVisits: 8, multiplier: 3.20 },   // 5-8 turnovers
+        { maxVisits: 12, multiplier: 4.50 },  // 9-12 turnovers
+        { maxVisits: 20, multiplier: 7.00 }   // High volume
+      ],
+      // Property manager sqft bands (per unit average)
+      sqftBands: [
+        { min: 0, max: 800, multiplier: 0.85, walkthroughRequired: false },
+        { min: 801, max: 1200, multiplier: 1.00, walkthroughRequired: false },
+        { min: 1201, max: 1800, multiplier: 1.18, walkthroughRequired: false },
+        { min: 1801, max: 2500, multiplier: 1.35, walkthroughRequired: true }
+      ],
+      complexityFactors: {
+        flooring: {
+          mostly_hard: 0.00,
+          mixed: 0.03,
+          mostly_carpet: 0.06
+        },
+        after_hours: 0.00,
+        supplies_included: 0.04,
+        urgency: {
+          '0-2': 0.08,  // Quick turnovers needed
+          '3-7': 0.03,
+          '8+': 0.00
+        }
+      },
+      complexityMax: 0.22
     }
   }
 };
