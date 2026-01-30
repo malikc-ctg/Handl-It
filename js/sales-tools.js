@@ -298,14 +298,14 @@ export function copyEmailTemplate(templateId) {
 }
 
 // ==========================================
-// CALL SCRIPTS
+// CALL SCRIPTS (Miro Board Embed)
 // ==========================================
 export function openCallScripts() {
   const modal = document.getElementById('call-scripts-modal');
   if (modal) {
     modal.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
-    loadCallScripts();
+    // Miro board is embedded directly in HTML
   }
 }
 
