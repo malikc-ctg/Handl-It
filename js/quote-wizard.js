@@ -149,8 +149,6 @@ function resetQuoteEngineForm() {
     'quote-sqft-estimate': '',
     'quote-frequency-per-month': '4',
     'quote-urgency-days': '30',
-    'quote-num-washrooms': '0',
-    'quote-num-treatment-rooms': '0',
     'quote-flooring': 'mostly_hard',
     'quote-notes': ''
   };
@@ -162,8 +160,6 @@ function resetQuoteEngineForm() {
   
   // Reset checkboxes
   const checkboxes = {
-    'quote-has-reception': false,
-    'quote-has-kitchen': false,
     'quote-after-hours': false,
     'quote-supplies-included': true,
     'quote-high-touch-disinfection': false
@@ -173,6 +169,18 @@ function resetQuoteEngineForm() {
     const el = document.getElementById(id);
     if (el) el.checked = checked;
   }
+  
+  // Reset all touchpoint number inputs to 0/1
+  document.querySelectorAll('.quote-touchpoint').forEach(el => {
+    if (el.type === 'number') {
+      el.value = el.id === 'quote-num-floors' ? '1' : '0';
+    } else if (el.type === 'checkbox') {
+      el.checked = false;
+    }
+  });
+  
+  // Hide touchpoints section
+  updateTouchpointsForServiceType(null);
   
   // Reset calculation display
   const calcResult = document.getElementById('quote-calculation-result');
@@ -644,6 +652,113 @@ function setupAutoCalculatePricing() {
 // Track if quote engine listeners are set up to prevent duplicates
 let quoteEngineListenersSetup = false;
 
+// Show/hide service-specific touchpoint fields
+function updateTouchpointsForServiceType(serviceType) {
+  const section = document.getElementById('quote-touchpoints-section');
+  const allTouchpoints = document.querySelectorAll('[id^="touchpoints-"]');
+  
+  // Hide all touchpoint sections
+  allTouchpoints.forEach(tp => tp.classList.add('hidden'));
+  
+  if (!serviceType) {
+    section?.classList.add('hidden');
+    return;
+  }
+  
+  // Show the section and the relevant touchpoints
+  section?.classList.remove('hidden');
+  const specificTouchpoints = document.getElementById(`touchpoints-${serviceType}`);
+  if (specificTouchpoints) {
+    specificTouchpoints.classList.remove('hidden');
+  }
+}
+
+// Get touchpoint data based on current service type
+function getTouchpointData(serviceType) {
+  const data = {
+    num_washrooms: 0,
+    num_treatment_rooms: 0,
+    has_reception: false,
+    has_kitchen: false
+  };
+  
+  switch (serviceType) {
+    case 'commercial_office':
+      data.num_workstations = parseInt(document.getElementById('quote-num-workstations')?.value) || 0;
+      data.num_meeting_rooms = parseInt(document.getElementById('quote-num-meeting-rooms')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms')?.value) || 0;
+      data.has_kitchen = document.getElementById('quote-has-kitchen')?.checked || false;
+      data.has_reception = document.getElementById('quote-has-reception')?.checked || false;
+      // Map to treatment rooms equivalent for calculation
+      data.num_treatment_rooms = data.num_meeting_rooms;
+      break;
+      
+    case 'medical_clinic':
+      data.num_exam_rooms = parseInt(document.getElementById('quote-num-exam-rooms')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms-med')?.value) || 0;
+      data.has_waiting = document.getElementById('quote-has-waiting-med')?.checked || false;
+      data.has_lab = document.getElementById('quote-has-lab')?.checked || false;
+      data.num_treatment_rooms = data.num_exam_rooms;
+      data.has_reception = data.has_waiting;
+      break;
+      
+    case 'physio_chiro':
+      data.num_treatment_rooms = parseInt(document.getElementById('quote-num-treatment-rooms')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms-physio')?.value) || 0;
+      data.has_gym = document.getElementById('quote-has-gym')?.checked || false;
+      data.has_waiting = document.getElementById('quote-has-waiting-physio')?.checked || false;
+      data.has_reception = data.has_waiting;
+      break;
+      
+    case 'dental':
+      data.num_operatories = parseInt(document.getElementById('quote-num-operatories')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms-dental')?.value) || 0;
+      data.has_sterilization = document.getElementById('quote-has-sterilization')?.checked || false;
+      data.has_xray = document.getElementById('quote-has-xray')?.checked || false;
+      data.num_treatment_rooms = data.num_operatories;
+      data.has_reception = true;
+      break;
+      
+    case 'optical':
+      data.num_exam_rooms = parseInt(document.getElementById('quote-num-exam-optical')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms-optical')?.value) || 0;
+      data.has_retail = document.getElementById('quote-has-retail-optical')?.checked || false;
+      data.has_lab = document.getElementById('quote-has-lab-optical')?.checked || false;
+      data.num_treatment_rooms = data.num_exam_rooms;
+      data.has_reception = data.has_retail;
+      break;
+      
+    case 'industrial':
+      data.num_warehouse_bays = parseInt(document.getElementById('quote-num-warehouse-bays')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms-ind')?.value) || 0;
+      data.has_office = document.getElementById('quote-has-office-ind')?.checked || false;
+      data.has_break_room = document.getElementById('quote-has-break-ind')?.checked || false;
+      data.has_kitchen = data.has_break_room;
+      break;
+      
+    case 'residential_common_area':
+      data.num_floors = parseInt(document.getElementById('quote-num-floors')?.value) || 1;
+      data.num_elevators = parseInt(document.getElementById('quote-num-elevators')?.value) || 0;
+      data.has_lobby = document.getElementById('quote-has-lobby')?.checked || false;
+      data.has_gym = document.getElementById('quote-has-gym-res')?.checked || false;
+      data.has_reception = data.has_lobby;
+      data.num_treatment_rooms = data.num_elevators;
+      break;
+      
+    case 'restaurant':
+      data.seating_capacity = parseInt(document.getElementById('quote-seating-capacity')?.value) || 0;
+      data.num_washrooms = parseInt(document.getElementById('quote-num-washrooms-rest')?.value) || 0;
+      data.has_commercial_kitchen = document.getElementById('quote-has-commercial-kitchen')?.checked || false;
+      data.has_bar = document.getElementById('quote-has-bar')?.checked || false;
+      data.has_kitchen = data.has_commercial_kitchen;
+      // Estimate rooms from seating
+      data.num_treatment_rooms = Math.ceil(data.seating_capacity / 50);
+      break;
+  }
+  
+  return data;
+}
+
 // Setup event listeners for quote engine form inputs
 function setupQuoteEngineListeners() {
   // Prevent duplicate listeners
@@ -655,19 +770,23 @@ function setupQuoteEngineListeners() {
   const serviceType = document.getElementById('quote-service-type');
   const sqftEstimate = document.getElementById('quote-sqft-estimate');
   const frequencyPerMonth = document.getElementById('quote-frequency-per-month');
-  const numWashrooms = document.getElementById('quote-num-washrooms');
-  const numTreatmentRooms = document.getElementById('quote-num-treatment-rooms');
-  const hasReception = document.getElementById('quote-has-reception');
-  const hasKitchen = document.getElementById('quote-has-kitchen');
   const flooring = document.getElementById('quote-flooring');
   const afterHours = document.getElementById('quote-after-hours');
   const suppliesIncluded = document.getElementById('quote-supplies-included');
   const highTouchDisinfection = document.getElementById('quote-high-touch-disinfection');
   const urgencyDays = document.getElementById('quote-urgency-days');
   const notes = document.getElementById('quote-notes');
+  
+  // Service type change - show/hide touchpoints
+  if (serviceType) {
+    serviceType.addEventListener('change', (e) => {
+      updateTouchpointsForServiceType(e.target.value);
+      calculateQuoteFromEngine();
+    });
+  }
 
-  // Add event listeners to all inputs
-  [serviceType, sqftEstimate, frequencyPerMonth, numWashrooms, numTreatmentRooms, flooring, urgencyDays, notes].forEach(input => {
+  // Add event listeners to basic inputs
+  [serviceType, sqftEstimate, frequencyPerMonth, flooring, urgencyDays, notes].forEach(input => {
     if (input) {
       input.addEventListener('input', calculateQuoteFromEngine);
       input.addEventListener('change', calculateQuoteFromEngine);
@@ -675,25 +794,25 @@ function setupQuoteEngineListeners() {
   });
 
   // Add event listeners to checkboxes
-  [hasReception, hasKitchen, afterHours, suppliesIncluded, highTouchDisinfection].forEach(checkbox => {
+  [afterHours, suppliesIncluded, highTouchDisinfection].forEach(checkbox => {
     if (checkbox) {
       checkbox.addEventListener('change', calculateQuoteFromEngine);
     }
   });
+  
+  // Add listeners to all dynamic touchpoint inputs using event delegation
+  document.getElementById('quote-touchpoints-section')?.addEventListener('input', calculateQuoteFromEngine);
+  document.getElementById('quote-touchpoints-section')?.addEventListener('change', calculateQuoteFromEngine);
 
   quoteEngineListenersSetup = true;
 }
 
 // Calculate quote using Quote Engine v2
 function calculateQuoteFromEngine() {
-  // Get form inputs
+  // Get basic form inputs
   const serviceType = document.getElementById('quote-service-type')?.value;
   const sqftEstimate = parseFloat(document.getElementById('quote-sqft-estimate')?.value) || null;
   const frequencyPerMonth = parseInt(document.getElementById('quote-frequency-per-month')?.value) || 4;
-  const numWashrooms = parseInt(document.getElementById('quote-num-washrooms')?.value) || 0;
-  const numTreatmentRooms = parseInt(document.getElementById('quote-num-treatment-rooms')?.value) || 0;
-  const hasReception = document.getElementById('quote-has-reception')?.checked || false;
-  const hasKitchen = document.getElementById('quote-has-kitchen')?.checked || false;
   const flooring = document.getElementById('quote-flooring')?.value || 'mostly_hard';
   const afterHours = document.getElementById('quote-after-hours')?.checked || false;
   const suppliesIncluded = document.getElementById('quote-supplies-included')?.checked !== false;
@@ -706,6 +825,9 @@ function calculateQuoteFromEngine() {
     document.getElementById('quote-calculation-result')?.classList.add('hidden');
     return;
   }
+  
+  // Get service-specific touchpoint data
+  const touchpointData = getTouchpointData(serviceType);
 
   try {
     // Calculate quote using engine
@@ -713,16 +835,18 @@ function calculateQuoteFromEngine() {
       service_type: serviceType,
       sqft_estimate: sqftEstimate,
       frequency_per_month: frequencyPerMonth,
-      num_washrooms: numWashrooms,
-      num_treatment_rooms: numTreatmentRooms,
-      has_reception: hasReception,
-      has_kitchen: hasKitchen,
+      num_washrooms: touchpointData.num_washrooms,
+      num_treatment_rooms: touchpointData.num_treatment_rooms,
+      has_reception: touchpointData.has_reception,
+      has_kitchen: touchpointData.has_kitchen,
       flooring: flooring,
       after_hours_required: afterHours,
       supplies_included: suppliesIncluded,
       high_touch_disinfection: highTouchDisinfection,
       urgency_start_days: urgencyDays,
-      notes: notes
+      notes: notes,
+      // Include all service-specific data for reference
+      service_specific: touchpointData
     };
 
     const quoteResult = calculateQuote(inputs);
@@ -937,15 +1061,14 @@ async function handleSaveDraft() {
     const sqft = parseInt(document.getElementById('quote-sqft-estimate')?.value) || 0;
     const frequency = parseInt(document.getElementById('quote-frequency-per-month')?.value) || 4;
     const urgency = parseInt(document.getElementById('quote-urgency-days')?.value) || 30;
-    const washrooms = parseInt(document.getElementById('quote-num-washrooms')?.value) || 0;
-    const treatmentRooms = parseInt(document.getElementById('quote-num-treatment-rooms')?.value) || 0;
-    const hasReception = document.getElementById('quote-has-reception')?.checked || false;
-    const hasKitchen = document.getElementById('quote-has-kitchen')?.checked || false;
     const flooring = document.getElementById('quote-flooring')?.value || 'mostly_hard';
     const afterHours = document.getElementById('quote-after-hours')?.checked || false;
     const suppliesIncluded = document.getElementById('quote-supplies-included')?.checked || true;
     const highTouchDisinfection = document.getElementById('quote-high-touch-disinfection')?.checked || false;
     const notes = document.getElementById('quote-notes')?.value || '';
+    
+    // Get service-specific touchpoint data
+    const touchpointData = serviceType ? getTouchpointData(serviceType) : {};
     
     // Get calculated values from display
     const monthlyExHst = parseFloat(document.getElementById('calc-monthly-ex-hst')?.textContent?.replace(/[^0-9.]/g, '')) || 0;
@@ -984,14 +1107,12 @@ async function handleSaveDraft() {
         sqft_estimate: sqft,
         frequency_per_month: frequency,
         urgency_days: urgency,
-        num_washrooms: washrooms,
-        num_treatment_rooms: treatmentRooms,
-        has_reception: hasReception,
-        has_kitchen: hasKitchen,
         flooring: flooring,
         after_hours: afterHours,
         supplies_included: suppliesIncluded,
-        high_touch_disinfection: highTouchDisinfection
+        high_touch_disinfection: highTouchDisinfection,
+        // Include service-specific touchpoint data
+        ...touchpointData
       },
       quote_calculation_outputs: {
         monthly_price_ex_hst: monthlyExHst,
