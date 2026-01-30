@@ -1630,6 +1630,7 @@
     let currentUserProfile = null;
     let bookings = [];
     let jobs = [];
+    let tasks = [];
     let sites = [];
     // Filter removed - always show all bookings
     let currentFilter = 'all';
@@ -1691,6 +1692,7 @@
       
       // All users: Load jobs (staff will see assigned jobs only)
       await loadJobs();
+      await loadTasks();
       
       // Initialize view toggle
       initViewToggle();
@@ -2142,8 +2144,23 @@
         }
       } catch (error) {
         console.error('❌ Error loading jobs:', error);
-        // Show error to user for debugging
         toast.error('Failed to load jobs: ' + error.message, 'Jobs Error');
+      }
+    }
+
+    async function loadTasks() {
+      try {
+        const { data, error } = await supabase
+          .from('calendar_tasks')
+          .select('*')
+          .neq('status', 'cancelled')
+          .order('due_date', { ascending: true });
+        if (error) throw error;
+        tasks = data || [];
+        if (currentView === 'calendar') updateCalendar();
+      } catch (e) {
+        console.error('Error loading calendar tasks:', e);
+        tasks = [];
       }
     }
 
@@ -2780,19 +2797,11 @@
           return;
         }
 
-        const firstSite = (sites && sites.length) ? sites[0] : null;
-        if (!firstSite) {
-          toast.error('Add at least one site to create tasks.', 'Task');
-          return;
-        }
-        const siteId = firstSite.id;
-
-        let scheduledDatetime;
+        let dueDatetime = null;
         let estimatedHours = 1;
 
         if (isAllDay) {
-          const d = new Date(due + 'T00:00:00');
-          scheduledDatetime = d.toISOString();
+          dueDatetime = new Date(due + 'T00:00:00').toISOString();
         } else {
           const start = new Date(due + 'T' + startTime + ':00');
           const end = new Date(due + 'T' + endTime + ':00');
@@ -2800,46 +2809,33 @@
             toast.error('End time must be after start time', 'Task');
             return;
           }
-          scheduledDatetime = start.toISOString();
+          dueDatetime = start.toISOString();
           estimatedHours = (end - start) / (60 * 60 * 1000);
         }
 
-        const jobData = {
-          client_id: currentUser.id,
-          site_id: parseInt(siteId),
-          assigned_worker_id: shareWith,
-          title: title,
-          job_type: 'cleaning',
-          description: description || 'Task',
-          scheduled_date: due,
-          scheduled_datetime: scheduledDatetime,
+        const taskData = {
+          title,
+          description: description || null,
+          due_date: due,
+          due_datetime: dueDatetime,
           is_all_day: !!isAllDay,
           estimated_hours: estimatedHours,
-          status: 'pending',
-          frequency: 'single visit',
+          assigned_to: shareWith || null,
           created_by: currentUser.id,
+          status: 'pending',
         };
 
-        const { data: job, error } = await supabase
-          .from('jobs')
-          .insert(jobData)
+        const { error } = await supabase
+          .from('calendar_tasks')
+          .insert(taskData)
           .select()
           .single();
 
         if (error) throw error;
 
-        if (shareWith) {
-          try {
-            const { notifyJobAssigned } = await import('./js/notification-triggers.js');
-            await notifyJobAssigned(job.id, shareWith, job.title, firstSite.name || 'Site', scheduledDatetime, !!isAllDay);
-          } catch (notifErr) {
-            console.warn('Task assignment notification failed:', notifErr);
-          }
-        }
-
         toast.success(shareWith ? 'Task created. It will appear on your calendar and the shared user\'s calendar.' : 'Task created. It will appear on your calendar.', 'Task Created');
         closeModals();
-        await loadJobs();
+        await loadTasks();
         if (typeof updateCalendar === 'function') updateCalendar();
       } catch (error) {
         console.error('Error creating task:', error);
@@ -3191,6 +3187,43 @@
         .filter(booking => booking !== null); // Remove null entries
     }
 
+    function formatTasksForCalendar(tasksList) {
+      return (tasksList || [])
+        .filter(t => t.due_date || t.due_datetime)
+        .map(task => {
+          const isAllDay = task.is_all_day !== false && !task.due_datetime;
+          const startDate = task.due_datetime || (task.due_date + 'T00:00:00');
+          let displayTitle = task.title || 'Task';
+          if (!isAllDay && task.due_datetime) {
+            try {
+              const d = new Date(task.due_datetime);
+              const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+              displayTitle = `${timeStr} • ${displayTitle}`;
+            } catch (e) {}
+          }
+          let endDate = null;
+          if (!isAllDay && task.due_datetime && task.estimated_hours) {
+            try {
+              const start = new Date(task.due_datetime);
+              const end = new Date(start.getTime() + (parseFloat(task.estimated_hours) || 1) * 60 * 60 * 1000);
+              endDate = end.toISOString();
+            } catch (e) {}
+          }
+          return {
+            id: `task-${task.id}`,
+            title: displayTitle,
+            start: startDate,
+            end: endDate,
+            allDay: isAllDay,
+            backgroundColor: '#6366f1',
+            borderColor: '#6366f1',
+            textColor: '#ffffff',
+            classNames: ['modern-calendar-event', 'event-task', `event-status-${task.status}`],
+            extendedProps: { type: 'task', id: task.id, status: task.status, isAllDay: !!isAllDay }
+          };
+        });
+    }
+
     // ========== CALENDAR INITIALIZATION ==========
     function initCalendar() {
       if (calendar) {
@@ -3294,16 +3327,15 @@
           info.jsEvent.preventDefault();
           
           if (eventType === 'job') {
-            // Open job sidebar
             openEventSidebar(eventId, 'job');
           } else if (eventType === 'booking') {
-            // Staff cannot view booking details
             if (isStaff) {
               toast.info('Only assigned jobs are visible in calendar view');
               return;
             }
-            // Open booking sidebar
             openEventSidebar(eventId, 'booking');
+          } else if (eventType === 'task') {
+            openEventSidebar(eventId, 'task');
           }
         },
         
@@ -3315,8 +3347,8 @@
           const isAllDay = info.event.extendedProps.isAllDay !== false && info.event.allDay;
           const newIsAllDay = info.event.allDay;
           
-          // Staff can only reschedule jobs (their assigned jobs)
-          if (isStaff && eventType !== 'job') {
+          // Staff can only reschedule jobs and tasks (not bookings)
+          if (isStaff && eventType === 'booking') {
             info.revert();
             toast.info('Staff can only reschedule assigned jobs');
             return;
@@ -3383,36 +3415,41 @@
           
           // Update in database
           try {
-            const updateData = {
-              scheduled_date: newDate, // Keep for backward compatibility
-              scheduled_datetime: newDatetime, // New datetime field
-              is_all_day: newIsAllDay, // Update all-day flag
-              updated_at: new Date().toISOString()
-            };
-            
             if (eventType === 'job') {
-              const { error } = await supabase
-                .from('jobs')
-                .update(updateData)
-                .eq('id', eventId);
-              
+              const updateData = {
+                scheduled_date: newDate,
+                scheduled_datetime: newDatetime,
+                is_all_day: newIsAllDay,
+                updated_at: new Date().toISOString()
+              };
+              const { error } = await supabase.from('jobs').update(updateData).eq('id', eventId);
               if (error) throw error;
             } else if (eventType === 'booking') {
-              // Non-staff only
               if (!isStaff) {
-                const { error } = await supabase
-                  .from('bookings')
-                  .update(updateData)
-                  .eq('id', eventId);
-                
+                const updateData = {
+                  scheduled_date: newDate,
+                  scheduled_datetime: newDatetime,
+                  is_all_day: newIsAllDay,
+                  updated_at: new Date().toISOString()
+                };
+                const { error } = await supabase.from('bookings').update(updateData).eq('id', eventId);
                 if (error) throw error;
               }
+            } else if (eventType === 'task') {
+              const updateData = {
+                due_date: newDate,
+                due_datetime: newDatetime,
+                is_all_day: newIsAllDay,
+                updated_at: new Date().toISOString()
+              };
+              const { error } = await supabase.from('calendar_tasks').update(updateData).eq('id', eventId);
+              if (error) throw error;
             }
             
             toast.success(`${eventType.charAt(0).toUpperCase() + eventType.slice(1)} rescheduled successfully`);
-            // Reload data to update calendar
             await loadBookings();
             await loadJobs();
+            await loadTasks();
           } catch (error) {
             console.error('Error rescheduling:', error);
             info.revert();
@@ -3430,7 +3467,8 @@
           try {
             const jobEvents = formatJobsForCalendar(jobs);
             const bookingEvents = formatBookingsForCalendar(bookings);
-            const allEvents = [...jobEvents, ...bookingEvents];
+            const taskEvents = formatTasksForCalendar(tasks);
+            const allEvents = [...jobEvents, ...bookingEvents, ...taskEvents];
             
             // Deduplicate events based on database ID + start date + type
             // This catches duplicates even if they have different calendar event IDs
@@ -3801,6 +3839,8 @@
           staffMembers = result.staff;
         } else if (eventType === 'booking') {
           eventData = await fetchBookingForSidebar(eventId);
+        } else if (eventType === 'task') {
+          eventData = await fetchTaskForSidebar(eventId);
         }
 
         if (!eventData) {
@@ -3991,6 +4031,26 @@
       }
     }
 
+    async function fetchTaskForSidebar(taskId) {
+      try {
+        const { data: task, error } = await supabase
+          .from('calendar_tasks')
+          .select('*')
+          .eq('id', taskId)
+          .single();
+        if (error) throw error;
+        if (!task) return null;
+        if (task.assigned_to) {
+          const { data: u } = await supabase.from('user_profiles').select('id, full_name, email').eq('id', task.assigned_to).single();
+          if (u) task.assigned_user = u;
+        }
+        return task;
+      } catch (e) {
+        console.error('Error fetching task for sidebar:', e);
+        throw e;
+      }
+    }
+
     // Populate sidebar with event data
     function populateSidebar(eventData, eventType, staffMembers = []) {
       const calendarContainer = document.getElementById('calendar-container');
@@ -4007,6 +4067,7 @@
       
       const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
       const canEdit = !isStaff && (eventData.status === 'draft' || eventData.status === 'pending');
+      const isTask = eventType === 'task';
 
       // Get all sidebar elements
       const sidebarTitle = sidebar.querySelector('#sidebar-event-title');
@@ -4019,37 +4080,22 @@
       const sidebarDeleteBtn = sidebar.querySelector('#sidebar-delete-btn');
       const sidebarRescheduleBtn = sidebar.querySelector('#sidebar-reschedule-btn');
 
-      // Title
       if (sidebarTitle) sidebarTitle.textContent = eventData.title || 'Untitled';
 
-      // Date & Time - Simplified format
       let dateStr = '';
       let timeStr = '';
       let isAllDay = eventData.is_all_day;
+      const dt = eventData.due_datetime || eventData.scheduled_datetime;
+      const d = eventData.due_date || eventData.scheduled_date;
 
-      if (eventData.scheduled_datetime) {
-        const date = new Date(eventData.scheduled_datetime);
-        dateStr = date.toLocaleDateString('en-US', { 
-          day: 'numeric',
-          month: 'long', 
-          year: 'numeric'
-        });
-        
+      if (dt) {
+        const date = new Date(dt);
+        dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
         if (!isAllDay) {
-          const startTime = date.toLocaleTimeString('en-US', { 
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
-          });
-          
-          // Calculate end time if estimated_hours exists (for jobs)
-          if (eventType === 'job' && eventData.estimated_hours) {
+          const startTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          if ((eventType === 'job' || isTask) && eventData.estimated_hours) {
             const endDate = new Date(date.getTime() + (eventData.estimated_hours * 60 * 60 * 1000));
-            const endTime = endDate.toLocaleTimeString('en-US', { 
-              hour: 'numeric', 
-              minute: '2-digit',
-              hour12: true 
-            });
+            const endTime = endDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
             timeStr = `${startTime} - ${endTime}`;
           } else {
             timeStr = startTime;
@@ -4057,59 +4103,59 @@
         } else {
           timeStr = 'All Day';
         }
-      } else if (eventData.scheduled_date) {
-        const date = new Date(eventData.scheduled_date);
-        dateStr = date.toLocaleDateString('en-US', { 
-          day: 'numeric',
-          month: 'long', 
-          year: 'numeric'
-        });
+      } else if (d) {
+        const date = new Date(d + (d.includes('T') ? '' : 'T00:00:00'));
+        dateStr = date.toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
         timeStr = 'All Day';
       }
 
       if (sidebarDate) sidebarDate.textContent = dateStr;
       if (sidebarTime) sidebarTime.textContent = timeStr;
 
-      // Show site section
-      if (sidebarSiteSection) sidebarSiteSection.classList.remove('hidden');
-
-      // Assigned Staff
-      renderStaffList(staffMembers, eventType, sidebar);
-
-      // Site Information
-      if (eventData.sites) {
-        renderSiteInfo(eventData.sites, sidebar);
-      } else if (eventData.site_id && eventType === 'booking') {
-        // For bookings, site might not be populated, fetch it
-        supabase.from('sites').select('*').eq('id', eventData.site_id).single()
-          .then(({ data: site }) => {
-            if (site) renderSiteInfo(site, sidebar);
-          });
-      }
-
-      // Client Information (for bookings)
-      if (eventType === 'booking' && eventData.client) {
-        renderClientInfo(eventData.client, sidebar);
-        if (sidebarClientSection) sidebarClientSection.classList.remove('hidden');
-      } else {
+      if (isTask) {
+        if (sidebarSiteSection) sidebarSiteSection.classList.add('hidden');
         if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
+        const primaryContent = sidebar.querySelector('#sidebar-primary-staff-content');
+        const primaryIcon = sidebar.querySelector('#sidebar-primary-staff .w-8.h-8');
+        if (primaryContent) {
+          primaryContent.innerHTML = eventData.assigned_user
+            ? `<span class="text-sm text-gray-700 dark:text-gray-300">Assigned to ${eventData.assigned_user.full_name || eventData.assigned_user.email || 'Unknown'}</span>`
+            : '<span class="text-sm text-gray-500 dark:text-gray-400">—</span>';
+        }
+        if (primaryIcon) primaryIcon.innerHTML = '<span class="text-xs font-semibold text-gray-500 dark:text-gray-400">?</span>';
+        const staffListEl = sidebar.querySelector('#sidebar-staff-list');
+        if (staffListEl) staffListEl.innerHTML = '';
+        const allStaffSec = sidebar.querySelector('#sidebar-all-staff-section');
+        if (allStaffSec) allStaffSec.classList.add('hidden');
+        if (sidebarViewDetailsBtn) {
+          sidebarViewDetailsBtn.classList.add('hidden');
+        }
+      } else {
+        if (sidebarSiteSection) sidebarSiteSection.classList.remove('hidden');
+        renderStaffList(staffMembers, eventType, sidebar);
+        if (eventData.sites) {
+          renderSiteInfo(eventData.sites, sidebar);
+        } else if (eventData.site_id && eventType === 'booking') {
+          supabase.from('sites').select('*').eq('id', eventData.site_id).single()
+            .then(({ data: site }) => { if (site) renderSiteInfo(site, sidebar); });
+        }
+        if (eventType === 'booking' && eventData.client) {
+          renderClientInfo(eventData.client, sidebar);
+          if (sidebarClientSection) sidebarClientSection.classList.remove('hidden');
+        } else {
+          if (sidebarClientSection) sidebarClientSection.classList.add('hidden');
+        }
+        if (sidebarViewDetailsBtn) {
+          sidebarViewDetailsBtn.classList.remove('hidden');
+          sidebarViewDetailsBtn.onclick = () => {
+            if (eventType === 'job') window.location.href = `jobs.html?job=${eventData.id}`;
+            else window.location.href = `bookings.html?booking=${eventData.id}`;
+          };
+        }
       }
 
-      // Action Buttons
-      if (sidebarViewDetailsBtn) {
-        sidebarViewDetailsBtn.onclick = () => {
-          if (eventType === 'job') {
-            window.location.href = `jobs.html?job=${eventData.id}`;
-          } else {
-            window.location.href = `bookings.html?booking=${eventData.id}`;
-          }
-        };
-      }
-      
       if (sidebarRescheduleBtn) {
-        sidebarRescheduleBtn.onclick = () => {
-          toast.info('Reschedule functionality coming soon', 'Info');
-        };
+        sidebarRescheduleBtn.onclick = () => toast.info('Reschedule: drag the event on the calendar', 'Info');
       }
 
       // Collapsible sections toggle
@@ -4152,43 +4198,54 @@
         };
       }
       
-      // Initially expand site section
-      const siteInfo = sidebar.querySelector('#sidebar-site-info');
-      if (siteInfo) siteInfo.classList.remove('hidden');
+      if (!isTask) {
+        const siteInfo = sidebar.querySelector('#sidebar-site-info');
+        if (siteInfo) siteInfo.classList.remove('hidden');
+      }
 
-      // Additional Details
       renderAdditionalDetails(eventData, eventType, sidebar);
 
-      // Edit/Delete buttons
       if (canEdit) {
         if (sidebarEditBtn) {
           sidebarEditBtn.classList.remove('hidden');
           sidebarEditBtn.onclick = () => {
-            closeEventSidebar();
-            if (eventType === 'job') {
-              window.location.href = `jobs.html?job=${eventData.id}`;
-            } else {
-              window.location.href = `bookings.html?booking=${eventData.id}`;
+            if (isTask) {
+              toast.info('Edit task coming soon', 'Info');
+              return;
             }
+            closeEventSidebar();
+            if (eventType === 'job') window.location.href = `jobs.html?job=${eventData.id}`;
+            else window.location.href = `bookings.html?booking=${eventData.id}`;
           };
         }
         if (sidebarDeleteBtn) {
           sidebarDeleteBtn.classList.remove('hidden');
           sidebarDeleteBtn.onclick = async () => {
-            const label = eventType === 'job' ? 'task/job' : 'booking';
-            const confirmed = await showConfirm(`Cancel this ${label}? It will be marked as cancelled.`, 'Cancel ' + (eventType === 'job' ? 'Task' : 'Booking'), 'warning');
+            const label = isTask ? 'task' : (eventType === 'job' ? 'job' : 'booking');
+            const confirmed = await showConfirm(`Cancel this ${label}? It will be marked as cancelled.`, 'Cancel ' + (isTask ? 'Task' : (eventType === 'job' ? 'Job' : 'Booking')), 'warning');
             if (!confirmed) return;
             try {
-              const table = eventType === 'job' ? 'jobs' : 'bookings';
-              const { error } = await supabase
-                .from(table)
-                .update({ status: 'cancelled', updated_at: new Date().toISOString() })
-                .eq('id', eventData.id);
-              if (error) throw error;
-              toast.success(eventType === 'job' ? 'Task cancelled.' : 'Booking cancelled.', 'Done');
-              closeEventSidebar();
-              await loadJobs();
-              if (eventType === 'booking') await loadBookings();
+              if (isTask) {
+                const { error } = await supabase
+                  .from('calendar_tasks')
+                  .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+                  .eq('id', eventData.id);
+                if (error) throw error;
+                toast.success('Task cancelled.', 'Done');
+                closeEventSidebar();
+                await loadTasks();
+              } else {
+                const table = eventType === 'job' ? 'jobs' : 'bookings';
+                const { error } = await supabase
+                  .from(table)
+                  .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+                  .eq('id', eventData.id);
+                if (error) throw error;
+                toast.success(eventType === 'job' ? 'Job cancelled.' : 'Booking cancelled.', 'Done');
+                closeEventSidebar();
+                await loadJobs();
+                if (eventType === 'booking') await loadBookings();
+              }
               if (typeof updateCalendar === 'function') updateCalendar();
             } catch (e) {
               console.error('Error cancelling:', e);
@@ -4199,13 +4256,6 @@
       } else {
         if (sidebarEditBtn) sidebarEditBtn.classList.add('hidden');
         if (sidebarDeleteBtn) sidebarDeleteBtn.classList.add('hidden');
-      }
-
-      // Reschedule button
-      if (sidebarRescheduleBtn) {
-        sidebarRescheduleBtn.onclick = () => {
-          toast.info('Reschedule functionality coming soon', 'Info');
-        };
       }
     }
 
@@ -4420,6 +4470,11 @@
         
         if (parts.length > 0) {
           detailsContentEl.innerHTML = parts.join('');
+          hasDetails = true;
+        }
+      } else if (eventType === 'task') {
+        if (eventData.description) {
+          detailsContentEl.innerHTML = `<div class="py-1.5"><p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">${eventData.description}</p></div>`;
           hasDetails = true;
         }
       }
