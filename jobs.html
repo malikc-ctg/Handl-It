@@ -744,11 +744,9 @@
               required 
               class="w-full border border-gray-200 dark:border-gray-600 rounded-xl px-4 py-3 focus:ring-2 focus:ring-nfgblue focus:border-nfgblue outline-none bg-gray-50 dark:bg-gray-700 dark:text-white transition appearance-none cursor-pointer"
             >
-              <option value="cleaning">🧹 Cleaning</option>
-              <option value="maintenance">🔧 Maintenance</option>
-              <option value="repair">🛠️ Repair</option>
-              <option value="inspection">🔍 Inspection</option>
-              <option value="emergency">🚨 Emergency</option>
+              <option value="basic_clean">Basic Clean</option>
+              <option value="deep_clean">Deep Clean</option>
+              <option value="snow_removal">Snow Removal</option>
             </select>
           </div>
           <div>
@@ -1289,39 +1287,62 @@
         currentUserProfile = profile || { role: 'client' };
       }
       
-      let query = supabase
-        .from('sites')
-        .select('*')
-        .order('name', { ascending: true });
+      console.log('[Jobs] User role:', currentUserProfile?.role);
       
-      // Staff might only see sites they're assigned to
-      // Admin/Client see sites they created or have access to
-      // RLS should handle this, but we can also filter by created_by as fallback
+      let sites = [];
       
-      const { data, error } = await query;
-      
-      if (error) {
-        console.error('[Jobs] Error fetching sites:', error);
+      // Staff users: Get sites they're assigned to
+      if (currentUserProfile && currentUserProfile.role === 'staff') {
+        console.log('[Jobs] Fetching sites for staff user via assignments...');
         
-        // Try with created_by filter if RLS blocks general access
-        console.log('[Jobs] Trying with created_by filter...');
-        const { data: filteredData, error: filteredError } = await supabase
+        const { data: assignments, error: assignError } = await supabase
+          .from('worker_site_assignments')
+          .select('site_id')
+          .eq('worker_id', currentUser.id);
+        
+        if (assignError) {
+          console.error('[Jobs] Error fetching assignments:', assignError);
+          return [];
+        }
+        
+        if (!assignments || assignments.length === 0) {
+          console.warn('[Jobs] No site assignments found for staff');
+          return [];
+        }
+        
+        const siteIds = assignments.map(a => a.site_id);
+        const { data: fetchedSites, error } = await supabase
+          .from('sites')
+          .select('*')
+          .in('id', siteIds)
+          .order('name', { ascending: true });
+        
+        if (error) {
+          console.error('[Jobs] Error fetching assigned sites:', error);
+          return [];
+        }
+        
+        sites = fetchedSites || [];
+      } else {
+        // Admin/Client: Fetch sites they created
+        console.log('[Jobs] Fetching sites created by user:', currentUser.id);
+        
+        const { data: fetchedSites, error } = await supabase
           .from('sites')
           .select('*')
           .eq('created_by', currentUser.id)
           .order('name', { ascending: true });
         
-        if (filteredError) {
-          console.error('[Jobs] Filtered query also failed:', filteredError);
+        if (error) {
+          console.error('[Jobs] Error fetching sites:', error);
           return [];
         }
         
-        console.log('[Jobs] Sites loaded (filtered):', filteredData?.length || 0);
-        return filteredData || [];
+        sites = fetchedSites || [];
       }
       
-      console.log('[Jobs] Sites loaded from DB:', data?.length || 0, 'sites');
-      return data || [];
+      console.log('[Jobs] Sites loaded:', sites?.length || 0, 'sites');
+      return sites;
     }
 
     // Get job tasks from Supabase
