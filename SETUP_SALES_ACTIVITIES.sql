@@ -7,26 +7,104 @@
 -- ============================================
 -- 1. ADD CONTACT TRACKING COLUMNS TO CONTACTS
 -- ============================================
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS no_contact_streak INTEGER DEFAULT 0;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS total_contact_attempts INTEGER DEFAULT 0;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_contact_attempt_at TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_contact_result TEXT;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS last_contacted_at TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS quote_sent_at TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS walkthrough_completed_at TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS walkthrough_scheduled_at TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS contact_status TEXT DEFAULT 'new' CHECK (contact_status IN ('new', 'active', 'nurturing', 'lost', 'converted'));
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS assigned_user_id UUID REFERENCES auth.users(id);
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS next_follow_up_date TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS next_follow_up_type TEXT;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS lost_reason TEXT;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS lost_at TIMESTAMPTZ;
-ALTER TABLE contacts ADD COLUMN IF NOT EXISTS converted_at TIMESTAMPTZ;
+DO $$
+BEGIN
+  -- no_contact_streak
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'no_contact_streak') THEN
+    ALTER TABLE contacts ADD COLUMN no_contact_streak INTEGER DEFAULT 0;
+  END IF;
+
+  -- total_contact_attempts
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'total_contact_attempts') THEN
+    ALTER TABLE contacts ADD COLUMN total_contact_attempts INTEGER DEFAULT 0;
+  END IF;
+
+  -- last_contact_attempt_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'last_contact_attempt_at') THEN
+    ALTER TABLE contacts ADD COLUMN last_contact_attempt_at TIMESTAMPTZ;
+  END IF;
+
+  -- last_contact_result
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'last_contact_result') THEN
+    ALTER TABLE contacts ADD COLUMN last_contact_result TEXT;
+  END IF;
+
+  -- last_contacted_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'last_contacted_at') THEN
+    ALTER TABLE contacts ADD COLUMN last_contacted_at TIMESTAMPTZ;
+  END IF;
+
+  -- quote_sent_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'quote_sent_at') THEN
+    ALTER TABLE contacts ADD COLUMN quote_sent_at TIMESTAMPTZ;
+  END IF;
+
+  -- walkthrough_completed_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'walkthrough_completed_at') THEN
+    ALTER TABLE contacts ADD COLUMN walkthrough_completed_at TIMESTAMPTZ;
+  END IF;
+
+  -- walkthrough_scheduled_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'walkthrough_scheduled_at') THEN
+    ALTER TABLE contacts ADD COLUMN walkthrough_scheduled_at TIMESTAMPTZ;
+  END IF;
+
+  -- contact_status
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'contact_status') THEN
+    ALTER TABLE contacts ADD COLUMN contact_status TEXT DEFAULT 'new';
+  END IF;
+
+  -- assigned_user_id
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'assigned_user_id') THEN
+    ALTER TABLE contacts ADD COLUMN assigned_user_id UUID;
+  END IF;
+
+  -- next_follow_up_date
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'next_follow_up_date') THEN
+    ALTER TABLE contacts ADD COLUMN next_follow_up_date TIMESTAMPTZ;
+  END IF;
+
+  -- next_follow_up_type
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'next_follow_up_type') THEN
+    ALTER TABLE contacts ADD COLUMN next_follow_up_type TEXT;
+  END IF;
+
+  -- lost_reason
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'lost_reason') THEN
+    ALTER TABLE contacts ADD COLUMN lost_reason TEXT;
+  END IF;
+
+  -- lost_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'lost_at') THEN
+    ALTER TABLE contacts ADD COLUMN lost_at TIMESTAMPTZ;
+  END IF;
+
+  -- converted_at
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'converted_at') THEN
+    ALTER TABLE contacts ADD COLUMN converted_at TIMESTAMPTZ;
+  END IF;
+
+  -- created_by (if missing)
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'contacts' AND column_name = 'created_by') THEN
+    ALTER TABLE contacts ADD COLUMN created_by UUID;
+  END IF;
+END $$;
 
 -- Also add tracking to deals for deal-specific follow-ups
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS quote_sent_at TIMESTAMPTZ;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS walkthrough_completed_at TIMESTAMPTZ;
-ALTER TABLE deals ADD COLUMN IF NOT EXISTS stage_entered_at TIMESTAMPTZ DEFAULT NOW();
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'deals' AND column_name = 'quote_sent_at') THEN
+    ALTER TABLE deals ADD COLUMN quote_sent_at TIMESTAMPTZ;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'deals' AND column_name = 'walkthrough_completed_at') THEN
+    ALTER TABLE deals ADD COLUMN walkthrough_completed_at TIMESTAMPTZ;
+  END IF;
+
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'deals' AND column_name = 'stage_entered_at') THEN
+    ALTER TABLE deals ADD COLUMN stage_entered_at TIMESTAMPTZ DEFAULT NOW();
+  END IF;
+END $$;
 
 -- ============================================
 -- 2. CREATE SALES ACTIVITIES TABLE (Contact-Centric)
