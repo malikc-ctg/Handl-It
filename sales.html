@@ -1277,121 +1277,122 @@
         </div>
       </div>
 
-      <!-- Log Activity Modal -->
-      <div id="log-activity-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">
-        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
-          <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
-            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Log Activity</h3>
-            <button id="close-activity-modal" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
-              <i data-lucide="x" class="w-5 h-5"></i>
+    </main>
+  </div>
+
+  <!-- Log Activity Modal (placed outside main for proper z-index stacking) -->
+  <div id="log-activity-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Log Activity</h3>
+        <button id="close-activity-modal" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="log-activity-form" class="p-4 space-y-4">
+        <input type="hidden" id="activity-deal-id">
+        
+        <!-- Deal Info Banner -->
+        <div id="activity-deal-info" class="p-3 bg-nfglight dark:bg-gray-700 rounded-lg">
+          <p class="font-medium text-nfgblue dark:text-blue-400" id="activity-deal-name">Deal Name</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">
+            Contact attempts: <span id="activity-attempt-count">0</span> | 
+            No-contact streak: <span id="activity-streak-count" class="font-semibold">0</span>/3
+          </p>
+        </div>
+        
+        <!-- Activity Type -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Activity Type</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button type="button" class="activity-type-btn p-3 border-2 border-nfgblue bg-nfgblue text-white rounded-lg text-center transition" data-type="call">
+              <i data-lucide="phone" class="w-5 h-5 mx-auto mb-1"></i>
+              <span class="text-xs">Call</span>
+            </button>
+            <button type="button" class="activity-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue rounded-lg text-center transition" data-type="email">
+              <i data-lucide="mail" class="w-5 h-5 mx-auto mb-1"></i>
+              <span class="text-xs">Email</span>
+            </button>
+            <button type="button" class="activity-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue rounded-lg text-center transition" data-type="meeting">
+              <i data-lucide="users" class="w-5 h-5 mx-auto mb-1"></i>
+              <span class="text-xs">Meeting</span>
+            </button>
+            <button type="button" class="activity-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue rounded-lg text-center transition" data-type="walkthrough">
+              <i data-lucide="map-pin" class="w-5 h-5 mx-auto mb-1"></i>
+              <span class="text-xs">Site Visit</span>
             </button>
           </div>
-          <form id="log-activity-form" class="p-4 space-y-4">
-            <input type="hidden" id="activity-deal-id">
-            
-            <!-- Deal Info Banner -->
-            <div id="activity-deal-info" class="p-3 bg-nfglight dark:bg-gray-700 rounded-lg">
-              <p class="font-medium text-nfgblue dark:text-blue-400" id="activity-deal-name">Deal Name</p>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                Contact attempts: <span id="activity-attempt-count">0</span> | 
-                No-contact streak: <span id="activity-streak-count" class="font-semibold">0</span>/3
-              </p>
-            </div>
-            
-            <!-- Activity Type -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Activity Type</label>
-              <div class="grid grid-cols-4 gap-2">
-                <button type="button" class="activity-type-btn p-3 border-2 border-nfgblue bg-nfgblue text-white rounded-lg text-center transition" data-type="call">
-                  <i data-lucide="phone" class="w-5 h-5 mx-auto mb-1"></i>
-                  <span class="text-xs">Call</span>
-                </button>
-                <button type="button" class="activity-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue rounded-lg text-center transition" data-type="email">
-                  <i data-lucide="mail" class="w-5 h-5 mx-auto mb-1"></i>
-                  <span class="text-xs">Email</span>
-                </button>
-                <button type="button" class="activity-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue rounded-lg text-center transition" data-type="meeting">
-                  <i data-lucide="users" class="w-5 h-5 mx-auto mb-1"></i>
-                  <span class="text-xs">Meeting</span>
-                </button>
-                <button type="button" class="activity-type-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-nfgblue rounded-lg text-center transition" data-type="walkthrough">
-                  <i data-lucide="map-pin" class="w-5 h-5 mx-auto mb-1"></i>
-                  <span class="text-xs">Site Visit</span>
-                </button>
-              </div>
-            </div>
-            
-            <!-- Outcome -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Outcome</label>
-              <div class="grid grid-cols-2 gap-3">
-                <button type="button" class="activity-outcome-btn p-3 border-2 border-green-500 bg-green-500 text-white rounded-lg flex items-center justify-center gap-2 transition" data-outcome="contact_made">
-                  <i data-lucide="check-circle" class="w-5 h-5"></i>
-                  <span>Contact Made</span>
-                </button>
-                <button type="button" class="activity-outcome-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-red-500 rounded-lg flex items-center justify-center gap-2 transition" data-outcome="no_contact">
-                  <i data-lucide="x-circle" class="w-5 h-5"></i>
-                  <span>No Contact</span>
-                </button>
-                <button type="button" class="activity-outcome-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-yellow-500 rounded-lg flex items-center justify-center gap-2 transition" data-outcome="voicemail">
-                  <i data-lucide="voicemail" class="w-5 h-5"></i>
-                  <span>Voicemail</span>
-                </button>
-                <button type="button" class="activity-outcome-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-blue-500 rounded-lg flex items-center justify-center gap-2 transition" data-outcome="scheduled">
-                  <i data-lucide="calendar-check" class="w-5 h-5"></i>
-                  <span>Scheduled</span>
-                </button>
-              </div>
-            </div>
-            
-            <!-- Warning for No Contact -->
-            <div id="no-contact-warning" class="hidden p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-              <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
-                <i data-lucide="alert-triangle" class="w-5 h-5"></i>
-                <span id="no-contact-warning-text" class="text-sm font-medium">This will be attempt 2 of 3</span>
-              </div>
-            </div>
-            
-            <!-- Notes -->
-            <div>
-              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
-              <textarea id="activity-notes" rows="2" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 resize-none" placeholder="What was discussed?"></textarea>
-            </div>
-            
-            <!-- Next Action -->
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Next Action</label>
-                <select id="activity-next-action" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-                  <option value="">None scheduled</option>
-                  <option value="call">Follow-up Call</option>
-                  <option value="email">Send Email</option>
-                  <option value="meeting">Schedule Meeting</option>
-                  <option value="walkthrough">Schedule Walkthrough</option>
-                  <option value="quote">Send Quote</option>
-                  <option value="close">Close Deal</option>
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When</label>
-                <input type="datetime-local" id="activity-next-date" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-              </div>
-            </div>
-            
-            <!-- Actions -->
-            <div class="flex justify-end gap-3 pt-2">
-              <button type="button" id="cancel-activity" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
-                Cancel
-              </button>
-              <button type="submit" id="save-activity-btn" class="px-6 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition flex items-center gap-2">
-                <i data-lucide="save" class="w-4 h-4"></i>
-                Save Activity
-              </button>
-            </div>
-          </form>
         </div>
-      </div>
-    </main>
+        
+        <!-- Outcome -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Outcome</label>
+          <div class="grid grid-cols-2 gap-3">
+            <button type="button" class="activity-outcome-btn p-3 border-2 border-green-500 bg-green-500 text-white rounded-lg flex items-center justify-center gap-2 transition" data-outcome="contact_made">
+              <i data-lucide="check-circle" class="w-5 h-5"></i>
+              <span>Contact Made</span>
+            </button>
+            <button type="button" class="activity-outcome-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-red-500 rounded-lg flex items-center justify-center gap-2 transition" data-outcome="no_contact">
+              <i data-lucide="x-circle" class="w-5 h-5"></i>
+              <span>No Contact</span>
+            </button>
+            <button type="button" class="activity-outcome-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-yellow-500 rounded-lg flex items-center justify-center gap-2 transition" data-outcome="voicemail">
+              <i data-lucide="voicemail" class="w-5 h-5"></i>
+              <span>Voicemail</span>
+            </button>
+            <button type="button" class="activity-outcome-btn p-3 border-2 border-nfgray dark:border-gray-600 hover:border-blue-500 rounded-lg flex items-center justify-center gap-2 transition" data-outcome="scheduled">
+              <i data-lucide="calendar-check" class="w-5 h-5"></i>
+              <span>Scheduled</span>
+            </button>
+          </div>
+        </div>
+        
+        <!-- Warning for No Contact -->
+        <div id="no-contact-warning" class="hidden p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <div class="flex items-center gap-2 text-red-700 dark:text-red-400">
+            <i data-lucide="alert-triangle" class="w-5 h-5"></i>
+            <span id="no-contact-warning-text" class="text-sm font-medium">This will be attempt 2 of 3</span>
+          </div>
+        </div>
+        
+        <!-- Notes -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Notes</label>
+          <textarea id="activity-notes" rows="2" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 resize-none" placeholder="What was discussed?"></textarea>
+        </div>
+        
+        <!-- Next Action -->
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Next Action</label>
+            <select id="activity-next-action" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+              <option value="">None scheduled</option>
+              <option value="call">Follow-up Call</option>
+              <option value="email">Send Email</option>
+              <option value="meeting">Schedule Meeting</option>
+              <option value="walkthrough">Schedule Walkthrough</option>
+              <option value="quote">Send Quote</option>
+              <option value="close">Close Deal</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When</label>
+            <input type="datetime-local" id="activity-next-date" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+          </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="cancel-activity" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
+            Cancel
+          </button>
+          <button type="submit" id="save-activity-btn" class="px-6 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition flex items-center gap-2">
+            <i data-lucide="save" class="w-4 h-4"></i>
+            Save Activity
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <!-- Create Account/Contact Modal -->
