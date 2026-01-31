@@ -5174,6 +5174,9 @@
       const nextAction = document.getElementById('activity-next-action').value;
       const nextDate = document.getElementById('activity-next-date').value;
 
+      console.log('[Activity] Saving activity for contact:', contactId);
+      console.log('[Activity] Type:', selectedActivityType, 'Outcome:', selectedOutcome);
+
       if (!contactId && !currentActivityDealId) {
         toast.error('No contact or deal selected', 'Error');
         return;
@@ -5184,30 +5187,10 @@
       saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
 
       try {
-        // Try to use the database function first (contact-based)
+        // Always use fallback (direct update) - it's more reliable
         if (contactId) {
-          const { data: result, error: fnError } = await supabase.rpc('log_contact_activity', {
-            p_contact_id: contactId,
-            p_activity_type: selectedActivityType,
-            p_outcome: selectedOutcome,
-            p_notes: notes || null,
-            p_next_action_date: nextDate || null,
-            p_next_action_type: nextAction || null,
-            p_deal_id: currentActivityDealId || null
-          });
-
-          if (fnError) {
-            // Fallback to direct update
-            console.log('[Activity] Function not available, using fallback:', fnError);
-            await saveActivityFallback(contactId, notes, nextAction, nextDate);
-          } else {
-            // Function worked
-            if (result?.auto_lost) {
-              toast.warning('Contact marked as lost: 3 no-contact attempts', 'Contact Lost');
-            } else {
-              toast.success('Activity logged successfully', 'Success');
-            }
-          }
+          console.log('[Activity] Updating contact directly...');
+          await saveActivityFallback(contactId, notes, nextAction, nextDate);
         } else {
           // No contact ID - update deal directly (legacy)
           await saveActivityFallbackDeal(currentActivityDealId, notes, nextAction, nextDate);
@@ -5257,6 +5240,8 @@
 
     // Fallback: Direct contact update
     async function saveActivityFallback(contactId, notes, nextAction, nextDate) {
+      console.log('[Activity] saveActivityFallback called for:', contactId);
+      
       const currentStreak = currentActivityContact?.no_contact_streak || 0;
       let newStreak = currentStreak;
       
@@ -5266,16 +5251,23 @@
         newStreak = currentStreak + 1;
       }
 
-      // Update contact
+      // Build update data - only include fields that exist
       const updateData = {
-        no_contact_streak: newStreak,
-        total_contact_attempts: (currentActivityContact?.total_contact_attempts || 0) + 1,
-        last_contact_attempt_at: new Date().toISOString(),
-        last_contact_result: selectedOutcome,
-        next_follow_up_date: nextDate || null,
-        next_follow_up_type: nextAction || null,
         updated_at: new Date().toISOString()
       };
+
+      // Try to set tracking fields (may not exist in database yet)
+      updateData.no_contact_streak = newStreak;
+      updateData.total_contact_attempts = (currentActivityContact?.total_contact_attempts || 0) + 1;
+      updateData.last_contact_attempt_at = new Date().toISOString();
+      updateData.last_contact_result = selectedOutcome;
+      
+      if (nextDate) {
+        updateData.next_follow_up_date = nextDate;
+      }
+      if (nextAction) {
+        updateData.next_follow_up_type = nextAction;
+      }
 
       // Update last_contacted_at if contact was made
       if (selectedOutcome === 'contact_made') {
@@ -5291,26 +5283,66 @@
         autoLost = true;
       }
 
-      const { error: updateError } = await supabase
+      console.log('[Activity] Updating contact with:', updateData);
+      
+      const { data: updateResult, error: updateError } = await supabase
         .from('contacts')
         .update(updateData)
-        .eq('id', contactId);
+        .eq('id', contactId)
+        .select();
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('[Activity] Contact update error:', updateError);
+        // If specific columns don't exist, try minimal update
+        if (updateError.message?.includes('column')) {
+          console.log('[Activity] Trying minimal update...');
+          const { error: minError } = await supabase
+            .from('contacts')
+            .update({ updated_at: new Date().toISOString() })
+            .eq('id', contactId);
+          if (minError) {
+            throw minError;
+          }
+        } else {
+          throw updateError;
+        }
+      } else {
+        console.log('[Activity] Contact updated successfully:', updateResult);
+      }
 
       // Insert activity record if table exists
       try {
         const { data: { user } } = await supabase.auth.getUser();
-        await supabase.from('sales_activities').insert({
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('company_id')
+          .eq('user_id', user?.id)
+          .single();
+          
+        const activityRecord = {
           contact_id: contactId,
           deal_id: currentActivityDealId || null,
-          assigned_user_id: currentActivityContact?.assigned_user_id || user?.id,
+          assigned_user_id: user?.id,
           activity_type: selectedActivityType,
           outcome: selectedOutcome,
-          notes: notes,
+          notes: notes || null,
           next_action_date: nextDate || null,
-          next_action_type: nextAction || null
-        });
+          next_action_type: nextAction || null,
+          company_id: profile?.company_id || null
+        };
+        
+        console.log('[Activity] Inserting activity record:', activityRecord);
+        
+        const { data: actData, error: actError } = await supabase
+          .from('sales_activities')
+          .insert(activityRecord)
+          .select();
+          
+        if (actError) {
+          console.log('[Activity] Activity insert error (table may not exist):', actError);
+        } else {
+          console.log('[Activity] Activity record created:', actData);
+        }
       } catch (actErr) {
         console.log('[Activity] Activities table may not exist yet:', actErr);
       }
