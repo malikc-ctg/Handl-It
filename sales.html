@@ -364,9 +364,14 @@
             </div>
           </div>
 
-          <!-- 2. Priority Actions Queue -->
+          <!-- 2. Priority Actions Queue (Top 3) -->
           <div class="mb-6">
-            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-3">Priority Actions</h3>
+            <div class="flex items-center justify-between mb-3">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Priority Actions</h3>
+              <a href="sales.html?tab=priority" class="text-sm text-nfgblue hover:text-nfgdark font-medium flex items-center gap-1">
+                View All <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </a>
+            </div>
             <div id="priority-actions" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg">
               <div id="priority-actions-list" class="divide-y divide-nfgray dark:divide-gray-700">
                 <!-- Priority actions will be rendered here -->
@@ -3947,7 +3952,7 @@
         blue: 'border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-900/10'
       };
 
-      actionsList.innerHTML = actions.slice(0, 12).map(action => {
+      actionsList.innerHTML = actions.slice(0, 3).map(action => {
         // Determine if this is a contact or deal action
         const isContact = !!action.contactId;
         const valueDisplay = action.dealValue ? `$${Number(action.dealValue).toLocaleString()}` : (action.companyName || '');
