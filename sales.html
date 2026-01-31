@@ -1285,8 +1285,8 @@
     <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
       <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
         <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Log Activity</h3>
-        <button id="close-activity-modal" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button type="button" id="close-activity-modal" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 cursor-pointer" onclick="closeActivityModal()">
+          <i data-lucide="x" class="w-5 h-5 pointer-events-none"></i>
         </button>
       </div>
       <form id="log-activity-form" class="p-4 space-y-4">
@@ -1383,7 +1383,7 @@
         
         <!-- Actions -->
         <div class="flex justify-end gap-3 pt-2">
-          <button type="button" id="cancel-activity" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">
+          <button type="button" id="cancel-activity" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition cursor-pointer" onclick="closeActivityModal()">
             Cancel
           </button>
           <button type="submit" id="save-activity-btn" class="px-6 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition flex items-center gap-2">
@@ -5111,6 +5111,14 @@
       selectedOutcome = outcome;
       updateOutcomeButtons();
       updateNoContactWarning();
+    };
+    
+    // Global function to close activity modal
+    window.closeActivityModal = function() {
+      const modal = document.getElementById('log-activity-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+      }
     };
 
     // Update activity type button states
