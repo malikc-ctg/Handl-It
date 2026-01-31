@@ -1278,7 +1278,7 @@
       </div>
 
       <!-- Log Activity Modal -->
-      <div id="log-activity-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div id="log-activity-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4" style="z-index: 9999;">
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-lg w-full">
           <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
             <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Log Activity</h3>
@@ -4281,8 +4281,13 @@
       const modal = document.getElementById('log-activity-modal');
       if (modal) {
         console.log('[TEST] Modal found, current classes:', modal.className);
+        console.log('[TEST] Modal computed style display:', window.getComputedStyle(modal).display);
         modal.classList.remove('hidden');
-        console.log('[TEST] Hidden removed, new classes:', modal.className);
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        console.log('[TEST] Styles applied, new classes:', modal.className);
+        console.log('[TEST] New computed display:', window.getComputedStyle(modal).display);
         if (window.lucide) lucide.createIcons();
         console.log('[TEST] Modal should now be visible');
       } else {
@@ -5092,9 +5097,11 @@
         // Show modal
         console.log('[Activity] Showing modal...');
         modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
         if (window.lucide) lucide.createIcons();
-        console.log('[Activity] Modal should now be visible');
+        console.log('[Activity] Modal should now be visible, display:', modal.style.display);
       } catch (err) {
         console.error('[Activity] Unexpected error:', err);
         alert('Error opening activity logger: ' + err.message);
