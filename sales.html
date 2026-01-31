@@ -221,6 +221,9 @@
       <a id="nav-sales" class="flex items-center gap-2 px-3 py-2 rounded-lg bg-nfglight dark:bg-gray-700 text-nfgblue dark:text-blue-400 font-medium w-full text-left" href="sales.html">
         <i data-lucide="trending-up" class="w-4 h-4"></i> Sales
       </a>
+      <a id="nav-priority" class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="sales.html?tab=priority">
+        <i data-lucide="zap" class="w-4 h-4"></i> Priority Actions
+      </a>
       <a class="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 w-full text-left" href="routes.html">
         <i data-lucide="route" class="w-4 h-4"></i> Routes
       </a>
@@ -806,6 +809,66 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority Actions Tab (Full Page) -->
+        <div id="tab-priority" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+          <div class="max-w-7xl mx-auto">
+            <!-- Header -->
+            <div class="flex items-center justify-between mb-6">
+              <div>
+                <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-1">Priority Actions</h2>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Contacts that need follow-up, sorted by urgency</p>
+              </div>
+              <button onclick="loadPriorityActionsPage()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition flex items-center gap-2">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
+              </button>
+            </div>
+            
+            <!-- Priority Legend -->
+            <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">P1: Urgent (Final attempt, missed callbacks)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">P2: High (1 no-contact, quote follow-ups)</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                <span class="text-sm text-gray-600 dark:text-gray-300">P3: Medium (New contacts, idle >7 days)</span>
+              </div>
+            </div>
+            
+            <!-- Stats Row -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-center">
+                <p id="priority-p1-count" class="text-2xl font-bold text-red-600">0</p>
+                <p class="text-xs text-red-600/70">Urgent (P1)</p>
+              </div>
+              <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 text-center">
+                <p id="priority-p2-count" class="text-2xl font-bold text-orange-600">0</p>
+                <p class="text-xs text-orange-600/70">High (P2)</p>
+              </div>
+              <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 text-center">
+                <p id="priority-p3-count" class="text-2xl font-bold text-yellow-600">0</p>
+                <p class="text-xs text-yellow-600/70">Medium (P3)</p>
+              </div>
+              <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 text-center">
+                <p id="priority-total-contacts" class="text-2xl font-bold text-green-600">0</p>
+                <p class="text-xs text-green-600/70">Total Contacts</p>
+              </div>
+            </div>
+            
+            <!-- Priority Actions List -->
+            <div id="priority-actions-full-list" class="space-y-3">
+              <div class="text-center py-12 text-gray-400">
+                <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+                <p>Loading priority actions...</p>
               </div>
             </div>
           </div>
@@ -3016,24 +3079,28 @@
     function updateSidebarActiveState(activeTab) {
       const navSales = document.getElementById('nav-sales');
       const navTools = document.getElementById('nav-tools');
+      const navPriority = document.getElementById('nav-priority');
+      
+      const activeClasses = ['bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium'];
+      const hoverClasses = ['hover:bg-nfglight', 'dark:hover:bg-gray-700'];
       
       // Remove active state from all sidebar links
-      if (navSales) {
-        navSales.classList.remove('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
-        navSales.classList.add('hover:bg-nfglight', 'dark:hover:bg-gray-700');
-      }
-      if (navTools) {
-        navTools.classList.remove('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
-        navTools.classList.add('hover:bg-nfglight', 'dark:hover:bg-gray-700');
-      }
+      [navSales, navTools, navPriority].forEach(nav => {
+        if (nav) {
+          nav.classList.remove(...activeClasses);
+          nav.classList.add(...hoverClasses);
+        }
+      });
       
       // Add active state based on current tab
-      if (activeTab === 'tools' && navTools) {
-        navTools.classList.add('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
-        navTools.classList.remove('hover:bg-nfglight', 'dark:hover:bg-gray-700');
-      } else if (activeTab === 'dashboard' && navSales) {
-        navSales.classList.add('bg-nfglight', 'dark:bg-gray-700', 'text-nfgblue', 'dark:text-blue-400', 'font-medium');
-        navSales.classList.remove('hover:bg-nfglight', 'dark:hover:bg-gray-700');
+      let activeNav = null;
+      if (activeTab === 'tools') activeNav = navTools;
+      else if (activeTab === 'priority') activeNav = navPriority;
+      else if (activeTab === 'dashboard' || activeTab === 'deals' || activeTab === 'quotes' || activeTab === 'contacts' || activeTab === 'team') activeNav = navSales;
+      
+      if (activeNav) {
+        activeNav.classList.add(...activeClasses);
+        activeNav.classList.remove(...hoverClasses);
       }
     }
     
@@ -3179,6 +3246,11 @@
             if (window.lucide) {
               lucide.createIcons();
             }
+            break;
+          case 'priority':
+            // Priority Actions full page
+            console.log('[Sales] Loading priority actions tab');
+            await loadPriorityActionsPage();
             break;
           case 'contacts':
             // Initialize accounts directory on first load
@@ -3921,6 +3993,255 @@
 
       if (window.lucide) lucide.createIcons();
     }
+
+    // Load Priority Actions Full Page
+    async function loadPriorityActionsPage() {
+      console.log('[Priority] Loading priority actions page...');
+      const listEl = document.getElementById('priority-actions-full-list');
+      if (!listEl) return;
+      
+      listEl.innerHTML = `
+        <div class="text-center py-12 text-gray-400">
+          <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
+          <p>Loading priority actions...</p>
+        </div>
+      `;
+      if (window.lucide) lucide.createIcons();
+      
+      try {
+        // Load contacts for priority actions
+        const contactsData = await loadContactsForPriorityActions();
+        console.log('[Priority] Loaded', contactsData?.length || 0, 'contacts');
+        
+        // Generate priority actions
+        const actions = generatePriorityActionsForPage(contactsData);
+        console.log('[Priority] Generated', actions.length, 'priority actions');
+        
+        // Update counts
+        const p1Count = actions.filter(a => a.priorityLevel === 1).length;
+        const p2Count = actions.filter(a => a.priorityLevel === 2).length;
+        const p3Count = actions.filter(a => a.priorityLevel === 3).length;
+        
+        document.getElementById('priority-p1-count').textContent = p1Count;
+        document.getElementById('priority-p2-count').textContent = p2Count;
+        document.getElementById('priority-p3-count').textContent = p3Count;
+        document.getElementById('priority-total-contacts').textContent = contactsData?.length || 0;
+        
+        // Render actions
+        if (actions.length === 0) {
+          listEl.innerHTML = `
+            <div class="text-center py-12 text-gray-400">
+              <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-green-500"></i>
+              <p class="text-lg font-medium text-gray-600">All caught up!</p>
+              <p class="text-sm">No priority actions at the moment.</p>
+            </div>
+          `;
+          if (window.lucide) lucide.createIcons();
+          return;
+        }
+        
+        const colorClasses = {
+          red: 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/10',
+          orange: 'border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/10',
+          yellow: 'border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
+        };
+        
+        listEl.innerHTML = actions.map(action => {
+          const isContact = !!action.contactId;
+          return `
+          <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition ${colorClasses[action.color] || ''}">
+            <div class="flex items-start justify-between">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="font-semibold text-nfgblue dark:text-blue-400 text-lg">${action.company}</span>
+                  ${action.companyName ? `<span class="text-sm text-gray-500">${action.companyName}</span>` : ''}
+                  ${action.streak ? `<span class="px-2 py-0.5 text-xs font-bold rounded-full ${action.streak >= 2 ? 'bg-red-500 text-white animate-pulse' : 'bg-yellow-100 text-yellow-700'}">${action.streak}/3 no-contact</span>` : ''}
+                </div>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">${action.reason}</p>
+                <div class="flex items-center gap-4 text-xs text-gray-500">
+                  <span>Last activity: ${action.lastActivity ? new Date(action.lastActivity).toLocaleString() : 'Never'}</span>
+                  ${action.phone ? `<a href="tel:${action.phone}" class="text-nfgblue hover:underline flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${action.phone}</a>` : ''}
+                  ${action.email ? `<a href="mailto:${action.email}" class="text-nfgblue hover:underline flex items-center gap-1"><i data-lucide="mail" class="w-3 h-3"></i> ${action.email}</a>` : ''}
+                </div>
+              </div>
+              <div class="flex gap-2 ml-4">
+                ${isContact ? `
+                  <button onclick="window.openLogActivityForContact && window.openLogActivityForContact('${action.contactId}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <i data-lucide="phone" class="w-4 h-4"></i>
+                    Log Activity
+                  </button>
+                  ${action.phone ? `<a href="tel:${action.phone}" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                    <i data-lucide="phone-call" class="w-4 h-4"></i>
+                    Call Now
+                  </a>` : ''}
+                ` : ''}
+              </div>
+            </div>
+          </div>
+        `}).join('');
+        
+        if (window.lucide) lucide.createIcons();
+      } catch (error) {
+        console.error('[Priority] Error loading priority actions:', error);
+        listEl.innerHTML = `
+          <div class="text-center py-12 text-red-500">
+            <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
+            <p>Failed to load priority actions</p>
+            <p class="text-sm text-gray-500">${error.message}</p>
+          </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+    
+    // Generate priority actions for full page (returns all, not limited)
+    function generatePriorityActionsForPage(contacts = []) {
+      const actions = [];
+      const now = new Date();
+      
+      const daysSince = (date) => {
+        if (!date) return Infinity;
+        return Math.floor((now - new Date(date)) / (1000 * 60 * 60 * 24));
+      };
+      
+      contacts.forEach(c => {
+        const streak = c.no_contact_streak || 0;
+        const contactName = c.full_name || `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || 'Unknown';
+        
+        // P1: Final attempt (2/3)
+        if (streak === 2) {
+          actions.push({
+            type: 'contact_final_attempt',
+            priorityLevel: 1,
+            priority: 0,
+            company: contactName,
+            companyName: c.company_name,
+            reason: '🚨 FINAL ATTEMPT - 2 no-contacts in a row. One more and they\'re marked as lost.',
+            lastActivity: c.last_contact_attempt_at || c.updated_at,
+            contactId: c.id,
+            streak: streak,
+            color: 'red',
+            phone: c.phone || c.normalized_phone,
+            email: c.email
+          });
+          return; // Don't add other actions for this contact
+        }
+        
+        // P1: Missed follow-up
+        if (c.next_follow_up_date) {
+          const followUpDate = new Date(c.next_follow_up_date);
+          if (followUpDate < now) {
+            actions.push({
+              type: 'contact_missed_followup',
+              priorityLevel: 1,
+              priority: 5,
+              company: contactName,
+              companyName: c.company_name,
+              reason: `📞 Missed scheduled follow-up: ${c.next_follow_up_type || 'Call'} was due ${followUpDate.toLocaleDateString()}`,
+              lastActivity: c.last_contact_attempt_at || c.updated_at,
+              contactId: c.id,
+              color: 'red',
+              phone: c.phone || c.normalized_phone,
+              email: c.email
+            });
+            return;
+          }
+        }
+        
+        // P2: 1 no-contact (attempt 2 of 3)
+        if (streak === 1) {
+          actions.push({
+            type: 'contact_follow_up',
+            priorityLevel: 2,
+            priority: 100,
+            company: contactName,
+            companyName: c.company_name,
+            reason: '📱 Follow up needed - 1 no-contact so far (attempt 2 of 3)',
+            lastActivity: c.last_contact_attempt_at || c.updated_at,
+            contactId: c.id,
+            streak: streak,
+            color: 'orange',
+            phone: c.phone || c.normalized_phone,
+            email: c.email
+          });
+          return;
+        }
+        
+        // P2: Quote sent, needs follow-up
+        if (c.quote_sent_at) {
+          const daysSinceQuote = daysSince(c.quote_sent_at);
+          if (daysSinceQuote >= 1 && daysSinceQuote <= 7) {
+            let followUpText = '';
+            if (daysSinceQuote <= 1) followUpText = 'Day 1: Check if quote was received';
+            else if (daysSinceQuote <= 3) followUpText = 'Day 3: Ask if they have any questions';
+            else followUpText = 'Day 7: Final quote follow-up before expiry';
+            
+            actions.push({
+              type: 'contact_quote_followup',
+              priorityLevel: 2,
+              priority: 100 + daysSinceQuote,
+              company: contactName,
+              companyName: c.company_name,
+              reason: `📄 Quote Follow-up - ${followUpText}`,
+              lastActivity: c.quote_sent_at,
+              contactId: c.id,
+              color: 'orange',
+              phone: c.phone || c.normalized_phone,
+              email: c.email
+            });
+            return;
+          }
+        }
+        
+        // P3: New contacts never contacted
+        if ((c.total_contact_attempts || 0) === 0 && !c.last_contacted_at) {
+          actions.push({
+            type: 'contact_new',
+            priorityLevel: 3,
+            priority: 200,
+            company: contactName,
+            companyName: c.company_name,
+            reason: '🆕 New contact - make your first call to introduce services',
+            lastActivity: c.created_at,
+            contactId: c.id,
+            color: 'yellow',
+            phone: c.phone || c.normalized_phone,
+            email: c.email
+          });
+          return;
+        }
+        
+        // P3: Idle contacts (>7 days)
+        if (c.total_contact_attempts > 0) {
+          const lastTouch = c.last_contacted_at || c.last_contact_attempt_at;
+          const days = daysSince(lastTouch);
+          if (days >= 7 && days < 30) {
+            actions.push({
+              type: 'contact_idle',
+              priorityLevel: 3,
+              priority: 200 + days,
+              company: contactName,
+              companyName: c.company_name,
+              reason: `💤 Re-engage contact - ${days} days since last activity`,
+              lastActivity: lastTouch,
+              contactId: c.id,
+              color: 'yellow',
+              phone: c.phone || c.normalized_phone,
+              email: c.email
+            });
+          }
+        }
+      });
+      
+      // Sort by priority level, then by priority score
+      return actions.sort((a, b) => {
+        if (a.priorityLevel !== b.priorityLevel) return a.priorityLevel - b.priorityLevel;
+        return a.priority - b.priority;
+      });
+    }
+    
+    // Expose to window for refresh button
+    window.loadPriorityActionsPage = loadPriorityActionsPage;
 
     // Render deals in kanban board
     // Expose to window for quote wizard to refresh deals
