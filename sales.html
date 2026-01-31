@@ -1386,9 +1386,9 @@
           <button type="button" id="cancel-activity" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition cursor-pointer" onclick="closeActivityModal()">
             Cancel
           </button>
-          <button type="submit" id="save-activity-btn" class="px-6 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition flex items-center gap-2">
-            <i data-lucide="save" class="w-4 h-4"></i>
-            Save Activity
+          <button type="button" id="save-activity-btn" class="px-6 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg font-medium transition flex items-center gap-2 cursor-pointer" onclick="submitActivity()">
+            <i data-lucide="save" class="w-4 h-4 pointer-events-none"></i>
+            <span class="pointer-events-none">Save Activity</span>
           </button>
         </div>
       </form>
@@ -5118,6 +5118,59 @@
       const modal = document.getElementById('log-activity-modal');
       if (modal) {
         modal.classList.add('hidden');
+      }
+    };
+    
+    // Global function to submit activity (called from Save button onclick)
+    window.submitActivity = async function() {
+      const contactId = currentActivityContact?.id;
+      const notes = document.getElementById('activity-notes')?.value || '';
+      const nextAction = document.getElementById('activity-next-action')?.value || '';
+      const nextDate = document.getElementById('activity-next-date')?.value || '';
+
+      console.log('[Activity] Submit clicked');
+      console.log('[Activity] Contact:', contactId);
+      console.log('[Activity] Type:', selectedActivityType, 'Outcome:', selectedOutcome);
+      console.log('[Activity] Notes:', notes);
+
+      if (!contactId && !currentActivityDealId) {
+        toast.error('No contact selected', 'Error');
+        return;
+      }
+
+      const saveBtn = document.getElementById('save-activity-btn');
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i> Saving...';
+        if (window.lucide) lucide.createIcons();
+      }
+
+      try {
+        await saveActivityFallback(contactId, notes, nextAction, nextDate);
+        
+        // Close modal
+        closeActivityModal();
+        
+        // Refresh priority actions page if visible
+        const priorityTab = document.getElementById('tab-priority');
+        if (priorityTab && !priorityTab.classList.contains('hidden') && typeof loadPriorityActionsPage === 'function') {
+          await loadPriorityActionsPage();
+        }
+        
+        // Refresh dashboard
+        if (typeof loadDashboardData === 'function') {
+          loadDashboardData();
+        }
+
+      } catch (error) {
+        console.error('[Activity] Save error:', error);
+        toast.error('Failed to save: ' + error.message, 'Error');
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<i data-lucide="save" class="w-4 h-4"></i> Save Activity';
+          if (window.lucide) lucide.createIcons();
+        }
       }
     };
 
