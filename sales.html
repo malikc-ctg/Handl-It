@@ -4071,7 +4071,7 @@
               </div>
               <div class="flex gap-2 ml-4">
                 ${isContact ? `
-                  <button onclick="window.openLogActivityForContact && window.openLogActivityForContact('${action.contactId}')" class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                  <button class="priority-log-btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2" data-contact-id="${action.contactId}">
                     <i data-lucide="phone" class="w-4 h-4"></i>
                     Log Activity
                   </button>
@@ -4086,6 +4086,20 @@
         `}).join('');
         
         if (window.lucide) lucide.createIcons();
+        
+        // Attach click handlers for Log Activity buttons
+        listEl.querySelectorAll('.priority-log-btn').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            const contactId = btn.dataset.contactId;
+            console.log('[Priority] Log activity clicked for contact:', contactId);
+            if (window.openLogActivityForContact) {
+              window.openLogActivityForContact(contactId);
+            } else {
+              console.error('[Priority] openLogActivityForContact not available');
+            }
+          });
+        });
       } catch (error) {
         console.error('[Priority] Error loading priority actions:', error);
         listEl.innerHTML = `
