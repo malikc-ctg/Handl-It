@@ -4997,45 +4997,78 @@
 
     // Open activity logger modal for a CONTACT
     window.openLogActivityForContact = async (contactId, dealId = null) => {
+      console.log('[Activity] Opening log activity for contact:', contactId);
+      
       const modal = document.getElementById('log-activity-modal');
-      if (!modal) return;
-
-      // Fetch contact info
-      const { data: contact, error } = await supabase
-        .from('contacts')
-        .select('*')
-        .eq('id', contactId)
-        .single();
-
-      if (error || !contact) {
-        toast.error('Could not load contact', 'Error');
+      if (!modal) {
+        console.error('[Activity] Modal element not found!');
+        alert('Error: Activity modal not found');
         return;
       }
+      console.log('[Activity] Modal found:', modal);
 
-      currentActivityContact = contact;
-      currentActivityDealId = dealId;
+      try {
+        // Fetch contact info
+        console.log('[Activity] Fetching contact from database...');
+        const { data: contact, error } = await supabase
+          .from('contacts')
+          .select('*')
+          .eq('id', contactId)
+          .single();
 
-      // Populate modal
-      document.getElementById('activity-deal-id').value = contactId; // Store contact ID
-      document.getElementById('activity-deal-name').textContent = contact.full_name || contact.email || 'Unknown Contact';
-      document.getElementById('activity-attempt-count').textContent = contact.total_contact_attempts || 0;
-      document.getElementById('activity-streak-count').textContent = contact.no_contact_streak || 0;
+        if (error) {
+          console.error('[Activity] Error fetching contact:', error);
+          toast.error('Could not load contact: ' + error.message, 'Error');
+          return;
+        }
+        
+        if (!contact) {
+          console.error('[Activity] Contact not found');
+          toast.error('Contact not found', 'Error');
+          return;
+        }
 
-      // Reset form
-      document.getElementById('activity-notes').value = '';
-      document.getElementById('activity-next-action').value = '';
-      document.getElementById('activity-next-date').value = '';
+        console.log('[Activity] Contact loaded:', contact.full_name || contact.email);
+        currentActivityContact = contact;
+        currentActivityDealId = dealId;
 
-      // Reset selections
-      selectedActivityType = 'call';
-      selectedOutcome = 'contact_made';
-      updateActivityTypeButtons();
-      updateOutcomeButtons();
-      updateNoContactWarning();
+        // Populate modal
+        const dealIdEl = document.getElementById('activity-deal-id');
+        const dealNameEl = document.getElementById('activity-deal-name');
+        const attemptCountEl = document.getElementById('activity-attempt-count');
+        const streakCountEl = document.getElementById('activity-streak-count');
+        
+        if (dealIdEl) dealIdEl.value = contactId;
+        if (dealNameEl) dealNameEl.textContent = contact.full_name || contact.email || 'Unknown Contact';
+        if (attemptCountEl) attemptCountEl.textContent = contact.total_contact_attempts || 0;
+        if (streakCountEl) streakCountEl.textContent = contact.no_contact_streak || 0;
 
-      // Show modal
-      modal.classList.remove('hidden');
-      if (window.lucide) lucide.createIcons();
+        // Reset form
+        const notesEl = document.getElementById('activity-notes');
+        const nextActionEl = document.getElementById('activity-next-action');
+        const nextDateEl = document.getElementById('activity-next-date');
+        
+        if (notesEl) notesEl.value = '';
+        if (nextActionEl) nextActionEl.value = '';
+        if (nextDateEl) nextDateEl.value = '';
+
+        // Reset selections
+        selectedActivityType = 'call';
+        selectedOutcome = 'contact_made';
+        if (typeof updateActivityTypeButtons === 'function') updateActivityTypeButtons();
+        if (typeof updateOutcomeButtons === 'function') updateOutcomeButtons();
+        if (typeof updateNoContactWarning === 'function') updateNoContactWarning();
+
+        // Show modal
+        console.log('[Activity] Showing modal...');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+        if (window.lucide) lucide.createIcons();
+        console.log('[Activity] Modal should now be visible');
+      } catch (err) {
+        console.error('[Activity] Unexpected error:', err);
+        alert('Error opening activity logger: ' + err.message);
+      }
     };
 
     // Backwards compatibility - open for deal (finds primary contact)
