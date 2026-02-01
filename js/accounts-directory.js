@@ -1839,34 +1839,49 @@ window.openAddContactModal = async function() {
 // Load contacts that can be linked to the account
 async function loadAvailableContacts() {
   const listEl = document.getElementById('existing-contacts-list');
-  if (!listEl) return;
+  if (!listEl) {
+    console.error('[Accounts] existing-contacts-list element not found');
+    return;
+  }
   
   listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading contacts...</p>';
   
   try {
-    // Get all standalone contacts (contacts table, not account_contacts)
+    console.log('[Accounts] Loading available contacts...');
+    
+    // Get all contacts from the contacts table
     const { data: contacts, error } = await supabase
       .from('contacts')
       .select('*')
-      .order('full_name', { ascending: true });
+      .order('created_at', { ascending: false });
+    
+    console.log('[Accounts] Contacts query result:', { contacts: contacts?.length, error });
     
     if (error) throw error;
     
-    // Filter out contacts already linked to this account
-    const accountContactIds = (currentAccount.contacts || []).map(c => c.id);
+    // Filter out contacts already linked to this account (if account has contacts)
+    const accountContactIds = (currentAccount?.contacts || []).map(c => c.id);
+    console.log('[Accounts] Account contact IDs to exclude:', accountContactIds);
+    
     availableContactsForLinking = (contacts || []).filter(c => !accountContactIds.includes(c.id));
+    console.log('[Accounts] Available contacts after filtering:', availableContactsForLinking.length);
     
     renderAvailableContacts(availableContactsForLinking);
   } catch (error) {
     console.error('[Accounts] Error loading available contacts:', error);
-    listEl.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Failed to load contacts</p>';
+    listEl.innerHTML = `<p class="text-sm text-red-500 text-center py-4">Failed to load contacts: ${error.message}</p>`;
   }
 }
 
 // Render available contacts list
 function renderAvailableContacts(contacts) {
   const listEl = document.getElementById('existing-contacts-list');
-  if (!listEl) return;
+  if (!listEl) {
+    console.error('[Accounts] existing-contacts-list not found for rendering');
+    return;
+  }
+  
+  console.log('[Accounts] Rendering', contacts?.length || 0, 'contacts');
   
   if (!contacts || contacts.length === 0) {
     listEl.innerHTML = `
