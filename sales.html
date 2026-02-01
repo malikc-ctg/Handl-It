@@ -1779,8 +1779,8 @@
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
       <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
         <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Add Contact to Account</h3>
-        <button onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
+        <button onclick="closeAddContactModal()" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5 pointer-events-none"></i>
         </button>
       </div>
       
@@ -1836,7 +1836,7 @@
             </select>
           </div>
           <div class="flex justify-end gap-3 pt-2">
-            <button type="button" onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
+            <button type="button" onclick="closeAddContactModal()" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
             <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Create & Add</button>
           </div>
         </form>

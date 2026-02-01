@@ -1845,6 +1845,14 @@ window.openAddContactModal = async function() {
   }
 };
 
+window.closeAddContactModal = function() {
+  const modal = document.getElementById('add-contact-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = '';
+  }
+};
+
 // Load contacts that can be linked to the account
 async function loadAvailableContacts() {
   const listEl = document.getElementById('existing-contacts-list');

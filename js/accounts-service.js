@@ -231,22 +231,22 @@ export async function getAccountDetail(accountId) {
     // Fetch DM contact
     if (account.dm_contact_id) {
       const { data: dmContact } = await supabase
-        .from('account_contacts')
+        .from('contacts')
         .select('*')
         .eq('id', account.dm_contact_id)
         .single();
       account.dm_contact = dmContact || null;
     }
 
-    // Fetch all contacts
+    // Fetch all contacts linked to this account
     const { data: contacts } = await supabase
-      .from('account_contacts')
+      .from('contacts')
       .select('*')
       .eq('account_id', accountId)
-      .order('is_primary', { ascending: false })
       .order('full_name', { ascending: true });
 
     account.contacts = contacts || [];
+    console.log('[Accounts] Account contacts loaded:', contacts?.length || 0);
 
     // Fetch all sites
     const { data: sites } = await supabase
