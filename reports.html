@@ -1809,10 +1809,12 @@
           dateFilter = date.toISOString();
         }
 
+        // Use staff_time_logs which has status field for filtering
         let query = supabase
-          .from('time_entries')
-          .select('user_id, total_hours, clock_in, clock_out')
-          .not('clock_out', 'is', null); // Only completed shifts
+          .from('staff_time_logs')
+          .select('user_id, total_duration, clock_in, clock_out, status')
+          .not('clock_out', 'is', null) // Only completed shifts
+          .neq('status', 'rejected'); // Exclude rejected entries
 
         if (dateFilter) {
           query = query.gte('clock_in', dateFilter);
@@ -1829,8 +1831,11 @@
           if (staffHoursChart) staffHoursChart.destroy();
           return;
         }
+        
+        // Filter out any rejected entries that might have slipped through
+        const filteredEntries = (timeEntries || []).filter(e => e.status !== 'rejected');
 
-        console.log('[Reports] ⏱️ Loaded', timeEntries?.length || 0, 'time entries');
+        console.log('[Reports] ⏱️ Loaded', filteredEntries.length, 'time entries (excluded rejected)');
 
         // Fetch user profiles to get names
         const { data: profiles } = await supabase
@@ -1838,11 +1843,12 @@
           .select('id, full_name, role')
           .in('role', ['staff', 'admin']);
 
-        // Calculate total hours per worker
+        // Calculate total hours per worker (total_duration is in seconds)
         const workerHours = {};
-        timeEntries?.forEach(entry => {
+        filteredEntries.forEach(entry => {
           const userId = entry.user_id;
-          const hours = parseFloat(entry.total_hours) || 0;
+          // Convert seconds to hours
+          const hours = (parseFloat(entry.total_duration) || 0) / 3600;
           workerHours[userId] = (workerHours[userId] || 0) + hours;
         });
 
