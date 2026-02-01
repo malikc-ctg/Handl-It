@@ -3001,19 +3001,36 @@
         const timePeriod = document.getElementById('time-period')?.value || '30';
         const { startDate, endDate } = getDateRange(timePeriod);
         
-        // Fetch all time entries (includes both staff and admin entries)
+        console.log('[TimeReports] Loading time reports for period:', startDate, 'to', endDate);
+        
+        // Fetch all time entries - explicitly exclude rejected entries
+        // Include approved and pending (or null status for backwards compatibility)
         const { data: timeEntries, error } = await supabase
           .from('staff_time_logs')
           .select('*, jobs(title, sites(name))')
           .gte('clock_in', startDate + 'T00:00:00')
           .lte('clock_in', endDate + 'T23:59:59')
-          .eq('status', 'approved'); // Only approved entries for reports
+          .neq('status', 'rejected'); // Exclude rejected entries (includes approved, pending, null)
         
         if (error) throw error;
         
+        // Further filter to only show approved entries for the reports
+        const approvedEntries = (timeEntries || []).filter(entry => {
+          // Include entries that are approved or have no status set (legacy entries)
+          const status = entry.status?.toLowerCase();
+          const isRejected = status === 'rejected';
+          if (isRejected) {
+            console.log('[TimeReports] Filtering out rejected entry:', entry.id);
+          }
+          return !isRejected;
+        });
+        
+        console.log('[TimeReports] Total entries fetched:', timeEntries?.length || 0);
+        console.log('[TimeReports] After filtering rejected:', approvedEntries.length);
+        
         // Fetch user profiles separately
-        if (timeEntries && timeEntries.length > 0) {
-          const userIds = [...new Set(timeEntries.map(e => e.user_id))];
+        if (approvedEntries && approvedEntries.length > 0) {
+          const userIds = [...new Set(approvedEntries.map(e => e.user_id))];
           const { data: profiles } = await supabase
             .from('user_profiles')
             .select('id, full_name, email')
@@ -3025,12 +3042,12 @@
             profilesMap[p.id] = p;
           });
           
-          timeEntries.forEach(entry => {
+          approvedEntries.forEach(entry => {
             entry.user_profiles = profilesMap[entry.user_id] || null;
           });
         }
         
-        const entries = timeEntries || [];
+        const entries = approvedEntries;
         
         // Calculate metrics
         const totalSeconds = entries.reduce((sum, e) => sum + (e.total_duration || 0), 0);
