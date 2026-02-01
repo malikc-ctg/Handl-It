@@ -714,7 +714,13 @@ async function openEditContactModal(contactId) {
     const modal = document.getElementById('edit-contact-modal');
     if (modal) {
       modal.classList.remove('hidden');
+      modal.style.display = 'flex';
+      modal.style.visibility = 'visible';
+      modal.style.opacity = '1';
       if (window.lucide) lucide.createIcons();
+      console.log('[Accounts] Edit contact modal opened');
+    } else {
+      console.error('[Accounts] Edit contact modal not found in DOM');
     }
   } catch (error) {
     console.error('[Accounts] Error opening edit contact modal:', error);
@@ -738,7 +744,10 @@ function populateEditContactForm(contact) {
 // Close edit contact modal
 function closeEditContactModal() {
   const modal = document.getElementById('edit-contact-modal');
-  if (modal) modal.classList.add('hidden');
+  if (modal) {
+    modal.classList.add('hidden');
+    modal.style.display = '';
+  }
   
   // Reset form
   const form = document.getElementById('edit-contact-form');
