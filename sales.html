@@ -1776,47 +1776,71 @@
 
   <!-- Add Contact to Account Modal -->
   <div id="add-contact-modal" class="hidden fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-nfgray dark:border-gray-700">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
       <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
         <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Add Contact to Account</h3>
         <button onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
           <i data-lucide="x" class="w-5 h-5"></i>
         </button>
       </div>
-      <form id="add-contact-form" class="p-4 space-y-4">
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name <span class="text-red-500">*</span></label>
-          <input name="full_name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+      
+      <!-- Tabs -->
+      <div class="flex border-b border-nfgray dark:border-gray-700">
+        <button id="add-contact-tab-existing" onclick="switchAddContactTab('existing')" class="flex-1 px-4 py-3 text-sm font-medium text-nfgblue border-b-2 border-nfgblue">
+          Select Existing
+        </button>
+        <button id="add-contact-tab-new" onclick="switchAddContactTab('new')" class="flex-1 px-4 py-3 text-sm font-medium text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-nfgblue">
+          Create New
+        </button>
+      </div>
+      
+      <!-- Select Existing Contact Tab -->
+      <div id="add-contact-existing-tab" class="p-4">
+        <div class="mb-3">
+          <input id="existing-contact-search" type="text" placeholder="Search contacts..." class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" oninput="filterExistingContacts(this.value)">
         </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title/Role</label>
-          <input name="title" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="e.g., Property Manager">
+        <div id="existing-contacts-list" class="space-y-2 max-h-64 overflow-y-auto">
+          <p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading contacts...</p>
         </div>
-        <div class="grid grid-cols-2 gap-3">
+      </div>
+      
+      <!-- Create New Contact Tab -->
+      <div id="add-contact-new-tab" class="hidden">
+        <form id="add-contact-form" class="p-4 space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
-            <input name="phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name <span class="text-red-500">*</span></label>
+            <input name="full_name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
-            <input name="email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title/Role</label>
+            <input name="title" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="e.g., Property Manager">
           </div>
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Tag</label>
-          <select name="role_tag" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
-            <option value="other">Other</option>
-            <option value="decision_maker">Decision Maker</option>
-            <option value="admin">Admin</option>
-            <option value="facilities">Facilities</option>
-            <option value="billing">Billing</option>
-          </select>
-        </div>
-        <div class="flex justify-end gap-3 pt-2">
-          <button type="button" onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
-          <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Add Contact</button>
-        </div>
-      </form>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+              <input name="phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input name="email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Tag</label>
+            <select name="role_tag" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+              <option value="other">Other</option>
+              <option value="decision_maker">Decision Maker</option>
+              <option value="admin">Admin</option>
+              <option value="facilities">Facilities</option>
+              <option value="billing">Billing</option>
+            </select>
+          </div>
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
+            <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Create & Add</button>
+          </div>
+        </form>
+      </div>
     </div>
   </div>
 

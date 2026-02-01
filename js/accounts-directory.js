@@ -1810,7 +1810,10 @@ window.openAddSiteModal = function() {
   }
 };
 
-window.openAddContactModal = function() {
+// Store available contacts for filtering
+let availableContactsForLinking = [];
+
+window.openAddContactModal = async function() {
   if (!currentAccount) {
     toast.error('No account selected', 'Error');
     return;
@@ -1818,7 +1821,157 @@ window.openAddContactModal = function() {
   const modal = document.getElementById('add-contact-modal');
   if (modal) {
     modal.classList.remove('hidden');
+    
+    // Reset to existing tab
+    switchAddContactTab('existing');
+    
+    // Clear search
+    const searchInput = document.getElementById('existing-contact-search');
+    if (searchInput) searchInput.value = '';
+    
+    // Load available contacts (standalone contacts not linked to this account)
+    await loadAvailableContacts();
+    
     if (window.lucide) lucide.createIcons();
+  }
+};
+
+// Load contacts that can be linked to the account
+async function loadAvailableContacts() {
+  const listEl = document.getElementById('existing-contacts-list');
+  if (!listEl) return;
+  
+  listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading contacts...</p>';
+  
+  try {
+    // Get all standalone contacts (contacts table, not account_contacts)
+    const { data: contacts, error } = await supabase
+      .from('contacts')
+      .select('*')
+      .order('full_name', { ascending: true });
+    
+    if (error) throw error;
+    
+    // Filter out contacts already linked to this account
+    const accountContactIds = (currentAccount.contacts || []).map(c => c.id);
+    availableContactsForLinking = (contacts || []).filter(c => !accountContactIds.includes(c.id));
+    
+    renderAvailableContacts(availableContactsForLinking);
+  } catch (error) {
+    console.error('[Accounts] Error loading available contacts:', error);
+    listEl.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Failed to load contacts</p>';
+  }
+}
+
+// Render available contacts list
+function renderAvailableContacts(contacts) {
+  const listEl = document.getElementById('existing-contacts-list');
+  if (!listEl) return;
+  
+  if (!contacts || contacts.length === 0) {
+    listEl.innerHTML = `
+      <div class="text-center py-6">
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">No available contacts found</p>
+        <button onclick="switchAddContactTab('new')" class="text-sm text-nfgblue hover:underline">Create a new contact</button>
+      </div>
+    `;
+    return;
+  }
+  
+  listEl.innerHTML = contacts.map(contact => {
+    const name = contact.full_name || `${contact.first_name || ''} ${contact.last_name || ''}`.trim() || 'Unknown';
+    const phone = contact.normalized_phone || contact.phone || '';
+    const email = contact.email || '';
+    const company = contact.company_name || '';
+    
+    return `
+      <button onclick="linkExistingContact('${contact.id}')" class="w-full text-left p-3 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 transition">
+        <div class="flex items-start justify-between">
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-gray-900 dark:text-white truncate">${escapeHtml(name)}</div>
+            ${company ? `<div class="text-sm text-gray-600 dark:text-gray-400 truncate">${escapeHtml(company)}</div>` : ''}
+            <div class="flex items-center gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
+              ${phone ? `<span class="flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${escapeHtml(phone)}</span>` : ''}
+              ${email ? `<span class="flex items-center gap-1"><i data-lucide="mail" class="w-3 h-3"></i> ${escapeHtml(email)}</span>` : ''}
+            </div>
+          </div>
+          <span class="text-xs text-nfgblue font-medium ml-2">Select</span>
+        </div>
+      </button>
+    `;
+  }).join('');
+  
+  if (window.lucide) lucide.createIcons();
+}
+
+// Filter existing contacts by search term
+window.filterExistingContacts = function(searchTerm) {
+  const term = searchTerm.toLowerCase().trim();
+  if (!term) {
+    renderAvailableContacts(availableContactsForLinking);
+    return;
+  }
+  
+  const filtered = availableContactsForLinking.filter(c => {
+    const name = (c.full_name || `${c.first_name || ''} ${c.last_name || ''}`).toLowerCase();
+    const email = (c.email || '').toLowerCase();
+    const phone = (c.normalized_phone || c.phone || '').toLowerCase();
+    const company = (c.company_name || '').toLowerCase();
+    return name.includes(term) || email.includes(term) || phone.includes(term) || company.includes(term);
+  });
+  
+  renderAvailableContacts(filtered);
+};
+
+// Switch between existing and new contact tabs
+window.switchAddContactTab = function(tab) {
+  const existingTab = document.getElementById('add-contact-tab-existing');
+  const newTab = document.getElementById('add-contact-tab-new');
+  const existingContent = document.getElementById('add-contact-existing-tab');
+  const newContent = document.getElementById('add-contact-new-tab');
+  
+  if (tab === 'existing') {
+    existingTab?.classList.add('text-nfgblue', 'border-nfgblue');
+    existingTab?.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+    newTab?.classList.remove('text-nfgblue', 'border-nfgblue');
+    newTab?.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+    existingContent?.classList.remove('hidden');
+    newContent?.classList.add('hidden');
+  } else {
+    newTab?.classList.add('text-nfgblue', 'border-nfgblue');
+    newTab?.classList.remove('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+    existingTab?.classList.remove('text-nfgblue', 'border-nfgblue');
+    existingTab?.classList.add('text-gray-500', 'dark:text-gray-400', 'border-transparent');
+    newContent?.classList.remove('hidden');
+    existingContent?.classList.add('hidden');
+  }
+};
+
+// Link an existing contact to the current account
+window.linkExistingContact = async function(contactId) {
+  if (!currentAccount) {
+    toast.error('No account selected', 'Error');
+    return;
+  }
+  
+  try {
+    // Update the contact to link it to this account
+    const { error } = await supabase
+      .from('contacts')
+      .update({ account_id: currentAccount.id })
+      .eq('id', contactId);
+    
+    if (error) throw error;
+    
+    toast.success('Contact linked to account');
+    document.getElementById('add-contact-modal')?.classList.add('hidden');
+    
+    // Refresh the drawer and accounts list
+    await loadAccounts();
+    await openAccountDrawer(currentAccount.id);
+  } catch (error) {
+    console.error('[Accounts] Error linking contact:', error);
+    toast.error('Failed to link contact: ' + (error.message || 'Unknown error'), 'Error');
   }
 };
 
