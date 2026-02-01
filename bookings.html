@@ -157,31 +157,176 @@
       background: transparent !important;
     }
     
-    /* ========== MODERN CALENDAR STYLING ========== */
+    /* ========== GOOGLE CALENDAR STYLE ========== */
     
-    /* Calendar container - modern rounded design */
+    /* Calendar container - full height like Google Calendar */
     #calendar-container {
       width: 100%;
-      min-height: calc(100vh - 300px);
+      min-height: calc(100vh - 180px);
+      height: calc(100vh - 180px);
     }
     
     #calendar-container .bg-white,
     #calendar-container .dark\:bg-gray-800 {
-      min-height: calc(100vh - 340px);
-      border-radius: 16px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      min-height: calc(100vh - 200px);
+      height: 100%;
+      border-radius: 12px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      padding: 0 !important;
     }
     
     /* FullCalendar container */
     #calendar {
       width: 100%;
-      padding: 8px;
+      padding: 0;
+      height: 100%;
     }
     
-    /* FullCalendar base styles */
+    /* FullCalendar base styles - Google Calendar look */
     .fc {
       width: 100%;
-      font-family: 'Inter', sans-serif;
+      height: 100%;
+      font-family: 'Google Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      font-size: 14px;
+    }
+    
+    /* Time slots - taller like Google Calendar (48px per 30min = 96px per hour) */
+    .fc-timegrid-slot {
+      height: 48px !important;
+      border-bottom: 1px solid #e8eaed !important;
+    }
+    
+    .fc-timegrid-slot-minor {
+      border-bottom: 1px solid #f1f3f4 !important;
+    }
+    
+    /* Time labels - Google Calendar style */
+    .fc-timegrid-slot-label {
+      font-size: 11px;
+      color: #70757a;
+      font-weight: 400;
+      vertical-align: top;
+      padding-top: 2px;
+    }
+    
+    .fc-timegrid-slot-label-cushion {
+      padding: 0 8px;
+    }
+    
+    /* Column headers - Google Calendar style */
+    .fc-col-header {
+      background: #fff;
+    }
+    
+    .fc-col-header-cell {
+      padding: 12px 8px;
+      border-bottom: 1px solid #e8eaed;
+      font-weight: 500;
+    }
+    
+    .fc-col-header-cell-cushion {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #70757a;
+      padding: 4px;
+    }
+    
+    /* Day number styling like Google */
+    .fc-daygrid-day-number,
+    .fc-col-header-cell .fc-daygrid-day-number {
+      font-size: 24px;
+      font-weight: 400;
+      color: #3c4043;
+    }
+    
+    /* Today highlight */
+    .fc-day-today {
+      background-color: #e8f0fe !important;
+    }
+    
+    .fc-day-today .fc-col-header-cell-cushion {
+      background-color: #1a73e8;
+      color: white;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Events - Google Calendar rounded style */
+    .fc-event {
+      border-radius: 4px;
+      border: none;
+      font-size: 12px;
+      padding: 2px 8px;
+      margin: 1px 4px;
+    }
+    
+    .fc-timegrid-event {
+      border-radius: 4px;
+      border-left: 4px solid;
+      margin: 1px 4px;
+    }
+    
+    .fc-event-title {
+      font-weight: 500;
+      font-size: 12px;
+    }
+    
+    .fc-event-time {
+      font-size: 11px;
+      font-weight: 400;
+    }
+    
+    /* Grid borders - lighter like Google */
+    .fc-theme-standard td,
+    .fc-theme-standard th {
+      border-color: #e8eaed;
+    }
+    
+    .fc-theme-standard .fc-scrollgrid {
+      border-color: #e8eaed;
+    }
+    
+    /* Now indicator - red line like Google */
+    .fc-timegrid-now-indicator-line {
+      border-color: #ea4335;
+      border-width: 2px;
+    }
+    
+    .fc-timegrid-now-indicator-arrow {
+      border-color: #ea4335;
+      border-top-color: transparent;
+      border-bottom-color: transparent;
+    }
+    
+    /* All day section */
+    .fc-timegrid-axis-cushion {
+      font-size: 11px;
+      color: #70757a;
+      text-transform: lowercase;
+    }
+    
+    /* Scrollbar styling */
+    .fc-scroller::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    .fc-scroller::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .fc-scroller::-webkit-scrollbar-thumb {
+      background-color: #dadce0;
+      border-radius: 4px;
+    }
+    
+    .fc-scroller::-webkit-scrollbar-thumb:hover {
+      background-color: #bdc1c6;
     }
     
     /* ========== CALENDAR EVENT SIDEBAR STYLING ========== */
@@ -420,10 +565,10 @@
       }
     }
     
-    /* Tablet adjustments */
+    /* Tablet adjustments - keep Google Calendar style */
     @media (min-width: 768px) and (max-width: 1023px) {
       .fc-timegrid-slot {
-        height: 44px;
+        height: 40px !important;
       }
       
       .fc-col-header-cell {
@@ -431,7 +576,24 @@
       }
       
       .fc-col-header-cell-cushion {
-        font-size: 12px;
+        font-size: 11px;
+      }
+      
+      #calendar-container {
+        min-height: calc(100vh - 200px);
+        height: calc(100vh - 200px);
+      }
+    }
+    
+    /* Desktop - larger slots */
+    @media (min-width: 1024px) {
+      .fc-timegrid-slot {
+        height: 48px !important;
+      }
+      
+      #calendar-container {
+        min-height: calc(100vh - 180px);
+        height: calc(100vh - 180px);
       }
     }
     
@@ -3344,14 +3506,20 @@
         editable: true, // Enable drag-and-drop
         droppable: false,
         dayMaxEvents: true,
-        height: availableHeight > 600 ? availableHeight : 600, // Minimum 600px, use calculated height if larger
+        height: '100%', // Fill container height like Google Calendar
         weekNumbers: false,
         firstDay: 0, // Sunday
-        slotMinTime: '06:00:00',
-        slotMaxTime: '24:00:00',
+        slotMinTime: '07:00:00', // Start at 7am like Google
+        slotMaxTime: '22:00:00', // End at 10pm
+        slotDuration: '00:30:00', // 30 min slots
+        slotLabelInterval: '01:00', // Show label every hour
         allDaySlot: true,
+        allDayText: 'all-day',
         nowIndicator: true,
         eventDisplay: 'block',
+        expandRows: true,
+        stickyHeaderDates: true,
+        dayHeaderFormat: { weekday: 'short', month: 'numeric', day: 'numeric' },
         eventTimeFormat: {
           hour: 'numeric',
           minute: '2-digit',
@@ -3609,38 +3777,20 @@
         }
       }, 100);
       
-      // Update calendar size after render to ensure proper height
+      // Update calendar size after render
       setTimeout(() => {
         if (calendar && calendarEl) {
-          const calendarContainerEl = calendarEl.closest('#calendar-container');
-          const scrollableContentEl = calendarContainerEl?.closest('.scrollable-content');
-          const availableHeight = scrollableContentEl 
-            ? scrollableContentEl.offsetHeight - 100
-            : window.innerHeight - 300;
-          
-          if (availableHeight > 600) {
-            calendar.setOption('height', availableHeight);
-            calendar.updateSize();
-          }
+          calendar.updateSize();
         }
         // Ensure button styles are correct after calendar renders
         const viewType = currentCalendarView === 'timeGridDay' ? 'day' : currentCalendarView === 'timeGridWeek' ? 'week' : 'month';
         updateButtonStyles(viewType);
       }, 200);
       
-      // Handle window resize to update calendar height
+      // Handle window resize to update calendar size
       window.addEventListener('resize', () => {
         if (calendar && currentView === 'calendar') {
-          const calendarContainerEl = document.getElementById('calendar-container');
-          const scrollableContentEl = calendarContainerEl?.closest('.scrollable-content');
-          const availableHeight = scrollableContentEl 
-            ? scrollableContentEl.offsetHeight - 100
-            : window.innerHeight - 300;
-          
-          if (availableHeight > 600) {
-            calendar.setOption('height', availableHeight);
-            calendar.updateSize();
-          }
+          calendar.updateSize();
         }
       });
       
