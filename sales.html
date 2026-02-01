@@ -482,28 +482,6 @@
             <!-- Board View -->
             <div id="deals-board-view" class="deals-view">
               <div id="deals-kanban" class="flex gap-4 overflow-x-auto pb-4">
-              <!-- Prospecting Column -->
-              <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="prospecting">
-                <div class="flex items-center justify-between mb-4">
-                  <div class="flex items-center gap-2">
-                    <span class="w-2 h-2 rounded-full bg-yellow-400"></span>
-                    <h3 class="font-semibold text-gray-700 dark:text-gray-300">Prospecting</h3>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
-                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
-                    </button>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
-                      <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
-                    </button>
-                  </div>
-                </div>
-                <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="prospecting">
-                  <!-- Deals will be rendered here -->
-                </div>
-              </div>
-
               <!-- Qualification Column -->
               <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="qualification">
                 <div class="flex items-center justify-between mb-4">
@@ -1219,7 +1197,6 @@
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stage</label>
                 <select id="edit-deal-stage" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
-                  <option value="prospecting">Prospecting</option>
                   <option value="qualification">Qualification</option>
                   <option value="proposal">Proposal</option>
                   <option value="negotiation">Negotiation</option>
@@ -2136,8 +2113,7 @@
             <div>
               <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Stage</label>
               <select id="deal-stage-select" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
-                <option value="prospecting" selected>Prospecting</option>
-                <option value="qualification">Qualification</option>
+                <option value="qualification" selected>Qualification</option>
                 <option value="proposal">Proposal</option>
                 <option value="negotiation">Negotiation</option>
                 <option value="closed_won">Closed Won</option>
@@ -3525,10 +3501,10 @@
     // Calculate and render KPIs
     function calculateAndRenderKPIs(deals, quotes) {
       // Open Pipeline
-      const openDeals = deals.filter(d => ['prospecting', 'qualification', 'proposal', 'negotiation'].includes(d.stage));
+      const openDeals = deals.filter(d => ['qualification', 'proposal', 'negotiation'].includes(d.stage));
       const totalOpen = openDeals.reduce((sum, d) => sum + getDealValue(d), 0);
       const weightedOpen = openDeals.reduce((sum, d) => {
-        const stageWeights = { prospecting: 0.1, qualification: 0.3, proposal: 0.7, negotiation: 0.9 };
+        const stageWeights = { qualification: 0.3, proposal: 0.7, negotiation: 0.9 };
         return sum + getDealValue(d) * (stageWeights[d.stage] || 0.5);
       }, 0);
 
@@ -4270,7 +4246,7 @@
       const kanbanBoard = document.getElementById('deals-kanban');
       if (!kanbanBoard) return;
 
-      const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
+      const stages = ['qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
       
       // Clear all columns
       stages.forEach(stage => {
@@ -4347,10 +4323,7 @@
             // Determine status and priority
             let statusTag = '';
             let statusColorClass = 'bg-purple-400';
-            if (stage === 'prospecting') {
-              statusTag = 'Not Started';
-              statusColorClass = 'bg-purple-400';
-            } else if (stage === 'qualification') {
+            if (stage === 'qualification') {
               statusTag = 'In Research';
               statusColorClass = 'bg-yellow-400';
             } else if (stage === 'proposal') {
@@ -4598,9 +4571,8 @@
       const container = document.getElementById('deals-overview-content');
       if (!container) return;
 
-      const stages = ['prospecting', 'qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
+      const stages = ['qualification', 'proposal', 'negotiation', 'closed_won', 'closed_lost'];
       const stageLabels = {
-        prospecting: 'Prospecting',
         qualification: 'Qualification',
         proposal: 'Proposal',
         negotiation: 'Negotiation',
@@ -4698,7 +4670,6 @@
 
         // Format stage
         const stageLabels = {
-          prospecting: 'Prospecting',
           qualification: 'Qualification',
           proposal: 'Proposal',
           negotiation: 'Negotiation',
@@ -4751,7 +4722,6 @@
       }
 
       const stageLabels = {
-        prospecting: 'Prospecting',
         qualification: 'Qualification',
         proposal: 'Proposal',
         negotiation: 'Negotiation',
@@ -4883,8 +4853,7 @@
           <tr class="deal-row ${isIdle ? 'bg-red-50 dark:bg-red-900/20' : 'hover:bg-nfglight dark:hover:bg-gray-700'} cursor-pointer transition" data-deal-id="${deal.id}">
             <td class="px-4 py-3 text-sm font-medium text-nfgblue dark:text-blue-400">${deal.company_name || deal.title || 'Unknown'}</td>
             <td class="px-4 py-3">
-              <select class="text-sm border border-nfgray dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-nftext dark:text-gray-200" onchange="updateDealStage('${deal.id}', this.value)" value="${deal.stage || 'prospecting'}">
-                <option value="prospecting" ${deal.stage === 'prospecting' ? 'selected' : ''}>Prospecting</option>
+              <select class="text-sm border border-nfgray dark:border-gray-600 rounded-lg px-2 py-1 bg-white dark:bg-gray-800 text-nftext dark:text-gray-200" onchange="updateDealStage('${deal.id}', this.value)" value="${deal.stage || 'qualification'}">
                 <option value="qualification" ${deal.stage === 'qualification' ? 'selected' : ''}>Qualification</option>
                 <option value="proposal" ${deal.stage === 'proposal' ? 'selected' : ''}>Proposal</option>
                 <option value="negotiation" ${deal.stage === 'negotiation' ? 'selected' : ''}>Negotiation</option>
@@ -4914,7 +4883,6 @@
     // Render pipeline stage snapshot
     function renderPipelineSnapshot(deals) {
       const stages = [
-        { key: 'prospecting', label: 'Prospecting' },
         { key: 'qualification', label: 'Qualification' },
         { key: 'proposal', label: 'Proposal' },
         { key: 'negotiation', label: 'Negotiation' },
@@ -6821,7 +6789,6 @@
           dealsListEl.innerHTML = deals.map(deal => {
             const value = parseFloat(deal.deal_value || deal.value_estimate || 0);
             const stageColors = {
-              'prospecting': 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300',
               'qualification': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
               'proposal': 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300',
               'negotiation': 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300',
