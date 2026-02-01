@@ -727,8 +727,8 @@
                   <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400">Client Accounts</h2>
                   <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Manage your client accounts directory</p>
                 </div>
-              <button id="create-account-btn" onclick="document.getElementById('create-account-modal')?.classList.remove('hidden'); if(window.lucide) lucide.createIcons();" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-                  <i data-lucide="plus" class="w-4 h-4"></i> New Account
+              <button id="create-account-btn" onclick="openCreateAccountModal()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
+                  <i data-lucide="plus" class="w-4 h-4 pointer-events-none"></i> <span class="pointer-events-none">New Account</span>
                 </button>
               </div>
               
@@ -1373,7 +1373,7 @@
   </div>
 
   <!-- Create Account/Contact Modal -->
-  <div id="create-account-modal" class="hidden fixed inset-0 bg-black/40 z-[80] flex items-center justify-center p-4">
+  <div id="create-account-modal" class="hidden fixed inset-0 bg-black/40 z-[9999] flex items-center justify-center p-4" style="display: none;">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
       <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
         <h3 id="create-modal-title" class="text-lg font-semibold text-nfgblue dark:text-blue-400">Create Account</h3>
@@ -5035,6 +5035,22 @@
     let currentActivityDealId = null; // Optional deal reference
     let selectedActivityType = 'call';
     let selectedOutcome = 'contact_made';
+
+    // Open Create Account Modal
+    window.openCreateAccountModal = function() {
+      console.log('[Sales] Opening create account modal');
+      const modal = document.getElementById('create-account-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        modal.style.visibility = 'visible';
+        modal.style.opacity = '1';
+        if (window.lucide) lucide.createIcons();
+        console.log('[Sales] Create account modal opened');
+      } else {
+        console.error('[Sales] Create account modal not found');
+      }
+    };
 
     // Open activity logger modal for a CONTACT
     window.openLogActivityForContact = async (contactId, dealId = null) => {

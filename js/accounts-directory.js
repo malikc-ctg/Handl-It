@@ -980,12 +980,15 @@ function setupEventListeners() {
   });
 
   // Close create account modal
-  document.getElementById('create-account-close')?.addEventListener('click', () => {
-    document.getElementById('create-account-modal')?.classList.add('hidden');
-  });
-  document.getElementById('create-account-cancel')?.addEventListener('click', () => {
-    document.getElementById('create-account-modal')?.classList.add('hidden');
-  });
+  const closeCreateAccountModal = () => {
+    const modal = document.getElementById('create-account-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
+  };
+  document.getElementById('create-account-close')?.addEventListener('click', closeCreateAccountModal);
+  document.getElementById('create-account-cancel')?.addEventListener('click', closeCreateAccountModal);
 
   // Contact detail modal handlers
   document.getElementById('contact-detail-close')?.addEventListener('click', closeContactDetailModal);
@@ -1507,8 +1510,18 @@ function setupEventListeners() {
           toast.success('Contact created');
         }
         
-        document.getElementById('create-account-modal')?.classList.add('hidden');
+        const modal = document.getElementById('create-account-modal');
+        if (modal) {
+          modal.classList.add('hidden');
+          modal.style.display = 'none';
+        }
         e.target.reset();
+        // Reset DM fields
+        const dmFields = document.getElementById('dm-fields');
+        if (dmFields) dmFields.classList.add('hidden');
+        const toggleDmBtn = document.getElementById('toggle-dm-fields');
+        if (toggleDmBtn) toggleDmBtn.innerHTML = '<i data-lucide="plus" class="w-3 h-3"></i> Add Contact';
+        
         setContactType('account'); // Reset to account type
         await loadAccounts();
       } catch (error) {
