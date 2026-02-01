@@ -245,15 +245,24 @@
       background-color: #e8f0fe !important;
     }
     
-    .fc-day-today .fc-col-header-cell-cushion {
+    /* Today's date number - small blue circle */
+    .fc-day-today .fc-daygrid-day-number {
       background-color: #1a73e8;
-      color: white;
+      color: white !important;
       border-radius: 50%;
-      width: 28px;
-      height: 28px;
+      width: 24px;
+      height: 24px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    /* Week/Day view - today header */
+    .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+      color: #1a73e8;
+      font-weight: 600;
     }
     
     /* Events - Google Calendar rounded style */
