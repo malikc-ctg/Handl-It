@@ -1814,13 +1814,20 @@ window.openAddSiteModal = function() {
 let availableContactsForLinking = [];
 
 window.openAddContactModal = async function() {
+  console.log('[Accounts] openAddContactModal called, currentAccount:', currentAccount?.name);
+  
   if (!currentAccount) {
     toast.error('No account selected', 'Error');
     return;
   }
+  
   const modal = document.getElementById('add-contact-modal');
+  console.log('[Accounts] Add contact modal found:', !!modal);
+  
   if (modal) {
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    console.log('[Accounts] Modal should be visible now');
     
     // Reset to existing tab
     switchAddContactTab('existing');
@@ -1833,6 +1840,8 @@ window.openAddContactModal = async function() {
     await loadAvailableContacts();
     
     if (window.lucide) lucide.createIcons();
+  } else {
+    console.error('[Accounts] add-contact-modal not found in DOM!');
   }
 };
 
