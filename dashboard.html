@@ -1668,26 +1668,79 @@
       modalClockTime.textContent = timeStr;
     }
 
+    // localStorage key for clock state backup
+    const CLOCK_STATE_KEY = 'nfg_clock_state';
+    
+    // Save clock state to localStorage as backup
+    function saveClockStateToStorage(entry) {
+      if (entry) {
+        localStorage.setItem(CLOCK_STATE_KEY, JSON.stringify({
+          ...entry,
+          savedAt: new Date().toISOString()
+        }));
+        console.log('[TimeClock] 💾 Saved clock state to localStorage');
+      } else {
+        localStorage.removeItem(CLOCK_STATE_KEY);
+        console.log('[TimeClock] 💾 Cleared clock state from localStorage');
+      }
+    }
+    
+    // Get clock state from localStorage
+    function getClockStateFromStorage() {
+      try {
+        const stored = localStorage.getItem(CLOCK_STATE_KEY);
+        if (!stored) return null;
+        
+        const state = JSON.parse(stored);
+        
+        // Check if the stored state is from today and doesn't have clock_out
+        const clockInDate = new Date(state.clock_in).toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0];
+        
+        if (clockInDate === today && !state.clock_out) {
+          console.log('[TimeClock] 💾 Found valid clock state in localStorage');
+          return state;
+        } else {
+          // Clear old/invalid state
+          localStorage.removeItem(CLOCK_STATE_KEY);
+          return null;
+        }
+      } catch (e) {
+        console.warn('[TimeClock] ⚠️ Error reading localStorage:', e);
+        return null;
+      }
+    }
+
     async function checkClockStatus(supabase) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Check for today's entry that hasn't been clocked out
-        const today = new Date().toISOString().split('T')[0];
+        // First, check localStorage for immediate state restoration
+        const storedState = getClockStateFromStorage();
+        if (storedState && storedState.user_id === user.id) {
+          console.log('[TimeClock] ⚡ Restoring clock state from localStorage while fetching from DB...');
+          currentTimeEntry = storedState;
+          showClockedInState();
+          startTimer();
+        }
+
+        // Check for ANY entry that hasn't been clocked out (not just today)
+        // This handles cases where someone clocked in yesterday and is still working
         const { data, error } = await supabase
           .from('time_entries')
           .select('*')
           .eq('user_id', user.id)
-          .gte('clock_in', `${today}T00:00:00`)
           .is('clock_out', null)
           .order('clock_in', { ascending: false })
           .limit(1);
 
         if (error) {
           console.warn('[TimeClock] ⚠️ Could not check clock status (table may not exist yet):', error.message);
-          // Show clocked out state by default if table doesn't exist
-          showClockedOutState();
+          // If localStorage had state, keep it; otherwise show clocked out
+          if (!storedState) {
+            showClockedOutState();
+          }
           return;
         }
 
@@ -1711,18 +1764,27 @@
             staff_time_log_id: staffLog?.id
           };
           
+          // Save to localStorage for faster restoration on reload
+          saveClockStateToStorage(currentTimeEntry);
+          
           showClockedInState();
           startTimer();
           console.log('[TimeClock] ✅ Already clocked in since', new Date(currentTimeEntry.clock_in).toLocaleTimeString());
         } else {
-          // Not clocked in
+          // Not clocked in - clear any stale localStorage state
+          saveClockStateToStorage(null);
           showClockedOutState();
           console.log('[TimeClock] ℹ️ Not currently clocked in');
         }
       } catch (error) {
         console.error('[TimeClock] ❌ Error checking clock status:', error);
-        // Show clocked out state by default on error
-        showClockedOutState();
+        // If localStorage had state, keep using it
+        const storedState = getClockStateFromStorage();
+        if (storedState) {
+          console.log('[TimeClock] 🔄 Using localStorage state due to DB error');
+        } else {
+          showClockedOutState();
+        }
       }
     }
 
@@ -1855,6 +1917,10 @@
           ...timeEntry,
           staff_time_log_id: staffTimeLog?.id
         };
+        
+        // Save to localStorage for persistence across page reloads
+        saveClockStateToStorage(currentTimeEntry);
+        
         showClockedInState();
         startTimer();
         
@@ -1971,6 +2037,9 @@
         stopTimer();
         showClockedOutState();
         currentTimeEntry = null;
+        
+        // Clear localStorage state
+        saveClockStateToStorage(null);
         
         // Clear notes
         if (notesInput) notesInput.value = '';
