@@ -293,6 +293,11 @@ export async function createAccount(accountData) {
       owner_user_id: accountData.owner_user_id || user.id,
       hq_address: accountData.hq_address || null,
       city: accountData.city || null,
+      phone: accountData.phone || null,
+      email: accountData.email || null,
+      website: accountData.website || null,
+      industry: accountData.industry || null,
+      notes: accountData.notes || null,
       site_count: 0,
       contact_count: 0
     };

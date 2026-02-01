@@ -1398,27 +1398,101 @@
         </div>
 
         <!-- Account Fields (shown when Account is selected) -->
-        <div id="account-fields" class="space-y-4">
+        <div id="account-fields" class="space-y-4 max-h-[60vh] overflow-y-auto pr-2">
           <div>
             <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name <span class="text-red-500">*</span></label>
             <input name="name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
-            <select name="status" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
-              <option value="prospect">Prospect</option>
-              <option value="in_progress">In Progress</option>
-              <option value="active">Active Client</option>
-              <option value="dormant">Dormant</option>
-            </select>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+              <select name="status" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+                <option value="prospect">Prospect</option>
+                <option value="in_progress">In Progress</option>
+                <option value="active">Active Client</option>
+                <option value="dormant">Dormant</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Industry</label>
+              <select name="industry" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+                <option value="">Select Industry</option>
+                <option value="healthcare">Healthcare</option>
+                <option value="real_estate">Real Estate</option>
+                <option value="hospitality">Hospitality</option>
+                <option value="retail">Retail</option>
+                <option value="education">Education</option>
+                <option value="manufacturing">Manufacturing</option>
+                <option value="construction">Construction</option>
+                <option value="property_management">Property Management</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+              <input name="account_phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="(555) 123-4567">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+              <input name="account_email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="info@company.com">
+            </div>
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HQ Address</label>
-            <input name="hq_address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
+            <input name="website" type="url" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="https://www.company.com">
           </div>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HQ Address</label>
+              <input name="hq_address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+              <input name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            </div>
+          </div>
+
+          <!-- Decision Maker Section -->
+          <div class="border-t border-nfgray dark:border-gray-700 pt-4 mt-4">
+            <div class="flex items-center justify-between mb-3">
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">Decision Maker (Primary Contact)</label>
+              <button type="button" id="toggle-dm-fields" class="text-xs text-nfgblue hover:underline flex items-center gap-1">
+                <i data-lucide="plus" class="w-3 h-3"></i> Add Contact
+              </button>
+            </div>
+            <div id="dm-fields" class="hidden space-y-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">First Name</label>
+                  <input name="dm_first_name" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Last Name</label>
+                  <input name="dm_last_name" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
+                </div>
+              </div>
+              <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Title/Role</label>
+                <input name="dm_title" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800" placeholder="e.g., Operations Manager">
+              </div>
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Phone</label>
+                  <input name="dm_phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Email</label>
+                  <input name="dm_email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-gray-800">
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
-            <input name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+            <textarea name="notes" rows="2" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="Any additional notes about this account..."></textarea>
           </div>
         </div>
 

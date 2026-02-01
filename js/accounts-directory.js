@@ -1372,6 +1372,23 @@ function setupEventListeners() {
   accountTypeBtn?.addEventListener('click', () => setContactType('account'));
   contactTypeBtn?.addEventListener('click', () => setContactType('contact'));
 
+  // Toggle Decision Maker fields
+  const toggleDmBtn = document.getElementById('toggle-dm-fields');
+  const dmFields = document.getElementById('dm-fields');
+  if (toggleDmBtn && dmFields) {
+    toggleDmBtn.addEventListener('click', () => {
+      const isHidden = dmFields.classList.contains('hidden');
+      if (isHidden) {
+        dmFields.classList.remove('hidden');
+        toggleDmBtn.innerHTML = '<i data-lucide="minus" class="w-3 h-3"></i> Hide';
+      } else {
+        dmFields.classList.add('hidden');
+        toggleDmBtn.innerHTML = '<i data-lucide="plus" class="w-3 h-3"></i> Add Contact';
+      }
+      if (window.lucide) lucide.createIcons();
+    });
+  }
+
   const createAccountForm = document.getElementById('create-account-form');
   if (createAccountForm) {
     let isSubmitting = false;
@@ -1412,13 +1429,44 @@ function setupEventListeners() {
             return;
           }
           
-          await accountsService.createAccount({
+          // Create the account with new fields
+          const newAccount = await accountsService.createAccount({
             name: accountName,
             status: formData.get('status'),
             hq_address: formData.get('hq_address')?.trim() || null,
-            city: formData.get('city')?.trim() || null
+            city: formData.get('city')?.trim() || null,
+            phone: formData.get('account_phone')?.trim() || null,
+            email: formData.get('account_email')?.trim() || null,
+            website: formData.get('website')?.trim() || null,
+            industry: formData.get('industry') || null,
+            notes: formData.get('notes')?.trim() || null
           });
-          toast.success('Account created');
+          
+          // Check if Decision Maker info was provided
+          const dmFirstName = formData.get('dm_first_name')?.trim();
+          const dmLastName = formData.get('dm_last_name')?.trim();
+          const dmPhone = formData.get('dm_phone')?.trim();
+          const dmEmail = formData.get('dm_email')?.trim();
+          
+          if (dmFirstName && dmLastName && (dmPhone || dmEmail) && newAccount?.id) {
+            // Create Decision Maker contact linked to the account
+            try {
+              await accountsService.createContact({
+                account_id: newAccount.id,
+                full_name: `${dmFirstName} ${dmLastName}`,
+                title: formData.get('dm_title')?.trim() || null,
+                phone: dmPhone || null,
+                email: dmEmail || null,
+                role_tag: 'decision_maker'
+              });
+              toast.success('Account and Decision Maker created');
+            } catch (dmError) {
+              console.error('[Accounts] Error creating decision maker:', dmError);
+              toast.success('Account created (Decision Maker failed)');
+            }
+          } else {
+            toast.success('Account created');
+          }
         } else {
           // Create Contact (standalone person)
           const firstName = formData.get('first_name')?.trim();
