@@ -338,6 +338,38 @@
       background-color: #bdc1c6;
     }
     
+    /* Google Calendar style time picker */
+    #task-start-time,
+    #task-end-time {
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #3c4043;
+    }
+    
+    #task-start-time:focus,
+    #task-end-time:focus {
+      border-color: #1a73e8;
+      box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.2);
+    }
+    
+    #task-start-time option,
+    #task-end-time option {
+      padding: 8px 12px;
+      font-size: 14px;
+    }
+    
+    .dark #task-start-time,
+    .dark #task-end-time {
+      color: #e8eaed;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    }
+    
     /* ========== CALENDAR EVENT SIDEBAR STYLING ========== */
     #calendar-event-sidebar {
       border-left: 1px solid #E5E7EB;
@@ -1649,14 +1681,21 @@
             <span class="text-sm text-gray-700 dark:text-gray-300">All day</span>
           </label>
         </div>
-        <div id="task-time-section" class="hidden space-y-3">
-          <div>
-            <label class="block text-sm font-medium mb-1.5">Start time *</label>
-            <input id="task-start-time" type="time" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" value="09:00" />
-          </div>
-          <div>
-            <label class="block text-sm font-medium mb-1.5">End time *</label>
-            <input id="task-end-time" type="time" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" value="10:00" />
+        <div id="task-time-section" class="hidden">
+          <div class="flex items-center gap-3">
+            <div class="flex-1">
+              <label class="block text-sm font-medium mb-1.5">Start time</label>
+              <select id="task-start-time" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800 cursor-pointer">
+                <!-- Options populated by JS -->
+              </select>
+            </div>
+            <span class="text-gray-400 mt-6">–</span>
+            <div class="flex-1">
+              <label class="block text-sm font-medium mb-1.5">End time</label>
+              <select id="task-end-time" class="w-full border border-nfgray dark:border-gray-600 rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none bg-white dark:bg-gray-800 cursor-pointer">
+                <!-- Options populated by JS -->
+              </select>
+            </div>
           </div>
         </div>
         <div>
@@ -5024,14 +5063,60 @@
       if (taskDesc) taskDesc.value = '';
       if (taskAllDay) taskAllDay.checked = true;
       if (taskTimeSection) taskTimeSection.classList.add('hidden');
-      const taskStart = document.getElementById('task-start-time');
-      const taskEnd = document.getElementById('task-end-time');
-      if (taskStart) taskStart.value = '09:00';
-      if (taskEnd) taskEnd.value = '10:00';
+      // Reset time dropdowns to defaults
+      populateTimeDropdowns();
       document.querySelectorAll('.task-share-checkbox').forEach(cb => cb.checked = false);
       loadStaffForTaskShare();
       if (window.lucide) lucide.createIcons();
     }
+
+    // ========== TIME PICKER FUNCTIONS (Google Calendar style) ==========
+    function populateTimeDropdowns() {
+      const startSelect = document.getElementById('task-start-time');
+      const endSelect = document.getElementById('task-end-time');
+      
+      if (!startSelect || !endSelect) return;
+      
+      // Generate time options in 15-minute increments (Google Calendar style)
+      const times = [];
+      for (let hour = 0; hour < 24; hour++) {
+        for (let min = 0; min < 60; min += 15) {
+          const h = hour % 12 || 12;
+          const ampm = hour < 12 ? 'am' : 'pm';
+          const displayTime = `${h}:${min.toString().padStart(2, '0')}${ampm}`;
+          const value = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+          times.push({ display: displayTime, value: value });
+        }
+      }
+      
+      // Populate start time
+      startSelect.innerHTML = times.map(t => 
+        `<option value="${t.value}">${t.display}</option>`
+      ).join('');
+      
+      // Populate end time
+      endSelect.innerHTML = times.map(t => 
+        `<option value="${t.value}">${t.display}</option>`
+      ).join('');
+      
+      // Set defaults (9:00am - 10:00am)
+      startSelect.value = '09:00';
+      endSelect.value = '10:00';
+    }
+    
+    // Auto-update end time when start time changes (1 hour later)
+    document.getElementById('task-start-time')?.addEventListener('change', (e) => {
+      const startValue = e.target.value;
+      const endSelect = document.getElementById('task-end-time');
+      if (startValue && endSelect) {
+        const [hours, mins] = startValue.split(':').map(Number);
+        const endHour = (hours + 1) % 24;
+        endSelect.value = `${endHour.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+      }
+    });
+    
+    // Initialize time dropdowns on page load
+    populateTimeDropdowns();
 
     // ========== EVENT LISTENERS ==========
     document.getElementById('create-booking-btn')?.addEventListener('click', () => {
