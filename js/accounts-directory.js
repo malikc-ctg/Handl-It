@@ -384,11 +384,20 @@ function escapeHtml(text) {
 async function openAccountDrawer(accountId) {
   try {
     const drawer = document.getElementById('account-drawer');
-    if (!drawer) return;
+    const backdrop = document.getElementById('account-drawer-backdrop');
+    if (!drawer) {
+      console.error('[Accounts] Account drawer not found in DOM');
+      toast.error('Account drawer not available', 'Error');
+      return;
+    }
 
     currentAccount = await accountsService.getAccountDetail(accountId);
     renderAccountDrawer();
     drawer.classList.remove('hidden');
+    drawer.style.display = 'block';
+    if (backdrop) backdrop.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+    console.log('[Accounts] Account drawer opened for:', currentAccount?.name);
   } catch (error) {
     console.error('[Accounts] Error opening account drawer:', error);
     toast.error('Failed to load account details', 'Error');
@@ -398,7 +407,12 @@ async function openAccountDrawer(accountId) {
 // Close account drawer
 function closeAccountDrawer() {
   const drawer = document.getElementById('account-drawer');
-  if (drawer) drawer.classList.add('hidden');
+  const backdrop = document.getElementById('account-drawer-backdrop');
+  if (drawer) {
+    drawer.classList.add('hidden');
+    drawer.style.display = '';
+  }
+  if (backdrop) backdrop.classList.add('hidden');
   currentAccount = null;
 }
 

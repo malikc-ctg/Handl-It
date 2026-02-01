@@ -1724,6 +1724,56 @@
     </div>
   </div>
 
+  <!-- Account Drawer (Slide-in from right) -->
+  <div id="account-drawer" class="hidden fixed inset-y-0 right-0 w-full max-w-lg bg-white dark:bg-gray-800 shadow-2xl z-[9999] transform transition-transform overflow-y-auto">
+    <div class="sticky top-0 bg-white dark:bg-gray-800 border-b border-nfgray dark:border-gray-700 p-4 flex items-center justify-between z-10">
+      <h2 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Account Details</h2>
+      <button id="close-account-drawer" onclick="window.accountsDirectory?.closeAccountDrawer()" class="p-2 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+    </div>
+    
+    <div class="p-4 space-y-6">
+      <!-- Company Summary -->
+      <div id="drawer-company-summary" class="border-b border-nfgray dark:border-gray-700 pb-4">
+        <!-- Populated by JS -->
+      </div>
+      
+      <!-- Decision Maker Section -->
+      <div>
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+          <i data-lucide="user-check" class="w-4 h-4"></i> Decision Maker
+        </h3>
+        <div id="drawer-decision-maker">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      
+      <!-- Contacts Section -->
+      <div>
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+          <i data-lucide="users" class="w-4 h-4"></i> Contacts
+        </h3>
+        <div id="drawer-contacts-list" class="space-y-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+      
+      <!-- Sites Section -->
+      <div>
+        <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
+          <i data-lucide="building" class="w-4 h-4"></i> Sites
+        </h3>
+        <div id="drawer-sites-list" class="space-y-2">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Account Drawer Backdrop -->
+  <div id="account-drawer-backdrop" class="hidden fixed inset-0 bg-black/40 z-[9998]" onclick="window.accountsDirectory?.closeAccountDrawer()"></div>
+
   <!-- Employee Details Modal -->
   <div id="employee-detail-modal" class="hidden fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-hidden flex flex-col">
