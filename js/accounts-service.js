@@ -327,16 +327,25 @@ export async function createAccount(accountData) {
  */
 export async function updateAccount(accountId, updates) {
   try {
+    // Build update object with only defined values
+    const updateData = {};
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.status !== undefined) updateData.status = updates.status;
+    if (updates.owner_user_id !== undefined) updateData.owner_user_id = updates.owner_user_id;
+    if (updates.hq_address !== undefined) updateData.hq_address = updates.hq_address;
+    if (updates.city !== undefined) updateData.city = updates.city;
+    if (updates.phone !== undefined) updateData.phone = updates.phone;
+    if (updates.email !== undefined) updateData.email = updates.email;
+    if (updates.website !== undefined) updateData.website = updates.website;
+    if (updates.industry !== undefined) updateData.industry = updates.industry;
+    if (updates.notes !== undefined) updateData.notes = updates.notes;
+    if (updates.last_touch_at !== undefined) {
+      updateData.last_touch_at = updates.last_touch_at ? new Date(updates.last_touch_at).toISOString() : null;
+    }
+    
     const { data, error } = await supabase
       .from('accounts')
-      .update({
-        name: updates.name,
-        status: updates.status,
-        owner_user_id: updates.owner_user_id,
-        hq_address: updates.hq_address,
-        city: updates.city,
-        last_touch_at: updates.last_touch_at ? new Date(updates.last_touch_at).toISOString() : null
-      })
+      .update(updateData)
       .eq('id', accountId)
       .select()
       .single();

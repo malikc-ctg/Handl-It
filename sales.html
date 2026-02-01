@@ -1774,6 +1774,177 @@
   <!-- Account Drawer Backdrop -->
   <div id="account-drawer-backdrop" class="hidden fixed inset-0 bg-black/40 z-[9998]" onclick="window.accountsDirectory?.closeAccountDrawer()"></div>
 
+  <!-- Add Contact to Account Modal -->
+  <div id="add-contact-modal" class="hidden fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Add Contact to Account</h3>
+        <button onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="add-contact-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name <span class="text-red-500">*</span></label>
+          <input name="full_name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title/Role</label>
+          <input name="title" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="e.g., Property Manager">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+            <input name="phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <input name="email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role Tag</label>
+          <select name="role_tag" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+            <option value="other">Other</option>
+            <option value="decision_maker">Decision Maker</option>
+            <option value="admin">Admin</option>
+            <option value="facilities">Facilities</option>
+            <option value="billing">Billing</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="document.getElementById('add-contact-modal').classList.add('hidden')" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Add Contact</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Add Site to Account Modal -->
+  <div id="add-site-modal" class="hidden fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Add Site to Account</h3>
+        <button onclick="document.getElementById('add-site-modal').classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="add-site-form" class="p-4 space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Site Name <span class="text-red-500">*</span></label>
+          <input name="name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800" placeholder="e.g., Main Office, Warehouse A">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Address <span class="text-red-500">*</span></label>
+          <input name="address" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+          <input name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="document.getElementById('add-site-modal').classList.add('hidden')" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Add Site</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Set Decision Maker Modal -->
+  <div id="set-dm-modal" class="hidden fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Set Decision Maker</h3>
+        <button onclick="document.getElementById('set-dm-modal').classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div class="p-4">
+        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">Select a contact to set as the Decision Maker for this account:</p>
+        <div id="set-dm-contacts-list" class="space-y-2 max-h-64 overflow-y-auto">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Account Modal -->
+  <div id="edit-account-modal" class="hidden fixed inset-0 bg-black/40 z-[10000] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Edit Account</h3>
+        <button onclick="document.getElementById('edit-account-modal').classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="edit-account-form" class="p-4 space-y-4 max-h-[70vh] overflow-y-auto">
+        <input type="hidden" id="edit-account-id" name="account_id">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Company Name <span class="text-red-500">*</span></label>
+          <input id="edit-account-name" name="name" type="text" required class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+            <select id="edit-account-status" name="status" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+              <option value="prospect">Prospect</option>
+              <option value="in_progress">In Progress</option>
+              <option value="active">Active Client</option>
+              <option value="dormant">Dormant</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Industry</label>
+            <select id="edit-account-industry" name="industry" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+              <option value="">Select Industry</option>
+              <option value="healthcare">Healthcare</option>
+              <option value="real_estate">Real Estate</option>
+              <option value="hospitality">Hospitality</option>
+              <option value="retail">Retail</option>
+              <option value="education">Education</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="construction">Construction</option>
+              <option value="property_management">Property Management</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Phone</label>
+            <input id="edit-account-phone" name="phone" type="tel" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <input id="edit-account-email" name="email" type="email" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Website</label>
+          <input id="edit-account-website" name="website" type="url" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">HQ Address</label>
+            <input id="edit-account-hq-address" name="hq_address" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">City</label>
+            <input id="edit-account-city" name="city" type="text" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800">
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+          <textarea id="edit-account-notes" name="notes" rows="3" class="w-full border border-nfgray dark:border-gray-600 rounded-xl px-3 py-2 bg-white dark:bg-gray-800"></textarea>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" onclick="document.getElementById('edit-account-modal').classList.add('hidden')" class="px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">Cancel</button>
+          <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Employee Details Modal -->
   <div id="employee-detail-modal" class="hidden fixed inset-0 bg-black/50 z-[80] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-hidden flex flex-col">

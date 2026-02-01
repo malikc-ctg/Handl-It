@@ -797,9 +797,9 @@ function renderAccountDrawer() {
         </div>
       </div>
       <div class="flex gap-2 mt-4">
-        <button id="drawer-add-site-btn" class="px-3 py-2 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Add Site</button>
-        <button id="drawer-add-contact-btn" class="px-3 py-2 text-sm border border-nfgray hover:bg-nfglight rounded-lg">Add Contact</button>
-        <button id="drawer-edit-account-btn" class="px-3 py-2 text-sm border border-nfgray hover:bg-nfglight rounded-lg">Edit</button>
+        <button onclick="window.openAddSiteModal()" class="px-3 py-2 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Add Site</button>
+        <button onclick="window.openAddContactModal()" class="px-3 py-2 text-sm border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg">Add Contact</button>
+        <button onclick="window.openEditAccountModal()" class="px-3 py-2 text-sm border border-nfgray hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg">Edit</button>
       </div>
     `;
   }
@@ -810,25 +810,25 @@ function renderAccountDrawer() {
     if (currentAccount.dm_contact) {
       const dm = currentAccount.dm_contact;
       dmSection.innerHTML = `
-        <div class="p-4 border border-nfgray rounded-xl">
+        <div class="p-4 border border-nfgray dark:border-gray-700 rounded-xl">
           <div class="flex items-start justify-between">
             <div class="flex-1">
               <h4 class="font-medium text-nfgblue dark:text-blue-400">${escapeHtml(dm.full_name)}</h4>
-              ${dm.title ? `<p class="text-sm text-gray-600 mt-1">${escapeHtml(dm.title)}</p>` : ''}
+              ${dm.title ? `<p class="text-sm text-gray-600 dark:text-gray-400 mt-1">${escapeHtml(dm.title)}</p>` : ''}
               <div class="mt-2 flex items-center gap-3">
-                ${dm.phone ? `<a href="tel:${dm.phone}" class="text-sm text-gray-600 hover:text-nfgblue flex items-center gap-1"><i data-lucide="phone" class="w-4 h-4"></i> ${escapeHtml(dm.phone)}</a>` : ''}
-                ${dm.email ? `<a href="mailto:${dm.email}" class="text-sm text-gray-600 hover:text-nfgblue flex items-center gap-1"><i data-lucide="mail" class="w-4 h-4"></i> ${escapeHtml(dm.email)}</a>` : ''}
+                ${dm.phone ? `<a href="tel:${dm.phone}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-nfgblue flex items-center gap-1"><i data-lucide="phone" class="w-4 h-4"></i> ${escapeHtml(dm.phone)}</a>` : ''}
+                ${dm.email ? `<a href="mailto:${dm.email}" class="text-sm text-gray-600 dark:text-gray-400 hover:text-nfgblue flex items-center gap-1"><i data-lucide="mail" class="w-4 h-4"></i> ${escapeHtml(dm.email)}</a>` : ''}
               </div>
             </div>
-            <button id="drawer-change-dm-btn" class="px-3 py-1 text-sm border border-nfgray hover:bg-nfglight rounded-lg">Change DM</button>
+            <button onclick="window.openSetDMModal()" class="px-3 py-1 text-sm border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg">Change DM</button>
           </div>
         </div>
       `;
     } else {
       dmSection.innerHTML = `
-        <div class="p-4 border border-nfgray rounded-xl text-center">
-          <p class="text-sm text-gray-500 mb-3">No decision maker set</p>
-          <button id="drawer-set-dm-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Set Decision Maker</button>
+        <div class="p-4 border border-nfgray dark:border-gray-700 rounded-xl text-center">
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">No decision maker set</p>
+          <button onclick="window.openSetDMModal()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Set Decision Maker</button>
         </div>
       `;
     }
@@ -1607,48 +1607,104 @@ function setupEventListeners() {
       toast.error('Failed to add site', 'Error');
     }
   });
+
+  // Edit account form
+  document.getElementById('edit-account-form')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!currentAccount) return;
+    
+    const formData = new FormData(e.target);
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn?.textContent;
+    
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+    }
+    
+    try {
+      await accountsService.updateAccount(currentAccount.id, {
+        name: formData.get('name')?.trim(),
+        status: formData.get('status'),
+        industry: formData.get('industry') || null,
+        phone: formData.get('phone')?.trim() || null,
+        email: formData.get('email')?.trim() || null,
+        website: formData.get('website')?.trim() || null,
+        hq_address: formData.get('hq_address')?.trim() || null,
+        city: formData.get('city')?.trim() || null,
+        notes: formData.get('notes')?.trim() || null
+      });
+      
+      toast.success('Account updated successfully');
+      document.getElementById('edit-account-modal')?.classList.add('hidden');
+      await loadAccounts();
+      // Refresh the drawer with updated data
+      await openAccountDrawer(currentAccount.id);
+    } catch (error) {
+      console.error('[Accounts] Error updating account:', error);
+      toast.error('Failed to update account: ' + (error.message || 'Unknown error'), 'Error');
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText || 'Save Changes';
+      }
+    }
+  });
 }
 
 // Open set DM modal
 function openSetDMModal(account) {
   const modal = document.getElementById('set-dm-modal');
-  if (!modal) return;
+  if (!modal) {
+    console.error('[Accounts] Set DM modal not found');
+    return;
+  }
   
   const contactsList = document.getElementById('set-dm-contacts-list');
   if (contactsList) {
     if (!account.contacts || account.contacts.length === 0) {
-      contactsList.innerHTML = '<p class="text-sm text-gray-500">No contacts available. Add a contact first.</p>';
+      contactsList.innerHTML = `
+        <div class="text-center py-4">
+          <p class="text-sm text-gray-500 dark:text-gray-400 mb-3">No contacts available.</p>
+          <button onclick="document.getElementById('set-dm-modal').classList.add('hidden'); window.openAddContactModal();" class="text-sm text-nfgblue hover:underline">Add a contact first</button>
+        </div>
+      `;
     } else {
       contactsList.innerHTML = account.contacts.map(contact => `
-        <button class="set-dm-contact-btn w-full text-left p-3 border border-nfgray rounded-lg hover:bg-nfglight" data-contact-id="${contact.id}">
-          <div class="font-medium">${escapeHtml(contact.full_name)}</div>
-          ${contact.title ? `<div class="text-sm text-gray-600">${escapeHtml(contact.title)}</div>` : ''}
+        <button class="set-dm-contact-btn w-full text-left p-3 border border-nfgray dark:border-gray-600 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700 transition" data-contact-id="${contact.id}">
+          <div class="font-medium text-gray-900 dark:text-white">${escapeHtml(contact.full_name)}</div>
+          ${contact.title ? `<div class="text-sm text-gray-600 dark:text-gray-400">${escapeHtml(contact.title)}</div>` : ''}
         </button>
       `).join('');
+      
+      // Setup contact selection with event delegation
+      contactsList.onclick = async (e) => {
+        const btn = e.target.closest('.set-dm-contact-btn');
+        if (btn) {
+          const contactId = btn.dataset.contactId;
+          btn.disabled = true;
+          btn.textContent = 'Setting...';
+          try {
+            await accountsService.setDecisionMaker(account.id, contactId);
+            toast.success('Decision maker set');
+            modal.classList.add('hidden');
+            await loadAccounts();
+            if (currentAccount && currentAccount.id === account.id) {
+              await openAccountDrawer(account.id);
+            }
+          } catch (error) {
+            console.error('[Accounts] Error setting DM:', error);
+            toast.error('Failed to set decision maker', 'Error');
+            btn.disabled = false;
+          }
+        }
+      };
     }
   }
 
   modal.dataset.accountId = account.id;
   modal.classList.remove('hidden');
-
-  // Setup contact selection
-  contactsList?.addEventListener('click', async (e) => {
-    const btn = e.target.closest('.set-dm-contact-btn');
-    if (btn) {
-      const contactId = btn.dataset.contactId;
-      try {
-        await accountsService.setDecisionMaker(account.id, contactId);
-        toast.success('Decision maker set');
-        modal.classList.add('hidden');
-        await loadAccounts();
-        if (currentAccount && currentAccount.id === account.id) {
-          await openAccountDrawer(account.id);
-        }
-      } catch (error) {
-        toast.error('Failed to set decision maker', 'Error');
-      }
-    }
-  });
+  if (window.lucide) lucide.createIcons();
 }
 
 // Handle account actions (edit/delete)
@@ -1740,6 +1796,63 @@ function attachContactActionListeners() {
   // Icons should already be rendered via lucide.createIcons()
   // Inline onclick handlers handle the click events
 }
+
+// Global functions for drawer buttons
+window.openAddSiteModal = function() {
+  if (!currentAccount) {
+    toast.error('No account selected', 'Error');
+    return;
+  }
+  const modal = document.getElementById('add-site-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+};
+
+window.openAddContactModal = function() {
+  if (!currentAccount) {
+    toast.error('No account selected', 'Error');
+    return;
+  }
+  const modal = document.getElementById('add-contact-modal');
+  if (modal) {
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+};
+
+window.openEditAccountModal = function() {
+  if (!currentAccount) {
+    toast.error('No account selected', 'Error');
+    return;
+  }
+  const modal = document.getElementById('edit-account-modal');
+  if (modal) {
+    // Populate form with current account data
+    document.getElementById('edit-account-id').value = currentAccount.id || '';
+    document.getElementById('edit-account-name').value = currentAccount.name || '';
+    document.getElementById('edit-account-status').value = currentAccount.status || 'prospect';
+    document.getElementById('edit-account-industry').value = currentAccount.industry || '';
+    document.getElementById('edit-account-phone').value = currentAccount.phone || '';
+    document.getElementById('edit-account-email').value = currentAccount.email || '';
+    document.getElementById('edit-account-website').value = currentAccount.website || '';
+    document.getElementById('edit-account-hq-address').value = currentAccount.hq_address || '';
+    document.getElementById('edit-account-city').value = currentAccount.city || '';
+    document.getElementById('edit-account-notes').value = currentAccount.notes || '';
+    
+    modal.classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  }
+};
+
+window.openSetDMModal = function() {
+  if (!currentAccount) {
+    toast.error('No account selected', 'Error');
+    return;
+  }
+  openSetDMModal(currentAccount);
+};
 
 // Export for use in sales.html
 const accountsDirectoryModule = {
