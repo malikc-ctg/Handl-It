@@ -782,25 +782,51 @@
       opacity: 1;
     }
     
-    /* Task events - ensure text visibility */
+    /* Force text visibility on ALL calendar events */
+    .fc-event,
+    .fc-event *,
+    .fc-timegrid-event,
+    .fc-timegrid-event *,
+    .fc-daygrid-event,
+    .fc-daygrid-event * {
+      color: #ffffff !important;
+    }
+    
+    .fc-event-title,
+    .fc-event-main,
+    .fc-event-time,
+    .fc-event-title-container {
+      color: #ffffff !important;
+      font-weight: 600 !important;
+      opacity: 1 !important;
+      visibility: visible !important;
+      display: block !important;
+    }
+    
+    .fc-timegrid-event .fc-event-main {
+      color: #ffffff !important;
+      padding: 4px 8px !important;
+      overflow: visible !important;
+    }
+    
+    .fc-timegrid-event-harness {
+      overflow: visible !important;
+    }
+    
+    /* Task events */
     .event-task {
       background-color: #6366f1 !important;
+    }
+    
+    /* Job events */
+    .event-job .fc-event-title,
+    .event-job .fc-event-main {
       color: #ffffff !important;
     }
     
-    .event-task .fc-event-title,
-    .event-task .fc-event-main,
-    .event-task .fc-event-time {
-      color: #ffffff !important;
-      font-weight: 600;
-    }
-    
-    .fc-timegrid-event.event-task .fc-event-main {
-      color: #ffffff !important;
-      padding: 4px 8px;
-    }
-    
-    .fc-daygrid-event.event-task {
+    /* Booking events */
+    .event-booking .fc-event-title,
+    .event-booking .fc-event-main {
       color: #ffffff !important;
     }
     
