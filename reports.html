@@ -4847,13 +4847,18 @@
 
     async function loadExpensesData(showToast = false) {
       try {
+        console.log('[Expenses] Loading expenses data...');
         const tbody = document.getElementById('expenses-table-body');
-        if (!tbody) return;
+        if (!tbody) {
+          console.warn('[Expenses] Table body element not found');
+          return;
+        }
 
         // Show loading state
         tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading expenses...</td></tr>';
 
         // Fetch expenses with related data
+        console.log('[Expenses] Building query...');
         let query = supabase
           .from('expenses')
           .select('*, jobs(title), sites(name)')
@@ -4862,33 +4867,43 @@
 
         // Apply filters
         if (currentExpenseFilters.category) {
+          console.log('[Expenses] Filtering by category:', currentExpenseFilters.category);
           query = query.eq('category', currentExpenseFilters.category);
         }
         if (currentExpenseFilters.job) {
+          console.log('[Expenses] Filtering by job:', currentExpenseFilters.job);
           query = query.eq('job_id', currentExpenseFilters.job);
         }
         if (currentExpenseFilters.site) {
           const siteIdNum = typeof currentExpenseFilters.site === 'string' ? parseInt(currentExpenseFilters.site, 10) : currentExpenseFilters.site;
+          console.log('[Expenses] Filtering by site:', siteIdNum);
           query = query.eq('site_id', siteIdNum);
         }
         if (currentExpenseFilters.dateFrom) {
+          console.log('[Expenses] Filtering by date from:', currentExpenseFilters.dateFrom);
           query = query.gte('expense_date', currentExpenseFilters.dateFrom);
         }
         if (currentExpenseFilters.dateTo) {
+          console.log('[Expenses] Filtering by date to:', currentExpenseFilters.dateTo);
           query = query.lte('expense_date', currentExpenseFilters.dateTo);
         }
 
+        console.log('[Expenses] Executing query...');
         const { data: expenses, error } = await query;
 
+        console.log('[Expenses] Query result:', { count: expenses?.length, error });
+        
         if (error) {
           console.error('[Expenses] Error loading expenses:', error);
-          if (error.code === 'PGRST204') {
+          if (error.code === 'PGRST204' || error.code === '42P01') {
             // Table doesn't exist yet
             tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Expenses table not found. Please run the SQL migration.</td></tr>';
             return;
           }
           throw error;
         }
+        
+        console.log('[Expenses] Loaded', expenses?.length || 0, 'expenses');
 
         allExpenses = expenses || [];
 
