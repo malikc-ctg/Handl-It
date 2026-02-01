@@ -782,6 +782,28 @@
       opacity: 1;
     }
     
+    /* Task events - ensure text visibility */
+    .event-task {
+      background-color: #6366f1 !important;
+      color: #ffffff !important;
+    }
+    
+    .event-task .fc-event-title,
+    .event-task .fc-event-main,
+    .event-task .fc-event-time {
+      color: #ffffff !important;
+      font-weight: 600;
+    }
+    
+    .fc-timegrid-event.event-task .fc-event-main {
+      color: #ffffff !important;
+      padding: 4px 8px;
+    }
+    
+    .fc-daygrid-event.event-task {
+      color: #ffffff !important;
+    }
+    
     /* Status-based styling */
     .event-status-pending {
       border-left: 2px solid rgba(255, 255, 255, 0.3);
