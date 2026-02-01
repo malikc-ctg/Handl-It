@@ -1604,22 +1604,10 @@ async function handleAccountAction(action, accountId) {
 }
 
 // Attach event listeners to action buttons
+// Note: Using inline onclick handlers now, so this just ensures icons are rendered
 function attachAccountActionListeners() {
-  document.querySelectorAll('.account-action-btn').forEach(btn => {
-    // Remove any existing listeners to prevent duplicates
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-    
-    // Attach click listener
-    newBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const action = newBtn.dataset.action;
-      const accountId = newBtn.dataset.accountId;
-      console.log('[Accounts] Button clicked directly:', { action, accountId });
-      await handleAccountAction(action, accountId);
-    });
-  });
+  // Icons should already be rendered via lucide.createIcons()
+  // Inline onclick handlers handle the click events
 }
 
 // Handle contact actions (edit, delete)
@@ -1663,22 +1651,10 @@ async function handleContactAction(action, contactId) {
 }
 
 // Attach event listeners to contact action buttons
+// Note: Using inline onclick handlers now, so this just ensures icons are rendered
 function attachContactActionListeners() {
-  document.querySelectorAll('.contact-action-btn').forEach(btn => {
-    // Remove any existing listeners to prevent duplicates
-    const newBtn = btn.cloneNode(true);
-    btn.parentNode.replaceChild(newBtn, btn);
-    
-    // Attach click listener
-    newBtn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      const action = newBtn.dataset.action;
-      const contactId = newBtn.dataset.contactId;
-      console.log('[Accounts] Contact button clicked directly:', { action, contactId });
-      await handleContactAction(action, contactId);
-    });
-  });
+  // Icons should already be rendered via lucide.createIcons()
+  // Inline onclick handlers handle the click events
 }
 
 // Export for use in sales.html
