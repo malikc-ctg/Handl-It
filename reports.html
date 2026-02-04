@@ -157,6 +157,11 @@
             <i data-lucide="download" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Export CSV</span>
           </button>
+          <button id="export-revenue-csv-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 text-xs sm:text-sm flex-shrink-0"
+                  title="Export Revenue CSV">
+            <i data-lucide="dollar-sign" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Revenue CSV</span>
+          </button>
           <button id="export-pdf-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 text-xs sm:text-sm flex-shrink-0"
                   title="Export PDF">
             <i data-lucide="file-text" class="w-4 h-4"></i>
@@ -256,7 +261,7 @@
       <!-- Overview Tab Content (existing content) -->
       <div id="tab-content-overview" class="tab-content space-y-6">
       <!-- Metric Cards -->
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
         <!-- Total Jobs -->
         <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg">
           <div class="flex items-center justify-between">
@@ -2329,6 +2334,7 @@
         }
         
         if (activeTab === 'overview' || activeTab === 'team' || !activeTab) {
+          // Export jobs CSV
           const timePeriod = document.getElementById('time-period')?.value || '30';
           const dateFrom = document.getElementById('date-from')?.value;
           const dateTo = document.getElementById('date-to')?.value;
