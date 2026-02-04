@@ -490,14 +490,22 @@
                     <span class="w-2 h-2 rounded-full bg-blue-400"></span>
                     <h3 class="font-semibold text-gray-700 dark:text-gray-300">Qualification</h3>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 relative">
                     <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" class="kanban-plus-btn p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" data-stage="qualification" title="New deal">
                       <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" class="kanban-menu-btn p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" data-stage="qualification" title="Options">
                       <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
+                    <div class="kanban-stage-dropdown hidden absolute right-0 top-full mt-1 py-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <button type="button" class="kanban-export-btn w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export deals
+                      </button>
+                      <button type="button" class="kanban-view-list-btn w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="list" class="w-4 h-4"></i> View in list
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="qualification">
@@ -512,14 +520,22 @@
                     <span class="w-2 h-2 rounded-full bg-purple-400"></span>
                     <h3 class="font-semibold text-gray-700 dark:text-gray-300">Proposal</h3>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 relative">
                     <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" class="kanban-plus-btn p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" data-stage="proposal" title="New deal">
                       <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" class="kanban-menu-btn p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" data-stage="proposal" title="Options">
                       <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
+                    <div class="kanban-stage-dropdown hidden absolute right-0 top-full mt-1 py-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <button type="button" class="kanban-export-btn w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export deals
+                      </button>
+                      <button type="button" class="kanban-view-list-btn w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="list" class="w-4 h-4"></i> View in list
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="proposal">
@@ -534,14 +550,22 @@
                     <span class="w-2 h-2 rounded-full bg-orange-400"></span>
                     <h3 class="font-semibold text-gray-700 dark:text-gray-300">Negotiation</h3>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 relative">
                     <span class="kanban-count bg-nfgblue text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" class="kanban-plus-btn p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" data-stage="negotiation" title="New deal">
                       <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" class="kanban-menu-btn p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" data-stage="negotiation" title="Options">
                       <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
+                    <div class="kanban-stage-dropdown hidden absolute right-0 top-full mt-1 py-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <button type="button" class="kanban-export-btn w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i> Export deals
+                      </button>
+                      <button type="button" class="kanban-view-list-btn w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="list" class="w-4 h-4"></i> View in list
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="negotiation">
@@ -549,21 +573,28 @@
                 </div>
               </div>
 
-              <!-- Closed Won Column -->
+              <!-- Closed Won Column (no +; three-dots: Clear pipeline, Export deals) -->
               <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border-2 border-green-200 dark:border-green-800" data-stage="closed_won">
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-green-400"></span>
                     <h3 class="font-semibold text-green-700 dark:text-green-300">Closed Won</h3>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 relative">
                     <span class="kanban-count bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
-                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
-                    </button>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" id="kanban-closed-won-menu-btn" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" title="Options">
                       <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
+                    <div id="kanban-closed-won-dropdown" class="hidden absolute right-0 top-full mt-1 py-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <button type="button" id="kanban-closed-won-clear-btn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+                        Clear pipeline
+                      </button>
+                      <button type="button" id="kanban-closed-won-export-btn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        Export deals
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_won">
@@ -5060,6 +5091,141 @@
       });
     }
 
+    // Closed Won column: three-dots menu (Clear pipeline, Export deals) — no plus button
+    function setupClosedWonPipelineMenu() {
+      const menuBtn = document.getElementById('kanban-closed-won-menu-btn');
+      const dropdown = document.getElementById('kanban-closed-won-dropdown');
+      const clearBtn = document.getElementById('kanban-closed-won-clear-btn');
+      const exportBtn = document.getElementById('kanban-closed-won-export-btn');
+      if (!menuBtn || !dropdown || !clearBtn) return;
+
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        document.querySelectorAll('.kanban-stage-dropdown, #kanban-closed-lost-dropdown').forEach(el => { if (el !== dropdown) el.classList.add('hidden'); });
+        dropdown.classList.toggle('hidden');
+        if (window.lucide) lucide.createIcons();
+      });
+      document.addEventListener('click', () => dropdown.classList.add('hidden'));
+      dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+      clearBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        dropdown.classList.add('hidden');
+        try {
+          const { data: deals, error: fetchErr } = await supabase.from('deals').select('id').eq('stage', 'closed_won');
+          if (fetchErr) throw fetchErr;
+          const ids = (deals || []).map(d => d.id);
+          if (ids.length === 0) {
+            toast.info('Closed Won pipeline is already empty', 'Info');
+            return;
+          }
+          if (!confirm(`Permanently delete all ${ids.length} deal(s) in Closed Won? This cannot be undone.`)) return;
+          const { error: deleteErr } = await supabase.from('deals').delete().in('id', ids);
+          if (deleteErr) throw deleteErr;
+          if (window.loadDealsForDashboard && window.renderDealsKanban) {
+            const data = await loadDealsForDashboard();
+            renderDealsKanban(data);
+          }
+          toast.success(`Removed ${ids.length} deal(s) from Closed Won`, 'Success');
+        } catch (err) {
+          console.error('[Sales] Clear Closed Won pipeline:', err);
+          toast.error(err.message || 'Failed to clear pipeline', 'Error');
+        }
+      });
+
+      if (exportBtn) {
+        exportBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          dropdown.classList.add('hidden');
+          const data = await loadDealsForDashboard();
+          const deals = (data || []).filter(d => d.stage === 'closed_won');
+          exportDealsToCsv(deals, 'Closed Won');
+        });
+      }
+    }
+
+    // Export deals to CSV and trigger download
+    function exportDealsToCsv(deals, stageLabel) {
+      if (!deals || deals.length === 0) {
+        toast.info('No deals to export', 'Info');
+        return;
+      }
+      const headers = ['Title', 'Stage', 'Value', 'Updated'];
+      const rows = deals.map(d => {
+        const title = d.title || (d.sites && d.sites.name) || 'Untitled';
+        const value = d.deal_value ?? d.estimated_value ?? d.value_estimate ?? '';
+        const updated = d.updated_at ? new Date(d.updated_at).toLocaleDateString() : '';
+        return [title, d.stage || '', value, updated];
+      });
+      const csv = [headers.join(','), ...rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `deals-${(stageLabel || 'export').replace(/\s+/g, '-').toLowerCase()}-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      toast.success(`Exported ${deals.length} deal(s)`, 'Export');
+    }
+
+    // Qualification / Proposal / Negotiation: plus = New deal with stage, three-dots = Export + View in list
+    function setupKanbanPlusAndStageMenus() {
+      document.querySelectorAll('.kanban-plus-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const stage = btn.dataset.stage;
+          if (window.switchTab) switchTab('deals');
+          const modal = document.getElementById('create-deal-modal');
+          const stageSelect = document.getElementById('deal-stage-select');
+          if (modal) modal.classList.remove('hidden');
+          if (stageSelect && stage) stageSelect.value = stage;
+          if (window.lucide) lucide.createIcons();
+        });
+      });
+
+      document.querySelectorAll('.kanban-menu-btn').forEach(menuBtn => {
+        const stage = menuBtn.dataset.stage;
+        const column = menuBtn.closest('.kanban-column');
+        const dropdown = column ? column.querySelector('.kanban-stage-dropdown') : null;
+        if (!dropdown) return;
+
+        menuBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          document.querySelectorAll('.kanban-stage-dropdown, #kanban-closed-lost-dropdown, #kanban-closed-won-dropdown').forEach(el => { if (el !== dropdown) el.classList.add('hidden'); });
+          dropdown.classList.toggle('hidden');
+          if (window.lucide) lucide.createIcons();
+        });
+
+        dropdown.querySelectorAll('.kanban-export-btn').forEach(exportBtn => {
+          exportBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.classList.add('hidden');
+            const data = await loadDealsForDashboard();
+            const deals = (data || []).filter(d => d.stage === stage);
+            const label = { qualification: 'Qualification', proposal: 'Proposal', negotiation: 'Negotiation' }[stage] || stage;
+            exportDealsToCsv(deals, label);
+          });
+        });
+
+        dropdown.querySelectorAll('.kanban-view-list-btn').forEach(viewBtn => {
+          viewBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            dropdown.classList.add('hidden');
+            if (window.switchTab) switchTab('deals');
+            const data = await loadDealsForDashboard();
+            globalDealsData = data || [];
+            const filtered = globalDealsData.filter(d => d.stage === stage);
+            switchDealsView('list');
+            renderDealsList(filtered);
+            toast.info(`Showing ${filtered.length} deal(s) in list`, 'List view');
+          });
+        });
+      });
+
+      document.addEventListener('click', () => {
+        document.querySelectorAll('.kanban-stage-dropdown').forEach(el => el.classList.add('hidden'));
+      });
+    }
+
     // Switch between deals views
     function switchDealsView(view) {
       // Hide all views
@@ -6640,6 +6806,8 @@
         initViewOptions();
         
         setupClosedLostPipelineMenu();
+        setupClosedWonPipelineMenu();
+        setupKanbanPlusAndStageMenus();
         
         console.log('[Sales Dashboard] Step 3: Initializing UI...');
         // Initialize UI first
