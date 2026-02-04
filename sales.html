@@ -841,62 +841,159 @@
           </div>
         </div>
 
-        <!-- Priority Actions Tab (Full Page) -->
-        <div id="tab-priority" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6">
+        <!-- Priority Actions Tab (Mini Powerhouse CRM - reference layout) -->
+        <div id="tab-priority" class="sales-tab-content hidden h-full overflow-y-auto p-4 md:p-6 bg-gray-50 dark:bg-gray-900">
           <div class="max-w-7xl mx-auto">
-            <!-- Header -->
-            <div class="flex items-center justify-between mb-6">
-              <div>
-                <h2 class="text-2xl font-semibold text-nfgblue dark:text-blue-400 mb-1">Priority Actions</h2>
-                <p class="text-sm text-gray-500 dark:text-gray-400">Contacts that need follow-up, sorted by urgency</p>
+            <!-- Top bar: Search, Sort, Filters, Me, + Add -->
+            <div class="flex flex-wrap items-center gap-3 mb-6">
+              <div class="flex-1 min-w-[200px] relative max-w-md">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                <input type="text" id="priority-search" placeholder="Search customer..." class="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-400" />
               </div>
-              <button onclick="loadPriorityActionsPage()" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition flex items-center gap-2">
-                <i data-lucide="refresh-cw" class="w-4 h-4"></i> Refresh
-              </button>
+              <div class="flex items-center gap-2">
+                <select id="priority-sort" class="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-sm">
+                  <option value="priority">Sort by priority</option>
+                  <option value="last_activity">Last activity</option>
+                  <option value="deal_value">Deal value</option>
+                  <option value="next_followup">Next follow-up</option>
+                </select>
+                <button type="button" id="priority-filters-btn" class="p-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                  <i data-lucide="filter" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+                </button>
+                <button type="button" id="priority-me-btn" class="p-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition" title="My actions only">
+                  <i data-lucide="user" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+                </button>
+                <button type="button" id="priority-refresh-btn" class="p-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition" title="Refresh list">
+                  <i data-lucide="refresh-cw" class="w-4 h-4 text-gray-600 dark:text-gray-400"></i>
+                </button>
+                <button type="button" id="priority-add-customer-btn" class="px-4 py-2 bg-gray-900 dark:bg-white text-white dark:text-gray-900 rounded-xl font-medium transition flex items-center gap-2 hover:opacity-90">
+                  <i data-lucide="plus" class="w-4 h-4"></i> Add customer
+                </button>
+              </div>
             </div>
-            
-            <!-- Priority Legend -->
-            <div class="flex flex-wrap gap-4 mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-              <div class="flex items-center gap-2">
-                <span class="w-3 h-3 bg-red-500 rounded-full"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-300">P1: Urgent (Final attempt, missed callbacks)</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="w-3 h-3 bg-orange-500 rounded-full"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-300">P2: High (1 no-contact, quote follow-ups)</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
-                <span class="text-sm text-gray-600 dark:text-gray-300">P3: Medium (New contacts, idle >7 days)</span>
+
+            <!-- Filters panel (collapsible) -->
+            <div id="priority-filters-panel" class="hidden mb-6 p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+              <div class="flex flex-wrap items-center gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Priority</label>
+                  <select id="priority-filter-priority" class="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                    <option value="">All</option>
+                    <option value="1">P1 Urgent</option>
+                    <option value="2">P2 High</option>
+                    <option value="3">P3 Medium</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Type</label>
+                  <select id="priority-filter-type" class="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                    <option value="">All types</option>
+                    <option value="contact_final_attempt">Final attempt</option>
+                    <option value="contact_missed_followup">Missed follow-up</option>
+                    <option value="contact_follow_up">Follow up (1 no-contact)</option>
+                    <option value="contact_quote_followup">Quote follow-up</option>
+                    <option value="contact_new">New contact</option>
+                    <option value="contact_idle">Idle</option>
+                    <option value="quote_expiring">Quote expiring</option>
+                    <option value="missed_callback">Missed callback</option>
+                    <option value="walkthrough_today">Walkthrough today</option>
+                    <option value="follow_up_needed">Deal follow-up</option>
+                    <option value="quote_follow_up">Deal quote follow-up</option>
+                    <option value="post_walkthrough">Post walkthrough</option>
+                    <option value="idle_deal">Idle deal</option>
+                    <option value="stuck_in_stage">Stuck in stage</option>
+                    <option value="new_uncontacted">New uncontacted deal</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Has deal</label>
+                  <select id="priority-filter-deal" class="px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+                    <option value="">All</option>
+                    <option value="yes">With deal</option>
+                    <option value="no">No deal</option>
+                  </select>
+                </div>
+                <button type="button" id="priority-filters-apply" class="self-end px-3 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm">Apply</button>
               </div>
             </div>
-            
-            <!-- Stats Row -->
+
+            <!-- KPI row (reference style) -->
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 text-center">
-                <p id="priority-p1-count" class="text-2xl font-bold text-red-600">0</p>
-                <p class="text-xs text-red-600/70">Urgent (P1)</p>
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p id="priority-p1-count" class="text-2xl font-bold text-red-600 dark:text-red-400">0</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Urgent (P1)</p>
+                </div>
+                <i data-lucide="alert-circle" class="w-8 h-8 text-red-500/30"></i>
               </div>
-              <div class="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl p-4 text-center">
-                <p id="priority-p2-count" class="text-2xl font-bold text-orange-600">0</p>
-                <p class="text-xs text-orange-600/70">High (P2)</p>
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p id="priority-p2-count" class="text-2xl font-bold text-orange-600 dark:text-orange-400">0</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">High (P2)</p>
+                </div>
+                <i data-lucide="trending-up" class="w-8 h-8 text-orange-500/30"></i>
               </div>
-              <div class="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 text-center">
-                <p id="priority-p3-count" class="text-2xl font-bold text-yellow-600">0</p>
-                <p class="text-xs text-yellow-600/70">Medium (P3)</p>
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p id="priority-tasks-count" class="text-2xl font-bold text-nfgblue dark:text-blue-400">0</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Tasks in progress</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
               </div>
-              <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 text-center">
-                <p id="priority-total-contacts" class="text-2xl font-bold text-green-600">0</p>
-                <p class="text-xs text-green-600/70">Total Contacts</p>
+              <div class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 flex items-center justify-between shadow-sm">
+                <div>
+                  <p id="priority-value" class="text-2xl font-bold text-green-600 dark:text-green-400">$0</p>
+                  <p class="text-xs text-gray-500 dark:text-gray-400">Pipeline value</p>
+                </div>
+                <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
               </div>
             </div>
-            
-            <!-- Priority Actions List -->
-            <div id="priority-actions-full-list" class="space-y-3">
-              <div class="text-center py-12 text-gray-400">
+
+            <!-- Priority Actions card grid -->
+            <div id="priority-actions-full-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div class="col-span-full text-center py-12 text-gray-400">
                 <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
                 <p>Loading priority actions...</p>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Priority card three-dots dropdown (shared template, filled by JS) -->
+        <div id="priority-card-menu-portal" class="hidden fixed z-[100] py-1 min-w-[180px] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-xl"></div>
+        <!-- Quick log / Schedule next modal -->
+        <div id="priority-quick-log-modal" class="hidden fixed inset-0 bg-black/50 z-[90] flex items-center justify-center p-4">
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full p-6">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Log outcome & next step</h3>
+              <button type="button" id="priority-quick-log-close" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <input type="hidden" id="priority-quick-log-contact-id" />
+            <input type="hidden" id="priority-quick-log-deal-id" />
+            <div class="space-y-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Outcome</label>
+                <select id="priority-quick-log-outcome" class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                  <option value="contact_made">Contact made</option>
+                  <option value="no_answer">No answer</option>
+                  <option value="voicemail">Left voicemail</option>
+                  <option value="callback_scheduled">Callback scheduled</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Next follow-up (optional)</label>
+                <input type="date" id="priority-quick-log-next-date" class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Note</label>
+                <textarea id="priority-quick-log-note" rows="2" class="w-full px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Brief note..."></textarea>
+              </div>
+            </div>
+            <div class="flex justify-end gap-2 mt-6">
+              <button type="button" id="priority-quick-log-cancel" class="px-4 py-2 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
+              <button type="button" id="priority-quick-log-save" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg">Save</button>
             </div>
           </div>
         </div>
@@ -4424,21 +4521,17 @@
         return a.priority - b.priority;
       });
 
-      // Render actions
+      // Render dashboard widget (top 3) when element exists
       const actionsList = document.getElementById('priority-actions-list');
-      if (!actionsList) return;
-
-      if (actions.length === 0) {
-        actionsList.innerHTML = `
+      if (actionsList) {
+        if (actions.length === 0) {
+          actionsList.innerHTML = `
           <div class="p-6 text-center text-gray-500 dark:text-gray-400">
             <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-2 text-green-500"></i>
             <p>No priority actions at this time</p>
           </div>
         `;
-        if (window.lucide) lucide.createIcons();
-        return;
-      }
-
+        } else {
       const colorClasses = {
         red: 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/10',
         orange: 'border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/10',
@@ -4491,118 +4584,323 @@
       `}).join('');
 
       if (window.lucide) lucide.createIcons();
+        }
+      }
+      return actions;
     }
 
-    // Load Priority Actions Full Page
+    // Priority Actions: unified list (for filters/sort) — set by loadPriorityActionsPage
+    window.priorityActionsFullList = [];
+    window.priorityActionsFilteredList = [];
+
+    // Load Priority Actions Full Page (unified feed + new card UI)
     async function loadPriorityActionsPage() {
-      console.log('[Priority] Loading priority actions page...');
       const listEl = document.getElementById('priority-actions-full-list');
       if (!listEl) return;
       
-      listEl.innerHTML = `
-        <div class="text-center py-12 text-gray-400">
-          <i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i>
-          <p>Loading priority actions...</p>
-        </div>
-      `;
+      listEl.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400"><i data-lucide="loader-2" class="w-8 h-8 mx-auto mb-2 animate-spin"></i><p>Loading priority actions...</p></div>`;
       if (window.lucide) lucide.createIcons();
       
       try {
-        // Load contacts for priority actions
-        const contactsData = await loadContactsForPriorityActions();
-        console.log('[Priority] Loaded', contactsData?.length || 0, 'contacts');
-        
-        // Generate priority actions
-        const actions = generatePriorityActionsForPage(contactsData);
-        console.log('[Priority] Generated', actions.length, 'priority actions');
-        
-        // Update counts
-        const p1Count = actions.filter(a => a.priorityLevel === 1).length;
-        const p2Count = actions.filter(a => a.priorityLevel === 2).length;
-        const p3Count = actions.filter(a => a.priorityLevel === 3).length;
-        
-        document.getElementById('priority-p1-count').textContent = p1Count;
-        document.getElementById('priority-p2-count').textContent = p2Count;
-        document.getElementById('priority-p3-count').textContent = p3Count;
-        document.getElementById('priority-total-contacts').textContent = contactsData?.length || 0;
-        
-        // Render actions
-        if (actions.length === 0) {
-          listEl.innerHTML = `
-            <div class="text-center py-12 text-gray-400">
-              <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-green-500"></i>
-              <p class="text-lg font-medium text-gray-600">All caught up!</p>
-              <p class="text-sm">No priority actions at the moment.</p>
-            </div>
-          `;
-          if (window.lucide) lucide.createIcons();
-          return;
-        }
-        
-        const colorClasses = {
-          red: 'border-l-4 border-red-500 bg-red-50 dark:bg-red-900/10',
-          orange: 'border-l-4 border-orange-500 bg-orange-50 dark:bg-orange-900/10',
-          yellow: 'border-l-4 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10'
-        };
-        
-        listEl.innerHTML = actions.map(action => {
-          const isContact = !!action.contactId;
-          return `
-          <div class="p-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition ${colorClasses[action.color] || ''}">
-            <div class="flex items-start justify-between">
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                  <span class="font-semibold text-nfgblue dark:text-blue-400 text-lg">${action.company}</span>
-                  ${action.companyName ? `<span class="text-sm text-gray-500">${action.companyName}</span>` : ''}
-                  ${action.streak ? `<span class="px-2 py-0.5 text-xs font-bold rounded-full ${action.streak >= 2 ? 'bg-red-500 text-white animate-pulse' : 'bg-yellow-100 text-yellow-700'}">${action.streak}/3 no-contact</span>` : ''}
-                </div>
-                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">${action.reason}</p>
-                <div class="flex items-center gap-4 text-xs text-gray-500">
-                  <span>Last activity: ${action.lastActivity ? new Date(action.lastActivity).toLocaleString() : 'Never'}</span>
-                  ${action.phone ? `<a href="tel:${action.phone}" class="text-nfgblue hover:underline flex items-center gap-1"><i data-lucide="phone" class="w-3 h-3"></i> ${action.phone}</a>` : ''}
-                  ${action.email ? `<a href="mailto:${action.email}" class="text-nfgblue hover:underline flex items-center gap-1"><i data-lucide="mail" class="w-3 h-3"></i> ${action.email}</a>` : ''}
-                </div>
-              </div>
-              <div class="flex gap-2 ml-4">
-                ${isContact ? `
-                  <button class="priority-log-btn px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition flex items-center gap-2" data-contact-id="${action.contactId}">
-                    <i data-lucide="phone" class="w-4 h-4"></i>
-                    Log Activity
-                  </button>
-                  ${action.phone ? `<a href="tel:${action.phone}" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
-                    <i data-lucide="phone-call" class="w-4 h-4"></i>
-                    Call Now
-                  </a>` : ''}
-                ` : ''}
-              </div>
-            </div>
-          </div>
-        `}).join('');
-        
-        if (window.lucide) lucide.createIcons();
-        
-        // Attach click handlers for Log Activity buttons
-        listEl.querySelectorAll('.priority-log-btn').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            const contactId = this.dataset.contactId;
-            if (window.openLogActivityForContact) {
-              window.openLogActivityForContact(contactId);
+        const [dealsData, quotesData, contactsData] = await Promise.all([
+          loadDealsForDashboard(),
+          loadQuotesForDashboard(),
+          loadContactsForPriorityActions()
+        ]);
+        let actions = generatePriorityActions(dealsData || [], quotesData || [], contactsData || []) || [];
+        // Enrich: link contact -> deal where possible
+        (dealsData || []).forEach(deal => {
+          const pid = deal.primary_contact_id;
+          if (!pid) return;
+          actions.forEach(a => {
+            if (a.contactId === pid && !a.dealId) {
+              a.dealId = deal.id;
+              a.dealStage = deal.stage;
+              a.dealValue = getDealValue(deal);
+              a.deal = deal;
             }
           });
         });
+        // Enrich deal-only actions with primary_contact (email, phone, company) for Call/Email
+        (dealsData || []).forEach(deal => {
+          actions.forEach(a => {
+            if (a.dealId !== deal.id) return;
+            if (a.email && a.phone) return;
+            const pc = deal.primary_contact;
+            if (pc) {
+              if (!a.email) a.email = pc.email;
+              if (!a.phone) a.phone = pc.phone || pc.mobile;
+              if (!a.company && pc.full_name) a.company = pc.full_name;
+            }
+            if (!a.deal) a.deal = deal;
+            if (a.dealValue == null) a.dealValue = getDealValue(deal);
+          });
+        });
+        // Attach next_follow_up_date from contacts for display/sort
+        (contactsData || []).forEach(c => {
+          actions.forEach(a => {
+            if (a.contactId === c.id && c.next_follow_up_date) a.next_follow_up_date = c.next_follow_up_date;
+          });
+        });
+        window.priorityActionsFullList = actions;
+        applyPriorityFiltersAndRender();
       } catch (error) {
         console.error('[Priority] Error loading priority actions:', error);
+        listEl.innerHTML = `<div class="col-span-full text-center py-12 text-red-500"><i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i><p>Failed to load priority actions</p><p class="text-sm text-gray-500">${error.message}</p></div>`;
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+
+    function applyPriorityFiltersAndRender() {
+      const listEl = document.getElementById('priority-actions-full-list');
+      if (!listEl) return;
+      let actions = [...(window.priorityActionsFullList || [])];
+      const search = (document.getElementById('priority-search')?.value || '').trim().toLowerCase();
+      const filterPriority = document.getElementById('priority-filter-priority')?.value;
+      const filterType = document.getElementById('priority-filter-type')?.value;
+      const filterDeal = document.getElementById('priority-filter-deal')?.value;
+      const sortBy = document.getElementById('priority-sort')?.value || 'priority';
+
+      if (search) {
+        actions = actions.filter(a =>
+          (a.company || '').toLowerCase().includes(search) ||
+          (a.companyName || '').toLowerCase().includes(search) ||
+          (a.reason || '').toLowerCase().includes(search)
+        );
+      }
+      if (filterPriority) {
+        const p = parseInt(filterPriority, 10);
+        actions = actions.filter(a => a.priorityLevel === p);
+      }
+      if (filterType) actions = actions.filter(a => a.type === filterType);
+      if (filterDeal === 'yes') actions = actions.filter(a => !!a.dealId);
+      if (filterDeal === 'no') actions = actions.filter(a => !a.dealId);
+
+      if (sortBy === 'last_activity') {
+        actions.sort((a, b) => (new Date(a.lastActivity || 0) - new Date(b.lastActivity || 0)));
+      } else if (sortBy === 'deal_value') {
+        actions.sort((a, b) => (b.dealValue || 0) - (a.dealValue || 0));
+      } else if (sortBy === 'next_followup') {
+        actions.sort((a, b) => (new Date(a.next_follow_up_date || 0) - new Date(b.next_follow_up_date || 0)));
+      } else {
+        actions.sort((a, b) => {
+          if (a.priorityLevel !== b.priorityLevel) return a.priorityLevel - b.priorityLevel;
+          return a.priority - b.priority;
+        });
+      }
+
+      window.priorityActionsFilteredList = actions;
+
+      const p1Count = (window.priorityActionsFullList || []).filter(a => a.priorityLevel === 1).length;
+      const p2Count = (window.priorityActionsFullList || []).filter(a => a.priorityLevel === 2).length;
+      const totalTasks = (window.priorityActionsFullList || []).length;
+      const totalValue = (window.priorityActionsFullList || []).reduce((s, a) => s + (a.dealValue || 0), 0);
+      const elP1 = document.getElementById('priority-p1-count');
+      const elP2 = document.getElementById('priority-p2-count');
+      const elTasks = document.getElementById('priority-tasks-count');
+      const elValue = document.getElementById('priority-value');
+      if (elP1) elP1.textContent = p1Count;
+      if (elP2) elP2.textContent = p2Count;
+      if (elTasks) elTasks.textContent = totalTasks;
+      if (elValue) elValue.textContent = '$' + (totalValue || 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+
+      if (actions.length === 0) {
         listEl.innerHTML = `
-          <div class="text-center py-12 text-red-500">
-            <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2"></i>
-            <p>Failed to load priority actions</p>
-            <p class="text-sm text-gray-500">${error.message}</p>
+          <div class="col-span-full text-center py-12 text-gray-400">
+            <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-3 text-green-500"></i>
+            <p class="text-lg font-medium text-gray-600 dark:text-gray-400">All caught up!</p>
+            <p class="text-sm">No priority actions match your filters.</p>
           </div>
         `;
         if (window.lucide) lucide.createIcons();
+        return;
       }
+
+      const borderColors = { red: 'border-l-4 border-red-500', orange: 'border-l-4 border-orange-500', yellow: 'border-l-4 border-yellow-500' };
+      listEl.innerHTML = actions.map((action, idx) => {
+        const dateStr = action.lastActivity ? new Date(action.lastActivity).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' }) : 'No due date';
+        const safeCompany = (action.company || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const safeReason = (action.reason || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        const safeCompanyName = (action.companyName || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return `
+        <div class="priority-action-card bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition text-left ${borderColors[action.color] || ''}" data-action-index="${idx}">
+          <div class="p-4">
+            <div class="flex items-start justify-between gap-2">
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <span class="font-semibold text-gray-900 dark:text-white truncate">${safeCompany}</span>
+                  ${action.dealId ? `<a href="#" class="priority-open-deal text-xs text-nfgblue hover:underline" data-deal-id="${action.dealId}">Open deal</a>` : ''}
+                </div>
+                ${safeCompanyName ? `<p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">${safeCompanyName}</p>` : ''}
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1 line-clamp-2">${safeReason}</p>
+                ${action.next_follow_up_date ? `<p class="text-xs text-nfgblue dark:text-blue-400 mt-1">Next: ${new Date(action.next_follow_up_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>` : ''}
+              </div>
+              <div class="relative">
+                <button type="button" class="priority-card-menu-btn p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700" data-action-index="${idx}" title="Actions">
+                  <i data-lucide="more-vertical" class="w-4 h-4 text-gray-500"></i>
+                </button>
+              </div>
+            </div>
+            <div class="flex items-center gap-4 mt-3 text-xs text-gray-500 dark:text-gray-400">
+              <span class="flex items-center gap-1"><i data-lucide="calendar" class="w-3.5 h-3.5"></i> ${dateStr}</span>
+              <span class="flex items-center gap-1"><i data-lucide="message-square" class="w-3.5 h-3.5"></i> ${action.activitiesCount ?? 0}</span>
+              <span class="flex items-center gap-1"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> ${action.dealId ? 1 : 0}</span>
+            </div>
+            <div class="priority-card-detail hidden mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 space-y-2">
+              ${action.email ? `<p class="text-sm flex items-center gap-2"><i data-lucide="mail" class="w-4 h-4 text-gray-400"></i> <a href="mailto:${action.email}" class="text-nfgblue hover:underline">${action.email}</a></p>` : ''}
+              ${action.phone ? `<p class="text-sm flex items-center gap-2"><i data-lucide="phone" class="w-4 h-4 text-gray-400"></i> <a href="tel:${action.phone}" class="text-nfgblue hover:underline">${action.phone}</a></p>` : ''}
+              ${action.dealStage ? `<p class="text-xs"><span class="font-medium">Stage:</span> ${(action.dealStage || '').replace('_', ' ')} ${action.dealValue ? ' · $' + Number(action.dealValue).toLocaleString() : ''}</p>` : ''}
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3 priority-action-bar">
+              ${action.phone ? `<a href="tel:${action.phone}" class="priority-call-btn inline-flex items-center gap-1 px-2 py-1.5 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-xs font-medium"><i data-lucide="phone" class="w-3.5 h-3.5"></i> Call</a>` : ''}
+              ${action.email ? `<button type="button" class="priority-email-btn inline-flex items-center gap-1 px-2 py-1.5 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-xs font-medium" data-action-index="${idx}"><i data-lucide="mail" class="w-3.5 h-3.5"></i> Follow-up</button>` : ''}
+              ${action.email ? `<button type="button" class="priority-proposal-btn inline-flex items-center gap-1 px-2 py-1.5 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-xs font-medium" data-action-index="${idx}"><i data-lucide="file-text" class="w-3.5 h-3.5"></i> Proposal</button>` : ''}
+              <button type="button" class="priority-log-btn inline-flex items-center gap-1 px-2 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs font-medium" data-action-index="${idx}"><i data-lucide="phone" class="w-3.5 h-3.5"></i> Log</button>
+              ${action.dealId ? `<button type="button" class="priority-open-deal-btn inline-flex items-center gap-1 px-2 py-1.5 border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg text-xs font-medium" data-deal-id="${action.dealId}"><i data-lucide="external-link" class="w-3.5 h-3.5"></i> Deal</button>` : ''}
+            </div>
+          </div>
+        </div>
+        `;
+      }).join('');
+
+      if (window.lucide) lucide.createIcons();
+      attachPriorityCardHandlers(listEl);
+    }
+
+    function attachPriorityCardHandlers(container) {
+      if (!container) return;
+      const actions = window.priorityActionsFilteredList || [];
+      container.querySelectorAll('.priority-action-card').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.priority-card-menu-btn, .priority-action-bar a, .priority-action-bar button, .priority-open-deal')) return;
+          const detail = card.querySelector('.priority-card-detail');
+          if (detail) detail.classList.toggle('hidden');
+          if (window.lucide) lucide.createIcons();
+        });
+      });
+      container.querySelectorAll('.priority-card-menu-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const idx = parseInt(btn.dataset.actionIndex, 10);
+          openPriorityCardMenu(idx, btn);
+        });
+      });
+      container.querySelectorAll('.priority-log-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.dataset.actionIndex, 10); openPriorityQuickLog(idx); });
+      });
+      container.querySelectorAll('.priority-email-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.dataset.actionIndex, 10); openPriorityCompose(idx, 'follow_up'); });
+      });
+      container.querySelectorAll('.priority-proposal-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.stopPropagation(); const idx = parseInt(btn.dataset.actionIndex, 10); openPriorityCompose(idx, 'proposal'); });
+      });
+      container.querySelectorAll('.priority-open-deal, .priority-open-deal-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const did = btn.dataset.dealId; if (did && window.sales && window.sales.openDealDetail) window.sales.openDealDetail(did); });
+      });
+    }
+
+    function openPriorityCardMenu(actionIndex, buttonEl) {
+      const actions = window.priorityActionsFilteredList || [];
+      const action = actions[actionIndex];
+      if (!action) return;
+      const portal = document.getElementById('priority-card-menu-portal');
+      if (!portal) return;
+      const rect = buttonEl.getBoundingClientRect();
+      portal.style.left = rect.left + 'px';
+      portal.style.top = (rect.bottom + 4) + 'px';
+      portal.classList.remove('hidden');
+      const isContact = !!action.contactId;
+      portal.innerHTML = `
+        ${action.phone ? `<a href="tel:${action.phone}" class="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"><i data-lucide="phone" class="w-4 h-4"></i> Call</a>` : ''}
+        ${action.email ? `<button type="button" class="priority-menu-email w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" data-idx="${actionIndex}" data-type="follow_up"><i data-lucide="mail" class="w-4 h-4"></i> Send follow-up</button>` : ''}
+        ${action.email ? `<button type="button" class="priority-menu-proposal w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" data-idx="${actionIndex}" data-type="proposal"><i data-lucide="file-text" class="w-4 h-4"></i> Send proposal</button>` : ''}
+        <button type="button" class="priority-menu-log w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" data-idx="${actionIndex}"><i data-lucide="phone-call" class="w-4 h-4"></i> Log activity</button>
+        <button type="button" class="priority-menu-quick-log w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" data-idx="${actionIndex}"><i data-lucide="calendar" class="w-4 h-4"></i> Schedule next</button>
+        ${action.dealId ? `<button type="button" class="priority-menu-deal w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded" data-deal-id="${action.dealId}"><i data-lucide="external-link" class="w-4 h-4"></i> Open deal</button>` : ''}
+      `;
+      if (window.lucide) lucide.createIcons();
+      portal.querySelectorAll('.priority-menu-email, .priority-menu-proposal').forEach(b => {
+        b.addEventListener('click', () => { const idx = parseInt(b.dataset.idx, 10); const type = b.dataset.type; openPriorityCompose(idx, type); portal.classList.add('hidden'); });
+      });
+      portal.querySelectorAll('.priority-menu-log').forEach(b => {
+        b.addEventListener('click', () => { const idx = parseInt(b.dataset.idx, 10); const a = (window.priorityActionsFilteredList || [])[idx]; if (a && a.contactId && window.openLogActivityForContact) window.openLogActivityForContact(a.contactId); portal.classList.add('hidden'); });
+      });
+      portal.querySelectorAll('.priority-menu-quick-log').forEach(b => {
+        b.addEventListener('click', () => { openPriorityQuickLog(parseInt(b.dataset.idx, 10)); portal.classList.add('hidden'); });
+      });
+      portal.querySelectorAll('.priority-menu-deal').forEach(b => {
+        b.addEventListener('click', () => { const did = b.dataset.dealId; if (did && window.sales && window.sales.openDealDetail) window.sales.openDealDetail(did); portal.classList.add('hidden'); });
+      });
+      const closeMenu = () => { portal.classList.add('hidden'); document.removeEventListener('click', closeMenu); };
+      setTimeout(() => document.addEventListener('click', closeMenu), 0);
+    }
+
+    function openPriorityCompose(actionIndex, type) {
+      const actions = window.priorityActionsFilteredList || [];
+      const action = actions[actionIndex];
+      if (!action || !action.email) return;
+      const deal = action.deal || (action.dealId ? null : null);
+      if (window.sales && typeof window.sales.openComposeModal === 'function') {
+        window.sales.openComposeModal(deal || { contact: { email: action.email, name: action.company }, primary_contact: { email: action.email, full_name: action.company }, sites: {}, id: action.dealId }, type);
+        document.getElementById('compose-to').value = action.email;
+      }
+    }
+
+    function openPriorityQuickLog(actionIndex) {
+      const actions = window.priorityActionsFilteredList || [];
+      const action = actions[actionIndex];
+      if (!action) return;
+      document.getElementById('priority-quick-log-contact-id').value = action.contactId || '';
+      document.getElementById('priority-quick-log-deal-id').value = action.dealId || '';
+      document.getElementById('priority-quick-log-modal').classList.remove('hidden');
+      if (window.lucide) lucide.createIcons();
+    }
+
+    function closePriorityQuickLogModal() {
+      document.getElementById('priority-quick-log-modal').classList.add('hidden');
+    }
+
+    async function savePriorityQuickLog() {
+      const contactId = document.getElementById('priority-quick-log-contact-id')?.value?.trim() || null;
+      const dealId = document.getElementById('priority-quick-log-deal-id')?.value?.trim() || null;
+      const outcome = document.getElementById('priority-quick-log-outcome')?.value;
+      const nextDate = document.getElementById('priority-quick-log-next-date')?.value || null;
+      const note = document.getElementById('priority-quick-log-note')?.value?.trim() || null;
+      if (!contactId && !dealId) { toast.error('No contact or deal', 'Error'); return; }
+      try {
+        if (contactId) {
+          if (typeof window.saveActivityForContact === 'function') {
+            await window.saveActivityForContact(contactId, { outcome, nextDate, note });
+          } else {
+            await savePriorityQuickLogToContact(contactId, { outcome, nextDate, note });
+          }
+        } else if (dealId) {
+          await savePriorityQuickLogToDeal(dealId, { outcome, nextDate, note });
+        }
+        closePriorityQuickLogModal();
+        loadPriorityActionsPage();
+      } catch (e) {
+        toast.error(e.message || 'Failed to save', 'Error');
+      }
+    }
+
+    async function savePriorityQuickLogToContact(contactId, { outcome, nextDate, note }) {
+      const updateData = {
+        updated_at: new Date().toISOString(),
+        last_contact_attempt_at: new Date().toISOString()
+      };
+      if (nextDate) updateData.next_follow_up_date = nextDate;
+      const { error } = await supabase.from('contacts').update(updateData).eq('id', contactId);
+      if (error) throw error;
+      toast.success('Activity logged', 'Saved');
+    }
+
+    async function savePriorityQuickLogToDeal(dealId, { outcome, nextDate, note }) {
+      const updateData = { updated_at: new Date().toISOString() };
+      if (nextDate) updateData.next_action_date = nextDate;
+      const { error } = await supabase.from('deals').update(updateData).eq('id', dealId);
+      if (error) throw error;
+      toast.success('Activity logged', 'Saved');
     }
     
     // Generate priority actions for full page (returns all, not limited)
@@ -5224,6 +5522,37 @@
       document.addEventListener('click', () => {
         document.querySelectorAll('.kanban-stage-dropdown').forEach(el => el.classList.add('hidden'));
       });
+    }
+
+    // Priority Actions tab: search, sort, filters, quick log, add customer
+    function setupPriorityTabListeners() {
+      const searchEl = document.getElementById('priority-search');
+      const sortEl = document.getElementById('priority-sort');
+      const filtersBtn = document.getElementById('priority-filters-btn');
+      const filtersPanel = document.getElementById('priority-filters-panel');
+      const filtersApply = document.getElementById('priority-filters-apply');
+      const meBtn = document.getElementById('priority-me-btn');
+      const addCustomerBtn = document.getElementById('priority-add-customer-btn');
+      const quickLogSave = document.getElementById('priority-quick-log-save');
+      const quickLogClose = document.getElementById('priority-quick-log-close');
+      const quickLogCancel = document.getElementById('priority-quick-log-cancel');
+
+      if (searchEl) searchEl.addEventListener('input', () => typeof applyPriorityFiltersAndRender === 'function' && applyPriorityFiltersAndRender());
+      if (searchEl) searchEl.addEventListener('change', () => typeof applyPriorityFiltersAndRender === 'function' && applyPriorityFiltersAndRender());
+      if (sortEl) sortEl.addEventListener('change', () => typeof applyPriorityFiltersAndRender === 'function' && applyPriorityFiltersAndRender());
+      if (filtersBtn && filtersPanel) filtersBtn.addEventListener('click', () => filtersPanel.classList.toggle('hidden'));
+      if (filtersApply) filtersApply.addEventListener('click', () => { if (filtersPanel) filtersPanel.classList.add('hidden'); typeof applyPriorityFiltersAndRender === 'function' && applyPriorityFiltersAndRender(); });
+      if (meBtn) meBtn.addEventListener('click', () => { if (typeof applyPriorityFiltersAndRender === 'function') applyPriorityFiltersAndRender(); });
+      if (addCustomerBtn) addCustomerBtn.addEventListener('click', () => {
+        if (window.sales && typeof window.sales.openCreateDealModal === 'function') window.sales.openCreateDealModal();
+        else { const modal = document.getElementById('create-deal-modal'); if (modal) modal.classList.remove('hidden'); }
+        if (window.lucide) lucide.createIcons();
+      });
+      if (quickLogSave) quickLogSave.addEventListener('click', () => typeof savePriorityQuickLog === 'function' && savePriorityQuickLog());
+      if (quickLogClose) quickLogClose.addEventListener('click', () => typeof closePriorityQuickLogModal === 'function' && closePriorityQuickLogModal());
+      if (quickLogCancel) quickLogCancel.addEventListener('click', () => typeof closePriorityQuickLogModal === 'function' && closePriorityQuickLogModal());
+      const refreshBtn = document.getElementById('priority-refresh-btn');
+      if (refreshBtn) refreshBtn.addEventListener('click', () => { if (typeof loadPriorityActionsPage === 'function') loadPriorityActionsPage(); });
     }
 
     // Switch between deals views
@@ -6246,8 +6575,9 @@
           contact_id: contactId,
           deal_id: currentActivityDealId || null,
           assigned_user_id: user?.id,
-          activity_type: selectedActivityType,
-          outcome: selectedOutcome,
+          created_by: user?.id,
+          activity_type: selectedActivityType || 'call',
+          outcome: selectedOutcome || 'contact_made',
           notes: notes || null,
           next_action_date: nextDate || null,
           next_action_type: nextAction || null,
@@ -6290,16 +6620,23 @@
         })
         .eq('id', dealId);
 
-      // Insert activity record
+      // Insert activity record (deal-only path: no contact)
       try {
+        const { data: profile } = await supabase
+          .from('user_profiles')
+          .select('company_id')
+          .eq('user_id', user?.id)
+          .single();
         await supabase.from('sales_activities').insert({
           deal_id: dealId,
           assigned_user_id: user?.id,
-          activity_type: selectedActivityType,
-          outcome: selectedOutcome,
-          notes: notes,
+          created_by: user?.id,
+          activity_type: selectedActivityType || 'call',
+          outcome: selectedOutcome || 'contact_made',
+          notes: notes || null,
           next_action_date: nextDate || null,
-          next_action_type: nextAction || null
+          next_action_type: nextAction || null,
+          company_id: profile?.company_id || null
         });
       } catch (actErr) {
         console.log('[Activity] Activities table may not exist yet:', actErr);
@@ -6848,7 +7185,8 @@
         setupClosedLostPipelineMenu();
         setupClosedWonPipelineMenu();
         setupKanbanPlusAndStageMenus();
-        
+        setupPriorityTabListeners();
+
         console.log('[Sales Dashboard] Step 3: Initializing UI...');
         // Initialize UI first
         if (typeof initializeUI === 'function') {
