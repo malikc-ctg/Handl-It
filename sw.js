@@ -365,6 +365,21 @@ self.addEventListener('message', (event) => {
     event.ports[0].postMessage({ version: '3.0', cacheName: CACHE_NAME });
   }
   
+  if (event.data && event.data.type === 'CONNECTION_STATUS') {
+    self.clients.matchAll({ includeUncontrolled: true }).then(clients => {
+      clients.forEach(client => {
+        if (event.source && client.id === event.source.id) {
+          return;
+        }
+        client.postMessage({
+          type: 'CONNECTION_STATUS',
+          online: event.data.online,
+          timestamp: event.data.timestamp
+        });
+      });
+    }).catch(err => console.warn('[SW v3] Failed to broadcast connection status:', err));
+  }
+  
   // Echo back to confirm message received
   if (event.ports && event.ports[0]) {
     event.ports[0].postMessage({ 
@@ -383,7 +398,7 @@ self.addEventListener('message', (event) => {
 self.addEventListener('sync', (event) => {
   console.log('[SW v3] Background sync triggered:', event.tag);
   
-  if (event.tag === 'sync-data') {
+  if (event.tag === 'sync-data' || event.tag === 'nfg-offline-sync') {
     event.waitUntil(
       requestSyncFromClient()
         .then((result) => {

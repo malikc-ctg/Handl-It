@@ -22,6 +22,22 @@
   pointer-events: none;
 }
 
+/* Dark mode */
+html.dark #page-loader,
+.dark #page-loader {
+  background: linear-gradient(135deg, #111827 0%, #1f2937 100%);
+}
+
+html.dark .loader-text,
+.dark .loader-text {
+  color: #60a5fa;
+}
+
+html.dark .loader-text-subtitle,
+.dark .loader-text-subtitle {
+  color: #9ca3af;
+}
+
 /* NFG Logo above loader */
 .loader-logo {
   margin-bottom: 40px;

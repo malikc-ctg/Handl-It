@@ -49,7 +49,7 @@ export async function createLeadFromVisit(doorVisitId, leadData) {
     };
 
     if (!isOnline()) {
-      return queueOperation('leads', 'create', lead);
+      return await queueOperation('leads', 'create', lead);
     }
 
     const { data, error } = await supabase
@@ -127,7 +127,7 @@ export async function createAppointmentFromVisit(doorVisitId, appointmentData) {
     };
 
     if (!isOnline()) {
-      return queueOperation('appointments', 'create', appointment);
+      return await queueOperation('appointments', 'create', appointment);
     }
 
     const { data, error } = await supabase
@@ -222,7 +222,7 @@ export async function fetchRouteFollowUpTasks(routeId) {
 export async function updateLeadStatus(leadId, status) {
   try {
     if (!isOnline()) {
-      return queueOperation('leads', 'update', { status }, leadId);
+      return await queueOperation('leads', 'update', { status }, leadId);
     }
 
     const { data, error } = await supabase
@@ -246,7 +246,7 @@ export async function updateLeadStatus(leadId, status) {
 export async function updateAppointmentStatus(appointmentId, status) {
   try {
     if (!isOnline()) {
-      return queueOperation('appointments', 'update', { status }, appointmentId);
+      return await queueOperation('appointments', 'update', { status }, appointmentId);
     }
 
     const { data, error } = await supabase

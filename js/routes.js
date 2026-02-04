@@ -49,7 +49,7 @@ export async function createTerritory(territoryData) {
     };
 
     if (!isOnline()) {
-      return queueOperation('territories', 'create', territory);
+      return await queueOperation('territories', 'create', territory);
     }
 
     const { data, error } = await supabase
@@ -102,7 +102,7 @@ export async function createRoute(routeData) {
     };
 
     if (!isOnline()) {
-      return queueOperation('routes', 'create', route);
+      return await queueOperation('routes', 'create', route);
     }
 
     const { data, error } = await supabase
@@ -231,7 +231,7 @@ export async function fetchRoute(routeId) {
 export async function updateRoute(routeId, updates) {
   try {
     if (!isOnline()) {
-      return queueOperation('routes', 'update', updates, routeId);
+      return await queueOperation('routes', 'update', updates, routeId);
     }
 
     const { data, error } = await supabase
@@ -315,7 +315,7 @@ export async function addDoorTargets(routeId, targets) {
       // For offline, queue each target separately
       const operationIds = [];
       for (const target of targets) {
-        const opId = queueOperation('door_targets', 'create', {
+        const opId = await queueOperation('door_targets', 'create', {
           ...target,
           route_id: routeId
         });
@@ -512,7 +512,7 @@ export async function recordDoorVisit(visitData) {
     };
 
     if (!isOnline()) {
-      return queueOperation('door_visits', 'create', visit);
+      return await queueOperation('door_visits', 'create', visit);
     }
 
     const { data, error } = await supabase

@@ -2309,6 +2309,7 @@
         
         if (activeTab === 'expenses') {
           if (typeof allExpenses === 'undefined' || !allExpenses?.length) {
+            hideProgressOverlay();
             toast.warning('No expenses to export', 'Export');
             return;
           }

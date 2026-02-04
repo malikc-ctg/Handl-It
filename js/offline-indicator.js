@@ -287,6 +287,12 @@ export function initOfflineIndicator() {
         console.log('[OfflineIndicator] Background sync requested by service worker');
         await syncOfflineQueue();
         updateIndicator(lastStatusDetail);
+      } else if (event.data && event.data.type === 'CONNECTION_STATUS') {
+        lastStatusDetail = {
+          ...(lastStatusDetail || {}),
+          isOnline: event.data.online
+        };
+        updateIndicator(lastStatusDetail);
       }
     });
   }

@@ -254,11 +254,26 @@ if (isPWA()) {
 }
 
 // Online/Offline status
+function broadcastConnectionStatus(online) {
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    try {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'CONNECTION_STATUS',
+        online,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.warn('[PWA] Failed to broadcast connection status:', error);
+    }
+  }
+}
+
 window.addEventListener('online', () => {
   console.log('✅ Back online');
   if (typeof toast !== 'undefined') {
     toast.success('Connection restored!');
   }
+  broadcastConnectionStatus(true);
 });
 
 window.addEventListener('offline', () => {
@@ -266,6 +281,7 @@ window.addEventListener('offline', () => {
   if (typeof toast !== 'undefined') {
     toast.warning('You are offline. Some features may be limited.');
   }
+  broadcastConnectionStatus(false);
 });
 
 // --- Service worker registration & push setup ---
