@@ -273,18 +273,17 @@ async function loadDeals() {
       .select('*')
       .order('created_at', { ascending: false });
 
-    // Filter by assigned user if rep
+    // Filter by assigned user if rep (use columns that exist in core schema to avoid 400)
     if (currentUserProfile && currentUserProfile.role === 'rep') {
-      // Try both assigned_to and assigned_user_id columns using OR
-      query = query.or(`assigned_to.eq.${currentUser.id},assigned_user_id.eq.${currentUser.id}`);
+      query = query.or(`assigned_user_id.eq.${currentUser.id},created_by.eq.${currentUser.id}`);
     }
 
     const { data, error } = await query;
     
     if (error) {
-      // If assigned_to doesn't exist, try without the filter
+      // If filter columns missing, try without the filter
       if (currentUserProfile && currentUserProfile.role === 'rep') {
-        console.warn('[Sales] assigned_to column not found, loading all deals');
+        console.warn('[Sales] Deals filter failed, loading all deals:', error.message);
         const retryQuery = supabase
           .from('deals')
           .select('*')
