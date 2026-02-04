@@ -571,21 +571,24 @@
                 </div>
               </div>
 
-              <!-- Closed Lost Column -->
+              <!-- Closed Lost Column (no add button; three-dots menu for Clear pipeline only) -->
               <div class="kanban-column flex-shrink-0 w-80 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700" data-stage="closed_lost">
                 <div class="flex items-center justify-between mb-4">
                   <div class="flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-gray-400"></span>
                     <h3 class="font-semibold text-gray-700 dark:text-gray-300">Closed Lost</h3>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-2 relative">
                     <span class="kanban-count bg-gray-500 text-white px-2 py-0.5 rounded-full text-xs font-medium">0</span>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
-                      <i data-lucide="plus" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
-                    </button>
-                    <button class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition">
+                    <button type="button" id="kanban-closed-lost-menu-btn" class="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition" title="Options">
                       <i data-lucide="more-horizontal" class="w-4 h-4 text-gray-500 dark:text-gray-400"></i>
                     </button>
+                    <div id="kanban-closed-lost-dropdown" class="hidden absolute right-0 top-full mt-1 py-1 w-44 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50">
+                      <button type="button" id="kanban-closed-lost-clear-btn" class="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded flex items-center gap-2">
+                        <i data-lucide="trash-2" class="w-4 h-4 text-red-500"></i>
+                        Clear pipeline
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="kanban-deals space-y-3 min-h-[200px]" data-stage="closed_lost">
@@ -5010,6 +5013,53 @@
       });
     }
 
+    // Closed Lost column: three-dots menu with "Clear pipeline" only (no plus button)
+    function setupClosedLostPipelineMenu() {
+      const menuBtn = document.getElementById('kanban-closed-lost-menu-btn');
+      const dropdown = document.getElementById('kanban-closed-lost-dropdown');
+      const clearBtn = document.getElementById('kanban-closed-lost-clear-btn');
+      if (!menuBtn || !dropdown || !clearBtn) return;
+
+      menuBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('hidden');
+        if (window.lucide) lucide.createIcons();
+      });
+
+      document.addEventListener('click', () => {
+        dropdown.classList.add('hidden');
+      });
+      dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+      clearBtn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        dropdown.classList.add('hidden');
+        try {
+          const { data: closedLostDeals, error: fetchErr } = await supabase
+            .from('deals')
+            .select('id')
+            .eq('stage', 'closed_lost');
+          if (fetchErr) throw fetchErr;
+          const ids = (closedLostDeals || []).map(d => d.id);
+          if (ids.length === 0) {
+            toast.info('Closed Lost pipeline is already empty', 'Info');
+            return;
+          }
+          if (!confirm(`Permanently delete all ${ids.length} deal(s) in Closed Lost? This cannot be undone.`)) return;
+          const { error: deleteErr } = await supabase.from('deals').delete().in('id', ids);
+          if (deleteErr) throw deleteErr;
+          if (window.loadDealsForDashboard && window.renderDealsKanban) {
+            const data = await loadDealsForDashboard();
+            renderDealsKanban(data);
+          }
+          toast.success(`Removed ${ids.length} deal(s) from Closed Lost`, 'Success');
+        } catch (err) {
+          console.error('[Sales] Clear Closed Lost pipeline:', err);
+          toast.error(err.message || 'Failed to clear pipeline', 'Error');
+        }
+      });
+    }
+
     // Switch between deals views
     function switchDealsView(view) {
       // Hide all views
@@ -6588,6 +6638,8 @@
         
         console.log('[Sales Dashboard] Step 2.5: Initializing view options...');
         initViewOptions();
+        
+        setupClosedLostPipelineMenu();
         
         console.log('[Sales Dashboard] Step 3: Initializing UI...');
         // Initialize UI first
