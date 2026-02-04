@@ -1385,9 +1385,10 @@ export async function createDeal(formData) {
       notes: dealNotes || null
     };
     
-    // Add created_by if user is available
+    // Set owner so Priority Actions and filters show deal for this user
     if (user) {
       dealInsertData.created_by = user.id;
+      dealInsertData.assigned_user_id = user.id;
     }
     
     // Add deal_value if provided
