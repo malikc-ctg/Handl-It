@@ -55,6 +55,7 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  <link rel="stylesheet" href="./css/skeleton-loaders.css">
   
   <!-- Dark Mode -->
   <link rel="stylesheet" href="./css/dark-mode.css">
@@ -832,8 +833,17 @@
                     </tr>
                   </thead>
                   <tbody id="accounts-table-body">
-                    <tr>
-                      <td colspan="8" class="px-4 py-12 text-center text-gray-500">Loading...</td>
+                    <!-- Skeleton shown by accounts-directory.js on load -->
+                    <tr class="skeleton-table-row animate-pulse">
+                      <td class="px-4 py-3" colspan="8">
+                        <div class="max-w-md mx-auto space-y-3 py-6">
+                          <div class="skeleton-bar skeleton-bar-w-3/4 h-4 rounded"></div>
+                          <div class="skeleton-bar skeleton-bar-w-1/2 h-4 rounded"></div>
+                          <div class="skeleton-bar skeleton-bar-w-1/2 h-4 rounded"></div>
+                          <div class="skeleton-bar skeleton-bar-w-1/4 h-4 rounded"></div>
+                          <div class="skeleton-bar skeleton-bar-w-1/2 h-4 rounded"></div>
+                        </div>
+                      </td>
                     </tr>
                   </tbody>
                 </table>

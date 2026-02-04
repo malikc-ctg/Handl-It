@@ -15,6 +15,7 @@ import {
 let indicatorElement = null;
 let syncButton = null;
 let statusText = null;
+let lastStatusDetail = null;
 
 /**
  * Create offline indicator UI
@@ -84,17 +85,25 @@ function createOfflineIndicator() {
 /**
  * Update indicator based on online/offline status and sync state
  */
-function updateIndicator() {
+function updateIndicator(detailOverride = null) {
   if (!indicatorElement) {
     createOfflineIndicator();
     return;
   }
 
-  const online = isOnline();
-  const pendingCount = getPendingOperationsCount();
-  const failedCount = getFailedOperationsCount();
+  const statusDetail = detailOverride || lastStatusDetail || {
+    pending: getPendingOperationsCount(),
+    failed: getFailedOperationsCount(),
+    isOnline: isOnline(),
+    syncing: false
+  };
+
+  const online = statusDetail.isOnline ?? isOnline();
+  const pendingCount = typeof statusDetail.pending === 'number' ? statusDetail.pending : getPendingOperationsCount();
+  const failedCount = typeof statusDetail.failed === 'number' ? statusDetail.failed : getFailedOperationsCount();
   const hasPending = pendingCount > 0;
   const hasFailed = failedCount > 0;
+  const syncing = !!statusDetail.syncing;
 
   const icon = document.getElementById('offline-status-icon');
   const title = document.getElementById('offline-status-title');
@@ -106,7 +115,16 @@ function updateIndicator() {
     return; // DOM was replaced (e.g. error UI) or indicator not yet in document
   }
 
-  if (!online) {
+  if (syncing && online) {
+    icon.className = 'w-5 h-5 rounded-full bg-blue-500 animate-pulse';
+    title.textContent = 'Syncing';
+    text.textContent = pendingCount
+      ? `Syncing ${pendingCount} queued operation(s)...`
+      : 'Finalizing sync...';
+    indicatorElement.classList.remove('hidden');
+    progress.classList.remove('hidden');
+    updateActions(actions, online, hasPending, hasFailed);
+  } else if (!online) {
     // Offline mode
     icon.className = 'w-5 h-5 rounded-full bg-red-500 animate-pulse';
     title.textContent = 'Offline Mode';
@@ -209,7 +227,10 @@ function updateActions(actionsContainer, online, hasPending, hasFailed) {
  * Handle sync status update event
  */
 function handleSyncStatusUpdate(event) {
-  updateIndicator();
+  if (event?.detail) {
+    lastStatusDetail = event.detail;
+  }
+  updateIndicator(lastStatusDetail);
 }
 
 /**
@@ -238,40 +259,40 @@ export function initOfflineIndicator() {
   
   // Listen for online/offline events
   window.addEventListener('online', () => {
-    updateIndicator();
+    updateIndicator(lastStatusDetail);
     // Auto-sync after coming online
     setTimeout(async () => {
       await syncOfflineQueue();
-      updateIndicator();
+      updateIndicator(lastStatusDetail);
     }, 1000);
   });
 
   window.addEventListener('offline', () => {
-    updateIndicator();
+    updateIndicator(lastStatusDetail);
   });
 
   // Listen for service worker messages
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('message', async (event) => {
       if (event.data && event.data.type === 'SYNC_COMPLETE') {
-        updateIndicator();
+        updateIndicator(lastStatusDetail);
         const { toast } = await import('./notifications.js');
         if (toast) toast.success('Sync completed', 'Offline Sync');
       } else if (event.data && event.data.type === 'SYNC_FAILED') {
-        updateIndicator();
+        updateIndicator(lastStatusDetail);
         const { toast } = await import('./notifications.js');
         if (toast) toast.error('Sync failed: ' + event.data.error, 'Offline Sync');
       } else if (event.data && event.data.type === 'REQUEST_SYNC') {
         // Service worker requested sync (background sync)
         console.log('[OfflineIndicator] Background sync requested by service worker');
         await syncOfflineQueue();
-        updateIndicator();
+        updateIndicator(lastStatusDetail);
       }
     });
   }
 
   // Update periodically
-  setInterval(updateIndicator, 3000);
+  setInterval(() => updateIndicator(lastStatusDetail), 3000);
   
   console.log('[OfflineIndicator] Initialized');
 }

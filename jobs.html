@@ -55,6 +55,7 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  <link rel="stylesheet" href="./css/skeleton-loaders.css">
   
   <!-- Dark Mode -->
   <link rel="stylesheet" href="./css/dark-mode.css">
@@ -1199,6 +1200,7 @@
     import { NFGDropdown } from './js/custom-dropdown.js'
     import { handleJobCompletion } from './js/recurring-jobs.js'
     import { showNotification, showConfirm, showPrompt, toast, notify } from './js/notifications.js'
+    import { createSkeletonCards, createEmptyState } from './js/skeleton.js'
 
     let currentFilter = 'all';
     let currentJobId = null;
@@ -1328,6 +1330,7 @@
     // Render jobs
     async function renderJobs() {
       const grid = document.getElementById('jobs-grid');
+      if (grid) grid.innerHTML = createSkeletonCards(6, 'card');
       const jobs = await getJobs();
       allJobs = jobs; // Store all jobs for selection tracking
       const sites = await getSites();
@@ -1336,21 +1339,21 @@
 
       if (filtered.length === 0) {
         const isStaff = currentUserProfile && currentUserProfile.role === 'staff';
-        grid.innerHTML = `
-          <div class="col-span-full text-center py-12">
-            <div class="bg-white dark:bg-gray-800 border-2 border-dashed border-nfgray rounded-xl p-12 max-w-md mx-auto">
-              <i data-lucide="clipboard-check" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-              <h3 class="text-nfgblue dark:text-blue-400 font-semibold text-xl mb-2">No Jobs Found</h3>
-              <p class="text-gray-500 mb-6">${isStaff ? 'No jobs have been assigned to you yet.' : 'Create your first job to get started.'}</p>
-              ${!isStaff ? `
-                <button data-action="open-modal" data-target="createJobModal" class="inline-flex items-center gap-2 px-6 py-3 bg-nfgblue dark:bg-blue-900 text-white rounded-xl hover:bg-nfgdark transition">
-                  <i data-lucide="plus" class="w-5 h-5"></i>
-                  Create Job
-                </button>
-              ` : ''}
-            </div>
-          </div>
-        `;
+        const emptyHtml = createEmptyState({
+          icon: 'clipboard-check',
+          title: 'No jobs yet',
+          message: isStaff ? 'No jobs have been assigned to you yet.' : 'Create your first job to get started.',
+          actionLabel: isStaff ? null : 'Create Job',
+          actionId: isStaff ? null : 'jobs-empty-create-btn',
+          bordered: true
+        });
+        grid.innerHTML = `<div class="col-span-full">${emptyHtml}</div>`;
+        const createBtn = document.getElementById('jobs-empty-create-btn');
+        if (createBtn) {
+          createBtn.setAttribute('data-action', 'open-modal');
+          createBtn.setAttribute('data-target', 'createJobModal');
+          createBtn.type = 'button';
+        }
         if (window.lucide) lucide.createIcons();
         return;
       }

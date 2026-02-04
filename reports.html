@@ -54,6 +54,7 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  <link rel="stylesheet" href="./css/skeleton-loaders.css">
   
   <!-- Dark Mode -->
   <link rel="stylesheet" href="./css/dark-mode.css">
@@ -1292,6 +1293,7 @@
   <script type="module">
     import { supabase } from './js/supabase.js'
     import { showNotification, showConfirm, showPrompt, toast, notify, handleError } from './js/notifications.js'
+    import { createSkeletonTableBody, createSkeletonTableRows, showProgressOverlay, hideProgressOverlay } from './js/skeleton.js'
 
     let currentUser = null;
     let currentUserProfile = null;
@@ -1482,11 +1484,13 @@
 
         // Fetch invoices for revenue metrics (paid or partially paid)
         try {
+          const dateStart = dateFilter ? dateFilter.split('T')[0] : null;
+          const dateEnd = dateEndFilter ? dateEndFilter.split('T')[0] : null;
           let invQuery = supabase
             .from('invoices')
             .select('id, total_amount, paid_amount, status, issue_date, site_id, client_id');
-          if (dateFilter) invQuery = invQuery.gte('issue_date', dateFilter.split('T')[0]);
-          if (dateEndFilter) invQuery = invQuery.lte('issue_date', dateEndFilter.split('T')[0]);
+          if (dateStart) invQuery = invQuery.gte('issue_date', dateStart);
+          if (dateEnd) invQuery = invQuery.lte('issue_date', dateEnd);
           if (filters.site) invQuery = invQuery.eq('site_id', filters.site);
           const { data: invoices } = await invQuery.in('status', ['paid', 'partially_paid']);
           reportsData.invoices = invoices || [];
@@ -1527,15 +1531,13 @@
       const activeSites = reportsData.sites.filter(s => s.status !== 'Inactive').length;
       console.log('[Reports] 🏢 Active Sites:', activeSites, '(Total:', reportsData.sites.length + ')');
       
-      // Emergency requests (count from bookings with is_emergency true OR jobs with job_type 'emergency')
-      const emergencyBookings = reportsData.bookings.filter(b => b.is_emergency === true).length;
-      const emergencyJobs = reportsData.jobs.filter(j => j.job_type === 'emergency').length;
-      const totalEmergencies = Math.max(emergencyBookings, emergencyJobs); // Use whichever is higher
-      console.log('[Reports] 🚨 Emergency Requests:', totalEmergencies, '(Bookings:', emergencyBookings, 'Jobs:', emergencyJobs + ')');
+      // Emergency requests (jobs only - avoid double-counting with bookings)
+      const totalEmergencies = reportsData.jobs.filter(j => j.job_type === 'emergency').length;
+      console.log('[Reports] 🚨 Emergency Requests:', totalEmergencies);
 
       // Revenue (from paid/partially_paid invoices - use paid_amount to avoid double-counting)
       const invoices = reportsData.invoices || [];
-      const totalRevenue = invoices.reduce((sum, inv) => sum + parseFloat(inv.paid_amount || inv.total_amount || 0), 0);
+      const totalRevenue = invoices.reduce((sum, inv) => sum + (parseFloat(inv.paid_amount || inv.total_amount) || 0), 0);
       const revEl = document.getElementById('metric-total-revenue');
       if (revEl) revEl.textContent = '$' + totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -1572,7 +1574,7 @@
       const byClient = {};
       const byDate = {};
       invoices.forEach(inv => {
-        const amt = parseFloat(inv.paid_amount || inv.total_amount || 0) || 0;
+        const amt = parseFloat(inv.paid_amount ?? inv.total_amount) || 0;
         const siteName = inv.site_id ? (sitesMap[inv.site_id]?.name || 'Site #' + inv.site_id) : '—';
         const clientName = inv.client_id ? (clientsMap[inv.client_id] || 'Client') : '—';
         bySite[siteName] = (bySite[siteName] || 0) + amt;
@@ -2300,6 +2302,7 @@
 
     // Export to CSV (tab-aware: jobs, expenses, or revenue)
     async function exportToCSV() {
+      showProgressOverlay('Exporting...');
       try {
         const activeTabBtn = document.querySelector('.tab-btn.border-nfgblue, .tab-btn.text-nfgblue');
         const activeTab = activeTabBtn?.dataset?.tab || 'overview';
@@ -2361,6 +2364,8 @@
         console.error('[Reports] Error exporting CSV:', error);
         const { handleError } = await import('./js/notifications.js');
         handleError(error, 'Exporting CSV');
+      } finally {
+        hideProgressOverlay();
       }
     }
     
@@ -4807,6 +4812,8 @@
     }
     
     function exportTeamToCSV() {
+      showProgressOverlay('Exporting team report...');
+      try {
       const filtered = allTeamEmployees.filter(emp => {
         if (teamFilters.search) {
           const searchLower = teamFilters.search.toLowerCase();
@@ -4840,6 +4847,10 @@
       a.download = `team-report-${new Date().toISOString().split('T')[0]}.csv`;
       a.click();
       window.URL.revokeObjectURL(url);
+      toast.success('Team report exported', 'Export');
+      } finally {
+        hideProgressOverlay();
+      }
     }
 
     async function loadExpensesData(showToast = false) {
@@ -4851,8 +4862,8 @@
           return;
         }
 
-        // Show loading state
-        tbody.innerHTML = '<tr><td colspan="9" class="px-4 py-8 text-center text-gray-500 dark:text-gray-400">Loading expenses...</td></tr>';
+        // Show skeleton loading state
+        tbody.innerHTML = createSkeletonTableBody(9, 5);
 
         // Fetch expenses with related data
         console.log('[Expenses] Building query...');
@@ -7680,6 +7691,34 @@
       applyDateRangeBtn?.addEventListener('click', refreshReports);
       document.getElementById('refresh-btn')?.addEventListener('click', refreshReports);
       document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
+      document.getElementById('export-revenue-csv-btn')?.addEventListener('click', async () => {
+        try {
+          const inv = reportsData.invoices || [];
+          if (!inv.length) {
+            toast.warning('No revenue data to export', 'Export');
+            return;
+          }
+          const { data: sites } = await supabase.from('sites').select('id, name');
+          const sitesMap = {};
+          (sites || []).forEach(s => { sitesMap[s.id] = s.name; });
+          const clientIds = [...new Set(inv.filter(i => i.client_id).map(i => i.client_id))];
+          const { data: profiles } = clientIds.length ? await supabase.from('user_profiles').select('id, full_name').in('id', clientIds) : { data: [] };
+          const clientsMap = {};
+          (profiles || []).forEach(p => { clientsMap[p.id] = p.full_name; });
+          const csv = 'Date,Client,Site,Amount,Status\n' + inv.map(i => [
+            i.issue_date || '',
+            `"${(clientsMap[i.client_id] || '').replace(/"/g, '""')}"`,
+            `"${(sitesMap[i.site_id] || '').replace(/"/g, '""')}"`,
+            parseFloat(i.paid_amount || i.total_amount || 0).toFixed(2),
+            i.status || ''
+          ].join(',')).join('\n');
+          downloadCSV(csv, `nfg-revenue-${new Date().toISOString().split('T')[0]}.csv`);
+          toast.success('Revenue exported to CSV!');
+        } catch (e) {
+          console.error('[Reports] Error exporting revenue:', e);
+          toast.error('Failed to export revenue', 'Error');
+        }
+      });
       document.getElementById('export-pdf-btn')?.addEventListener('click', exportToPDF);
       document.getElementById('print-btn')?.addEventListener('click', printReport);
       

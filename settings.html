@@ -26,6 +26,7 @@
   
   <!-- Page Loader -->
   <link rel="stylesheet" href="./css/loader.css">
+  <link rel="stylesheet" href="./css/skeleton-loaders.css">
   
   <!-- Notifications -->
   <link rel="stylesheet" href="./css/notifications.css">
@@ -701,6 +702,34 @@
               <i data-lucide="trash-2" class="w-4 h-4"></i>
               Clear System Data
             </button>
+          </div>
+        </section>
+
+        <!-- Workflow Automations (Admin) -->
+        <section id="workflow-automations-section" class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl shadow-nfg p-6">
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-nfglight dark:bg-gray-700 flex items-center justify-center">
+                <i data-lucide="zap" class="w-5 h-5 text-nfgblue dark:text-blue-400"></i>
+              </div>
+              <div>
+                <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Workflow Automations</h3>
+                <p class="text-sm text-gray-500 dark:text-gray-400">Auto-assign jobs, escalate overdue, send reminders</p>
+              </div>
+            </div>
+            <button id="run-workflow-now-btn" class="px-4 py-2 rounded-xl bg-nfgblue dark:bg-blue-900 text-white hover:bg-nfgdark font-medium inline-flex items-center gap-2">
+              <i data-lucide="play" class="w-4 h-4"></i>
+              Run now
+            </button>
+          </div>
+          <div id="workflow-rules-list" class="space-y-3 mb-6">
+            <p class="text-sm text-gray-500 dark:text-gray-400">Loading rules...</p>
+          </div>
+          <div class="border-t border-nfgray dark:border-gray-700 pt-4">
+            <h4 class="text-sm font-medium text-nfgblue dark:text-blue-400 mb-2">Recent runs</h4>
+            <div id="workflow-log-list" class="text-sm text-gray-600 dark:text-gray-300 max-h-40 overflow-y-auto space-y-1">
+              <p class="text-gray-500 dark:text-gray-400">No recent activity</p>
+            </div>
           </div>
         </section>
 
@@ -2922,6 +2951,12 @@
   
   <!-- Notification Center -->
   <script type="module" src="./js/notification-center.js"></script>
+
+  <!-- Workflow Automations -->
+  <script type="module">
+    import { initWorkflowAutomations } from './js/workflow-automations.js'
+    document.addEventListener('DOMContentLoaded', () => initWorkflowAutomations())
+  </script>
   
   <!-- Hide loader when page is ready -->
   <script>

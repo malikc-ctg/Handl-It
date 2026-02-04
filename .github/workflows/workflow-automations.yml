@@ -1,0 +1,19 @@
+name: Workflow Automations
+
+on:
+  schedule:
+    - cron: '0 8 * * 1-5'  # Weekdays at 8 AM UTC (3 AM Eastern)
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  run-automations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Workflow Automations
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -X POST \
+            -H "X-Cron-Secret: ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            https://zqcbldgheimqrnqmbbed.supabase.co/functions/v1/run-workflow-automations

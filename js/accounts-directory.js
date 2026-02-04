@@ -6,6 +6,7 @@
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
 import * as accountsService from './accounts-service.js';
+import { createSkeletonTableRows, createEmptyState } from './skeleton.js';
 
 let currentUser = null;
 let currentUserProfile = null;
@@ -63,6 +64,7 @@ async function loadAccounts() {
 
   try {
     console.log('[Accounts] Loading accounts and contacts...');
+    tbody.innerHTML = createSkeletonTableRows(5, 8);
     const search = document.getElementById('accounts-search')?.value || '';
     const statusFilter = document.getElementById('accounts-status-filter')?.value || '';
     const ownerFilter = document.getElementById('accounts-owner-filter')?.value || '';
@@ -153,17 +155,15 @@ function renderAccounts() {
   const totalItems = allItems.accounts.length + allItems.contacts.length;
 
   if (totalItems === 0) {
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="8" class="px-4 py-12 text-center">
-          <i data-lucide="building" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
-          <p class="text-gray-500">No accounts or contacts found</p>
-          <button id="create-account-btn-empty" class="mt-4 px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-xl font-medium transition inline-flex items-center gap-2">
-            <i data-lucide="plus" class="w-4 h-4"></i> Create Account or Contact
-          </button>
-        </td>
-      </tr>
-    `;
+    const emptyHtml = createEmptyState({
+      icon: 'building-2',
+      title: 'No accounts or contacts yet',
+      message: 'Create your first account or contact to get started.',
+      actionLabel: 'Create Account or Contact',
+      actionId: 'create-account-btn-empty',
+      bordered: true
+    });
+    tbody.innerHTML = `<tr><td colspan="8" class="p-0 align-top">${emptyHtml}</td></tr>`;
     if (window.lucide) lucide.createIcons();
     return;
   }
