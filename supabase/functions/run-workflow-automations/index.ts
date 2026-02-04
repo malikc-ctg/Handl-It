@@ -55,6 +55,9 @@ serve(async (req) => {
       overdue: { notified: 0, jobs: [] as string[] },
       job_reminders: { sent: 0, jobs: [] as string[] },
       deal_reminders: { sent: 0, deals: [] as string[] },
+      deal_callback_reminders: { sent: 0, deals: [] as string[] },
+      deal_walkthrough_reminders: { sent: 0, deals: [] as string[] },
+      deal_quote_expiring: { sent: 0, deals: [] as string[] },
       errors: [] as string[],
     }
 
@@ -258,18 +261,132 @@ serve(async (req) => {
 
         const assigneeId = deal.assigned_user_id || deal.assigned_to
         if (assigneeId && config.notify_assigned !== false) {
-          await createNotification(
-            supabase,
-            assigneeId,
-            'system',
-            'Deal follow-up reminder',
-            `Deal "${deal.title}" hasn't been touched in ${daysWithoutTouch}+ days. Consider following up.`,
-            `/sales.html`
-          )
+          const title = 'Deal follow-up reminder'
+          const body = `Deal "${deal.title}" hasn't been touched in ${daysWithoutTouch}+ days. Consider following up.`
+          const link = '/sales.html?tab=priority'
+          await createNotification(supabase, assigneeId, 'system', title, body, link)
+          await sendPushForUser(supabase, assigneeId, title, body, link)
           results.deal_reminders.sent++
           results.deal_reminders.deals.push(String(deal.id))
           await logAutomation(supabase, 'deal_follow_up_reminders', dealReminderRule.id, 'reminder_sent', 'deal', deal.id, {}, `Follow-up reminder sent at ${new Date().toISOString()}`)
         }
+      }
+    }
+
+    // 6. Deal callback due / overdue reminders
+    const dealCallbackRule = ruleMap['deal_callback_reminders']
+    if (dealCallbackRule) {
+      const config = dealCallbackRule.config || {}
+      const now = new Date()
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id, title, assigned_user_id, assigned_to, created_by, next_action_date, next_action_type, next_action_at, stage')
+        .not('stage', 'in', '("closed_won","closed_lost")')
+
+      for (const deal of deals || []) {
+        const actionDateRaw = deal.next_action_date || deal.next_action_at
+        if (!actionDateRaw) continue
+        const actionType = (deal.next_action_type || '').toLowerCase()
+        if (actionType !== 'callback') continue
+        const actionDate = new Date(actionDateRaw)
+        if (actionDate > todayEnd) continue
+
+        const assigneeId = deal.assigned_user_id || deal.assigned_to || deal.created_by
+        if (!assigneeId || config.notify_assigned === false) continue
+
+        const title = 'Callback due'
+        const body = actionDate < now ? `Deal "${deal.title}": callback was due. Follow up when you can.` : `Deal "${deal.title}": callback due today.`
+        const link = '/sales.html?tab=priority'
+        await createNotification(supabase, assigneeId, 'system', title, body, link)
+        if (config.send_push !== false) await sendPushForUser(supabase, assigneeId, title, body, link)
+        results.deal_callback_reminders.sent++
+        results.deal_callback_reminders.deals.push(String(deal.id))
+        await logAutomation(supabase, 'deal_callback_reminders', dealCallbackRule.id, 'reminder_sent', 'deal', deal.id, {}, `Callback reminder sent at ${new Date().toISOString()}`)
+      }
+    }
+
+    // 7. Deal walkthrough today reminders
+    const dealWalkthroughRule = ruleMap['deal_walkthrough_reminders']
+    if (dealWalkthroughRule) {
+      const config = dealWalkthroughRule.config || {}
+      const now = new Date()
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0)
+      const todayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+
+      const { data: deals } = await supabase
+        .from('deals')
+        .select('id, title, assigned_user_id, assigned_to, created_by, next_action_date, next_action_type, next_action_at, stage')
+        .not('stage', 'in', '("closed_won","closed_lost")')
+
+      for (const deal of deals || []) {
+        const actionDateRaw = deal.next_action_date || deal.next_action_at
+        if (!actionDateRaw) continue
+        const actionType = (deal.next_action_type || '').toLowerCase()
+        if (actionType !== 'walkthrough') continue
+        const actionDate = new Date(actionDateRaw)
+        if (actionDate < todayStart || actionDate > todayEnd) continue
+
+        const assigneeId = deal.assigned_user_id || deal.assigned_to || deal.created_by
+        if (!assigneeId || config.notify_assigned === false) continue
+
+        const timeStr = actionDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        const title = 'Walkthrough today'
+        const body = `Deal "${deal.title}": walkthrough at ${timeStr}.`
+        const link = '/sales.html?tab=priority'
+        await createNotification(supabase, assigneeId, 'system', title, body, link)
+        if (config.send_push !== false) await sendPushForUser(supabase, assigneeId, title, body, link)
+        results.deal_walkthrough_reminders.sent++
+        results.deal_walkthrough_reminders.deals.push(String(deal.id))
+        await logAutomation(supabase, 'deal_walkthrough_reminders', dealWalkthroughRule.id, 'reminder_sent', 'deal', deal.id, {}, `Walkthrough reminder sent at ${new Date().toISOString()}`)
+      }
+    }
+
+    // 8. Quote expiring soon (notify deal owner)
+    const quoteExpiringRule = ruleMap['deal_quote_expiring_reminders']
+    if (quoteExpiringRule) {
+      const config = quoteExpiringRule.config || {}
+      const hoursBefore = config.hours_before ?? 48
+      const now = new Date()
+      const cutoff = new Date(now.getTime() + hoursBefore * 60 * 60 * 1000)
+
+      const { data: quotes } = await supabase
+        .from('quotes')
+        .select('id, deal_id, expiry_date, valid_until, quote_value, company_name')
+        .not('deal_id', 'is', null)
+        .limit(500)
+
+      const nowIso = now.toISOString()
+      const cutoffIso = cutoff.toISOString()
+      const expiringQuotes = (quotes || []).filter((q: any) => {
+        const exp = q.expiry_date || q.valid_until
+        if (!exp) return false
+        return exp <= cutoffIso && exp > nowIso
+      })
+
+      for (const q of expiringQuotes) {
+        if (!q.deal_id) continue
+        const { data: deal } = await supabase
+          .from('deals')
+          .select('id, title, assigned_user_id, assigned_to, created_by')
+          .eq('id', q.deal_id)
+          .single()
+        if (!deal) continue
+
+        const assigneeId = deal.assigned_user_id || deal.assigned_to || deal.created_by
+        if (!assigneeId || config.notify_assigned === false) continue
+
+        const expiryDate = new Date(q.expiry_date || q.valid_until)
+        const hoursLeft = Math.round((expiryDate.getTime() - now.getTime()) / (60 * 60 * 1000))
+        const title = 'Quote expiring soon'
+        const body = `Quote for "${deal.title || q.company_name || 'Deal'}" expires in ${hoursLeft}h. Send a follow-up if needed.`
+        const link = '/sales.html?tab=deals'
+        await createNotification(supabase, assigneeId, 'system', title, body, link)
+        if (config.send_push !== false) await sendPushForUser(supabase, assigneeId, title, body, link)
+        results.deal_quote_expiring.sent++
+        results.deal_quote_expiring.deals.push(String(deal.id))
+        await logAutomation(supabase, 'deal_quote_expiring_reminders', quoteExpiringRule.id, 'reminder_sent', 'deal', deal.id, { quote_id: q.id }, `Quote expiring reminder sent at ${new Date().toISOString()}`)
       }
     }
 
@@ -329,4 +446,28 @@ async function createNotification(
     read: false,
     metadata: { automation: true, sent_at: new Date().toISOString() },
   })
+}
+
+async function sendPushForUser(
+  supabase: any,
+  userId: string,
+  title: string,
+  body: string,
+  url: string
+) {
+  try {
+    await fetch(`${Deno.env.get('SUPABASE_URL')}/functions/v1/send-push-notification`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        title,
+        body,
+        url: url || '/sales.html',
+      }),
+    })
+  } catch (_) {}
 }
