@@ -209,8 +209,8 @@ function updateActions(actionsContainer, online, hasPending, hasFailed) {
     clearBtn.innerHTML = '<i data-lucide="trash-2" class="w-3 h-3 inline-block mr-1"></i> Clear Failed';
     clearBtn.addEventListener('click', async () => {
       if (confirm('Clear all failed operations? They will not be synced.')) {
-        clearFailedOperations();
-        updateIndicator();
+        await clearFailedOperations();
+        updateIndicator(lastStatusDetail);
         const { toast } = await import('./notifications.js');
         if (toast) toast.info('Failed operations cleared', 'Sync');
       }

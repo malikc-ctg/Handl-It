@@ -4,7 +4,7 @@
  */
 
 import { supabase } from './supabase.js';
-import { queueOperation, syncOfflineQueue, isOnline } from './offline-sync.js';
+import { queueOperation, queueOrExecute, OPERATION_TYPES, syncOfflineQueue, isOnline } from './offline-sync.js';
 
 // Route statuses
 export const ROUTE_STATUS = {
@@ -48,18 +48,17 @@ export async function createTerritory(territoryData) {
       created_by: user.id
     };
 
-    if (!isOnline()) {
-      return await queueOperation('territories', 'create', territory);
+    const result = await queueOrExecute({
+      table: 'territories',
+      action: OPERATION_TYPES.CREATE,
+      payload: territory
+    });
+
+    if (result.queued) {
+      return result.operationId;
     }
 
-    const { data, error } = await supabase
-      .from('territories')
-      .insert(territory)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    return result.data;
   } catch (error) {
     console.error('[Routes] Error creating territory:', error);
     throw error;
@@ -101,18 +100,17 @@ export async function createRoute(routeData) {
       created_by: user.id
     };
 
-    if (!isOnline()) {
-      return await queueOperation('routes', 'create', route);
+    const result = await queueOrExecute({
+      table: 'routes',
+      action: OPERATION_TYPES.CREATE,
+      payload: route
+    });
+
+    if (result.queued) {
+      return result.operationId;
     }
 
-    const { data, error } = await supabase
-      .from('routes')
-      .insert(route)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+    return result.data;
   } catch (error) {
     console.error('[Routes] Error creating route:', error);
     throw error;
