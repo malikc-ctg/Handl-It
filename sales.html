@@ -5973,7 +5973,14 @@
       }
 
       try {
-        await saveActivityFallback(contactId, notes, nextAction, nextDate);
+        if (contactId) {
+          await saveActivityFallback(contactId, notes, nextAction, nextDate);
+        } else if (currentActivityDealId) {
+          await saveActivityFallbackDeal(currentActivityDealId, notes, nextAction, nextDate);
+        } else {
+          toast.error('No contact or deal to save activity for', 'Error');
+          return;
+        }
         
         // Close modal
         closeActivityModal();
@@ -6143,6 +6150,13 @@
     async function saveActivityFallback(contactId, notes, nextAction, nextDate) {
       console.log('[Activity] saveActivityFallback called for:', contactId);
       
+      if (!contactId) {
+        if (currentActivityDealId) {
+          return saveActivityFallbackDeal(currentActivityDealId, notes, nextAction, nextDate);
+        }
+        throw new Error('No contact or deal to save activity for');
+      }
+      
       const currentStreak = currentActivityContact?.no_contact_streak || 0;
       let newStreak = currentStreak;
       
@@ -6182,6 +6196,14 @@
         updateData.lost_at = new Date().toISOString();
         updateData.lost_reason = 'No response after 3 contact attempts';
         autoLost = true;
+      }
+
+      // Never PATCH contacts with null/undefined (causes 400 invalid uuid)
+      if (contactId == null || String(contactId) === 'null' || String(contactId).trim() === '') {
+        if (currentActivityDealId) {
+          return saveActivityFallbackDeal(currentActivityDealId, notes, nextAction, nextDate);
+        }
+        throw new Error('No contact or deal to save activity for');
       }
 
       console.log('[Activity] Updating contact with:', updateData);
