@@ -152,10 +152,15 @@
         <div class="flex items-center gap-1 sm:gap-2 flex-shrink-0">
           <!-- Notification Bell (will be injected by notification-center.js) -->
           
-          <button id="export-csv-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight text-xs sm:text-sm flex-shrink-0"
+          <button id="export-csv-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 text-xs sm:text-sm flex-shrink-0"
                   title="Export CSV">
             <i data-lucide="download" class="w-4 h-4"></i>
             <span class="hidden sm:inline">Export CSV</span>
+          </button>
+          <button id="export-pdf-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight dark:hover:bg-gray-600 text-xs sm:text-sm flex-shrink-0"
+                  title="Export PDF">
+            <i data-lucide="file-text" class="w-4 h-4"></i>
+            <span class="hidden sm:inline">Export PDF</span>
           </button>
           <button id="print-btn" class="inline-flex items-center justify-center sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-nfgray hover:bg-nfglight text-xs sm:text-sm flex-shrink-0"
                   title="Print">
@@ -175,15 +180,23 @@
           <p class="text-sm text-gray-500 mt-1" id="reports-description">View performance metrics and generate reports</p>
         </div>
         
-        <!-- Time Period Filter -->
+        <!-- Report Filters -->
         <div class="flex flex-wrap items-center gap-2">
-          <select id="time-period" class="px-3 py-2 rounded-xl border border-nfgray focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+          <select id="time-period" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-800 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
             <option value="7">Last 7 Days</option>
             <option value="30" selected>Last 30 Days</option>
             <option value="90">Last 90 Days</option>
             <option value="365">This Year</option>
             <option value="custom">Custom Range</option>
             <option value="all">All Time</option>
+          </select>
+          
+          <select id="filter-site" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-800 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <option value="">All Sites</option>
+          </select>
+          
+          <select id="filter-worker" class="px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 dark:bg-gray-800 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+            <option value="">All Workers</option>
           </select>
           
           <!-- Custom Date Range (hidden by default) -->
@@ -294,6 +307,41 @@
               <i data-lucide="alert-circle" class="w-5 h-5 text-red-600"></i>
             </div>
           </div>
+        </div>
+
+        <!-- Revenue Metrics -->
+        <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-4 shadow-nfg col-span-2 md:col-span-1">
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Total Revenue</p>
+              <p id="metric-total-revenue" class="text-2xl font-bold text-green-600 mt-1">$0</p>
+            </div>
+            <div class="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
+              <i data-lucide="dollar-sign" class="w-5 h-5 text-green-600"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Revenue Section -->
+      <div class="bg-white dark:bg-gray-800 border border-nfgray rounded-xl p-6 shadow-nfg">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Revenue Breakdown</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">By Service</p>
+            <div id="revenue-by-service" class="text-sm space-y-1 max-h-32 overflow-y-auto">—</div>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">By Site</p>
+            <div id="revenue-by-site" class="text-sm space-y-1 max-h-32 overflow-y-auto">—</div>
+          </div>
+          <div>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-1">By Client</p>
+            <div id="revenue-by-client" class="text-sm space-y-1 max-h-32 overflow-y-auto">—</div>
+          </div>
+        </div>
+        <div style="height: 200px; position: relative;">
+          <canvas id="revenue-trend-chart"></canvas>
         </div>
       </div>
 
@@ -1246,13 +1294,15 @@
       jobs: [],
       sites: [],
       bookings: [],
-      services: []
+      services: [],
+      invoices: []
     };
 
     // Chart instances
     let jobsOverTimeChart = null;
     let staffHoursChart = null;
     let workerPerformanceChart = null;
+    let revenueTrendChart = null;
     let hoursByStaffChart = null;
     let dailyHoursTrendChart = null;
 
@@ -1289,39 +1339,69 @@
       }
     }
 
-    // Fetch data based on time period
+    // Get current overview filters (site, worker)
+    function getOverviewFilters() {
+      const siteEl = document.getElementById('filter-site');
+      const workerEl = document.getElementById('filter-worker');
+      return {
+        site: siteEl?.value || '',
+        worker: workerEl?.value || ''
+      };
+    }
+
+    // Populate report filter dropdowns (site, worker)
+    async function populateReportFilters() {
+      const siteSelect = document.getElementById('filter-site');
+      const workerSelect = document.getElementById('filter-worker');
+      if (!siteSelect || !workerSelect) return;
+
+      // Sites from reportsData or fetch
+      const sites = reportsData.sites && reportsData.sites.length > 0
+        ? reportsData.sites
+        : (await supabase.from('sites').select('id, name').order('name')).data || [];
+      const currentSite = siteSelect.value;
+      siteSelect.innerHTML = '<option value="">All Sites</option>' + (sites || []).map(s => 
+        `<option value="${s.id}" ${s.id == currentSite ? 'selected' : ''}>${(s.name || 'Unknown').replace(/"/g, '&quot;')}</option>`
+      ).join('');
+
+      // Workers from user_profiles (staff, admin)
+      const { data: workers } = await supabase
+        .from('user_profiles')
+        .select('id, full_name')
+        .in('role', ['staff', 'admin', 'super_admin'])
+        .order('full_name');
+      const currentWorker = workerSelect.value;
+      workerSelect.innerHTML = '<option value="">All Workers</option>' + (workers || []).map(w =>
+        `<option value="${w.id}" ${w.id === currentWorker ? 'selected' : ''}>${(w.full_name || 'Unknown').replace(/"/g, '&quot;')}</option>`
+      ).join('');
+    }
+
+    // Fetch data based on time period and filters
     async function fetchData(days = 30, customStartDate = null, customEndDate = null) {
-      console.log('[Reports] Fetching data for period:', days, 'days', customStartDate ? `(custom: ${customStartDate} to ${customEndDate})` : '');
+      const filters = getOverviewFilters();
+      console.log('[Reports] Fetching data for period:', days, 'days', filters.site ? `site=${filters.site}` : '', filters.worker ? `worker=${filters.worker}` : '');
       
       try {
         let dateFilter = null;
         let dateEndFilter = null;
         
         if (days === 'custom' && customStartDate && customEndDate) {
-          // Custom date range
           dateFilter = new Date(customStartDate).toISOString();
           const endDate = new Date(customEndDate);
-          endDate.setHours(23, 59, 59, 999); // Include full end date
+          endDate.setHours(23, 59, 59, 999);
           dateEndFilter = endDate.toISOString();
         } else if (days !== 'all') {
-          // Preset period
           const date = new Date();
           date.setDate(date.getDate() - parseInt(days));
           date.setHours(0, 0, 0, 0);
           dateFilter = date.toISOString();
         }
 
-        // Fetch jobs (without site join since FK might not exist)
-        let jobsQuery = supabase
-          .from('jobs')
-          .select('*');
-        
-        if (dateFilter) {
-          jobsQuery = jobsQuery.gte('created_at', dateFilter);
-        }
-        if (dateEndFilter) {
-          jobsQuery = jobsQuery.lte('created_at', dateEndFilter);
-        }
+        let jobsQuery = supabase.from('jobs').select('*');
+        if (dateFilter) jobsQuery = jobsQuery.gte('created_at', dateFilter);
+        if (dateEndFilter) jobsQuery = jobsQuery.lte('created_at', dateEndFilter);
+        if (filters.site) jobsQuery = jobsQuery.eq('site_id', filters.site);
+        if (filters.worker) jobsQuery = jobsQuery.eq('assigned_worker_id', filters.worker);
 
         const { data: jobs, error: jobsError } = await jobsQuery.order('created_at', { ascending: false });
         if (jobsError) {
@@ -1395,11 +1475,27 @@
           console.log('[Reports] 🚨 Emergency bookings found:', emergencyCount);
         }
 
+        // Fetch invoices for revenue metrics (paid or partially paid)
+        try {
+          let invQuery = supabase
+            .from('invoices')
+            .select('id, total_amount, paid_amount, status, issue_date, site_id, client_id');
+          if (dateFilter) invQuery = invQuery.gte('issue_date', dateFilter.split('T')[0]);
+          if (dateEndFilter) invQuery = invQuery.lte('issue_date', dateEndFilter.split('T')[0]);
+          if (filters.site) invQuery = invQuery.eq('site_id', filters.site);
+          const { data: invoices } = await invQuery.in('status', ['paid', 'partially_paid']);
+          reportsData.invoices = invoices || [];
+        } catch (e) {
+          console.warn('[Reports] Invoices table may not exist:', e);
+          reportsData.invoices = [];
+        }
+
         // Summary log
         console.log('[Reports] 📊 Data Summary:', {
           jobs: reportsData.jobs.length,
           sites: reportsData.sites.length,
           bookings: reportsData.bookings.length,
+          invoices: reportsData.invoices.length,
           completedJobs: reportsData.jobs.filter(j => j.status === 'completed').length,
           emergencyJobs: reportsData.jobs.filter(j => j.job_type === 'emergency').length
         });
@@ -1432,18 +1528,93 @@
       const totalEmergencies = Math.max(emergencyBookings, emergencyJobs); // Use whichever is higher
       console.log('[Reports] 🚨 Emergency Requests:', totalEmergencies, '(Bookings:', emergencyBookings, 'Jobs:', emergencyJobs + ')');
 
+      // Revenue (from paid/partially_paid invoices - use paid_amount to avoid double-counting)
+      const invoices = reportsData.invoices || [];
+      const totalRevenue = invoices.reduce((sum, inv) => sum + parseFloat(inv.paid_amount || inv.total_amount || 0), 0);
+      const revEl = document.getElementById('metric-total-revenue');
+      if (revEl) revEl.textContent = '$' + totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
       // Update DOM
       document.getElementById('metric-total-jobs').textContent = totalJobs;
       document.getElementById('metric-completed-jobs').textContent = completedJobs;
       document.getElementById('metric-active-sites').textContent = activeSites;
       document.getElementById('metric-emergency-jobs').textContent = totalEmergencies;
       
+      // Revenue breakdown
+      updateRevenueBreakdown();
+
       console.log('[Reports] ✅ Metrics updated successfully');
       
       // Show a helpful message if there's no data at all
       if (totalJobs === 0 && reportsData.sites.length === 0) {
         console.warn('[Reports] ⚠️ No data found in the system');
         toast.warning('No data available yet. Create some sites and jobs to see reports!');
+      }
+    }
+
+    // Update revenue breakdown (by site, by client) and revenue trend chart
+    async function updateRevenueBreakdown() {
+      const invoices = reportsData.invoices || [];
+      const sitesMap = {};
+      (reportsData.sites || []).forEach(s => { sitesMap[s.id] = s; });
+      
+      const clientIds = [...new Set(invoices.filter(i => i.client_id).map(i => i.client_id))];
+      const { data: profiles } = clientIds.length > 0 ? await supabase.from('user_profiles').select('id, full_name').in('id', clientIds) : { data: [] };
+      const clientsMap = {};
+      (profiles || []).forEach(p => { clientsMap[p.id] = p.full_name || 'Unknown'; });
+
+      const bySite = {};
+      const byClient = {};
+      const byDate = {};
+      invoices.forEach(inv => {
+        const amt = parseFloat(inv.paid_amount || inv.total_amount || 0) || 0;
+        const siteName = inv.site_id ? (sitesMap[inv.site_id]?.name || 'Site #' + inv.site_id) : '—';
+        const clientName = inv.client_id ? (clientsMap[inv.client_id] || 'Client') : '—';
+        bySite[siteName] = (bySite[siteName] || 0) + amt;
+        byClient[clientName] = (byClient[clientName] || 0) + amt;
+        const d = inv.issue_date ? inv.issue_date.split('T')[0] : '';
+        if (d) byDate[d] = (byDate[d] || 0) + amt;
+      });
+
+      const fmt = (v) => '$' + parseFloat(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2 });
+      const renderList = (obj, limit = 5) => Object.entries(obj)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([k, v]) => `<div class="flex justify-between"><span>${k}</span><span>${fmt(v)}</span></div>`)
+        .join('') || '—';
+
+      const serviceEl = document.getElementById('revenue-by-service');
+      if (serviceEl) serviceEl.innerHTML = '—'; // Services from line items - simplified for now
+      
+      const siteEl = document.getElementById('revenue-by-site');
+      if (siteEl) siteEl.innerHTML = renderList(bySite);
+      
+      const clientEl = document.getElementById('revenue-by-client');
+      if (clientEl) clientEl.innerHTML = renderList(byClient);
+
+      // Revenue trend chart
+      const dates = Object.keys(byDate).sort();
+      const amounts = dates.map(d => byDate[d]);
+      const ctx = document.getElementById('revenue-trend-chart')?.getContext('2d');
+      if (ctx) {
+        if (revenueTrendChart) revenueTrendChart.destroy();
+        const colors = getChartColors ? getChartColors() : { text: '#1F2937', grid: '#E5E7EB', border: '#0D47A1' };
+        revenueTrendChart = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels: dates.map(d => new Date(d).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: '2-digit' })),
+            datasets: [{ label: 'Revenue', data: amounts, borderColor: colors.border || '#0D47A1', backgroundColor: (colors.background || 'rgba(13,71,161,0.1)'), fill: true, tension: 0.3 }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              x: { ticks: { color: colors.text }, grid: { color: colors.grid } },
+              y: { ticks: { color: colors.text, callback: v => '$' + v }, grid: { color: colors.grid } }
+            }
+          }
+        });
       }
     }
 
@@ -1466,6 +1637,7 @@
       createJobsOverTimeChart();
       createStaffHoursChart();
       createWorkerPerformanceChart();
+      updateRevenueBreakdown();
     });
 
     // Create Jobs Over Time Chart
@@ -1873,7 +2045,7 @@
 
         profiles?.forEach(profile => {
           const workerId = profile.id;
-          const workerJobs = reportsData.jobs.filter(j => j.assigned_to === workerId);
+          const workerJobs = reportsData.jobs.filter(j => (j.assigned_worker_id || j.assigned_to) === workerId);
           
           const completed = workerJobs.filter(j => j.status === 'completed').length;
           const active = workerJobs.filter(j => j.status === 'pending' || j.status === 'in-progress').length;
@@ -2101,6 +2273,7 @@
       const success = await fetchData(timePeriod, customStartDate, customEndDate);
       
       if (success) {
+        await populateReportFilters();
         updateMetrics();
         createJobsOverTimeChart();
         await createStaffHoursChart();
@@ -2120,77 +2293,92 @@
       }
     }
 
-    // Export to CSV
+    // Export to CSV (tab-aware: jobs, expenses, or revenue)
     async function exportToCSV() {
       try {
-        console.log('[Reports] 📥 Exporting CSV...');
+        const activeTabBtn = document.querySelector('.tab-btn.border-nfgblue, .tab-btn.text-nfgblue');
+        const activeTab = activeTabBtn?.dataset?.tab || 'overview';
         
-        // Get current filter settings
-        const timePeriod = document.getElementById('time-period')?.value || '30';
-        const dateFrom = document.getElementById('date-from')?.value;
-        const dateTo = document.getElementById('date-to')?.value;
-        
-        // Fetch user profiles for worker names
-        const { data: profiles } = await supabase
-          .from('user_profiles')
-          .select('id, full_name, email');
-        const profilesMap = {};
-        (profiles || []).forEach(p => {
-          profilesMap[p.id] = p;
-        });
-        
-        // Build CSV header
-        let csv = 'NFG Jobs Report\n';
-        csv += `Generated: ${new Date().toLocaleString()}\n`;
-        if (timePeriod === 'custom' && dateFrom && dateTo) {
-          csv += `Date Range: ${dateFrom} to ${dateTo}\n`;
-        } else if (timePeriod !== 'all') {
-          csv += `Period: Last ${timePeriod} Days\n`;
-        } else {
-          csv += `Period: All Time\n`;
+        if (activeTab === 'expenses') {
+          if (typeof allExpenses === 'undefined' || !allExpenses?.length) {
+            toast.warning('No expenses to export', 'Export');
+            return;
+          }
+          const filtered = allExpenses.filter(exp => {
+            if (currentExpenseFilters?.category && exp.category !== currentExpenseFilters.category) return false;
+            if (currentExpenseFilters?.site && String(exp.site_id) !== String(currentExpenseFilters.site)) return false;
+            if (currentExpenseFilters?.job && exp.job_id !== currentExpenseFilters.job) return false;
+            if (currentExpenseFilters?.dateFrom && exp.expense_date < currentExpenseFilters.dateFrom) return false;
+            if (currentExpenseFilters?.dateTo && exp.expense_date > currentExpenseFilters.dateTo) return false;
+            return true;
+          });
+          const csv = ['Date,Description,Category,Amount,Job,Site,Vendor,Notes'].join(',') + '\n' +
+            (filtered || allExpenses).map(exp => [
+              exp.expense_date || '',
+              `"${(exp.description || '').replace(/"/g, '""')}"`,
+              exp.category || '',
+              parseFloat(exp.amount || 0).toFixed(2),
+              exp.jobs?.title || '',
+              exp.sites?.name || '',
+              `"${(exp.vendor_name || '').replace(/"/g, '""')}"`,
+              `"${(exp.notes || '').replace(/"/g, '""')}"`
+            ].join(',')).join('\n');
+          downloadCSV(csv, `nfg-expenses-${new Date().toISOString().split('T')[0]}.csv`);
+          toast.success('Expenses exported to CSV!');
+          return;
         }
-        csv += '\n';
         
-        // CSV headers
-        csv += 'Job Title,Site,Status,Type,Assigned Worker,Worker Email,Created Date,Completed Date,Total Duration (hours),Description\n';
-        
-        // Add job data
-        reportsData.jobs.forEach(job => {
-          const createdDate = new Date(job.created_at).toLocaleDateString();
-          const completedDate = job.completed_at ? new Date(job.completed_at).toLocaleDateString() : '';
-          const worker = job.assigned_worker_id ? profilesMap[job.assigned_worker_id] : null;
-          const workerName = worker?.full_name || worker?.email || 'Unassigned';
-          const workerEmail = worker?.email || '';
-          const duration = job.total_duration ? (job.total_duration / 3600).toFixed(2) : ''; // Convert seconds to hours
-          const description = (job.description || '').replace(/"/g, '""'); // Escape quotes for CSV
+        if (activeTab === 'overview' || activeTab === 'team' || !activeTab) {
+          const timePeriod = document.getElementById('time-period')?.value || '30';
+          const dateFrom = document.getElementById('date-from')?.value;
+          const dateTo = document.getElementById('date-to')?.value;
+          const { data: profiles } = await supabase.from('user_profiles').select('id, full_name, email');
+          const profilesMap = {};
+          (profiles || []).forEach(p => { profilesMap[p.id] = p; });
           
-          csv += `"${job.title}","${job.sites?.name || 'Unknown'}","${job.status}","${job.job_type || 'cleaning'}","${workerName}","${workerEmail}","${createdDate}","${completedDate}","${duration}","${description}"\n`;
-        });
-        
-        // Create and download CSV
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        const timestamp = new Date().toISOString().split('T')[0];
-        a.download = `nfg-jobs-report-${timestamp}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        window.URL.revokeObjectURL(url);
-        
-        console.log('[Reports] ✅ CSV exported successfully');
-        toast.success('CSV exported successfully!');
+          let csv = 'NFG Jobs Report\n';
+          csv += `Generated: ${new Date().toLocaleString()}\n`;
+          csv += timePeriod === 'custom' && dateFrom && dateTo ? `Date Range: ${dateFrom} to ${dateTo}\n` :
+            timePeriod !== 'all' ? `Period: Last ${timePeriod} Days\n` : 'Period: All Time\n';
+          csv += '\nJob Title,Site,Status,Type,Assigned Worker,Worker Email,Created Date,Completed Date,Total Duration (hours),Description\n';
+          
+          (reportsData.jobs || []).forEach(job => {
+            const worker = (job.assigned_worker_id || job.assigned_to) ? profilesMap[job.assigned_worker_id || job.assigned_to] : null;
+            const workerName = worker?.full_name || worker?.email || 'Unassigned';
+            const duration = job.total_duration ? (parseFloat(job.total_duration) / 3600).toFixed(2) : '';
+            csv += `"${(job.title || '').replace(/"/g, '""')}","${(job.sites?.name || 'Unknown').replace(/"/g, '""')}","${job.status || ''}","${job.job_type || 'cleaning'}","${workerName}","${worker?.email || ''}","${job.created_at ? new Date(job.created_at).toLocaleDateString() : ''}","${job.completed_at ? new Date(job.completed_at).toLocaleDateString() : ''}","${duration}","${(job.description || '').replace(/"/g, '""')}"\n`;
+          });
+          downloadCSV(csv, `nfg-jobs-report-${new Date().toISOString().split('T')[0]}.csv`);
+          toast.success('Jobs exported to CSV!');
+        }
       } catch (error) {
-        console.error('[Reports] ❌ Error exporting CSV:', error);
+        console.error('[Reports] Error exporting CSV:', error);
         const { handleError } = await import('./js/notifications.js');
         handleError(error, 'Exporting CSV');
       }
+    }
+    
+    function downloadCSV(csv, filename) {
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     }
 
     // Print report
     function printReport() {
       window.print();
+    }
+
+    // Export to PDF (opens print dialog - user can choose Save as PDF)
+    function exportToPDF() {
+      window.print();
+      toast.success('Use "Save as PDF" in the print dialog', 'Export PDF');
     }
 
     // ========== TAB SYSTEM ==========
@@ -7486,7 +7674,11 @@
       applyDateRangeBtn?.addEventListener('click', refreshReports);
       document.getElementById('refresh-btn')?.addEventListener('click', refreshReports);
       document.getElementById('export-csv-btn')?.addEventListener('click', exportToCSV);
+      document.getElementById('export-pdf-btn')?.addEventListener('click', exportToPDF);
       document.getElementById('print-btn')?.addEventListener('click', printReport);
+      
+      document.getElementById('filter-site')?.addEventListener('change', refreshReports);
+      document.getElementById('filter-worker')?.addEventListener('change', refreshReports);
       
       // Time tracking event listeners
       document.getElementById('export-time-sheet-btn')?.addEventListener('click', exportTimeSheet);

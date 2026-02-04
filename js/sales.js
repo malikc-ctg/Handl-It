@@ -3,6 +3,7 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import * as salesTemplatesService from './services/sales-templates-service.js';
 
 // ==========================================
 // STATE MANAGEMENT
@@ -20,11 +21,13 @@ function getTableAvailabilityCache() {
   try {
     const cached = sessionStorage.getItem('tableAvailabilityCache');
     return cached ? JSON.parse(cached) : {
-      deal_events: null // null = unknown, false = unavailable, true = available
+      deal_events: null,
+      sales_activities: null
     };
   } catch (e) {
     return {
-      deal_events: null
+      deal_events: null,
+      sales_activities: null
     };
   }
 }
@@ -516,106 +519,296 @@ async function renderDealDetail(deal) {
   if (backBtn) backBtn.classList.remove('hidden');
 }
 
+const activityIcons = {
+  call: 'phone',
+  email: 'mail',
+  meeting: 'calendar',
+  note: 'sticky-note',
+  walkthrough: 'map-pin',
+  task: 'check-square',
+  message: 'message-square',
+  quote: 'file-text',
+  status_change: 'refresh-cw'
+};
+
+function isTableError(err) {
+  return err?.code === 'PGRST205' ||
+    err?.code === '42501' ||
+    err?.status === 404 ||
+    err?.status === 403 ||
+    err?.message?.includes('permission denied') ||
+    err?.message?.includes('Could not find the table') ||
+    err?.message?.includes('schema cache');
+}
+
 async function renderTimeline(dealId) {
   const timelineContainer = document.getElementById('timeline-container');
   if (!timelineContainer) return;
 
-  // Check cache - if table is known to be unavailable, skip query
-  // This prevents 404 errors from appearing in console after first check
   const cache = getTableAvailabilityCache();
-  if (cache.deal_events === false) {
-    timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
+  const items = [];
+
+  // 1) Load sales_activities for this deal (with creator names)
+  if (cache.sales_activities !== false) {
+    try {
+      const { data: activities, error: actError } = await supabase
+        .from('sales_activities')
+        .select('*')
+        .eq('deal_id', dealId)
+        .order('activity_date', { ascending: false });
+
+      if (actError) {
+        if (isTableError(actError)) {
+          setTableAvailability('sales_activities', false);
+        } else {
+          throw actError;
+        }
+      } else {
+        setTableAvailability('sales_activities', true);
+        const creatorIds = [...new Set((activities || []).map(a => a.created_by).filter(Boolean))];
+        let profilesMap = {};
+        if (creatorIds.length > 0) {
+          const { data: profiles } = await supabase
+            .from('user_profiles')
+            .select('id, full_name, email')
+            .in('id', creatorIds);
+          if (profiles) {
+            profilesMap = Object.fromEntries(profiles.map(p => [p.id, p]));
+          }
+        }
+        (activities || []).forEach(a => {
+          items.push({
+            source: 'activity',
+            sortAt: new Date(a.activity_date || a.created_at).getTime(),
+            ...a,
+            creator: a.created_by ? (profilesMap[a.created_by] || {}) : {}
+          });
+        });
+      }
+    } catch (e) {
+      if (!isTableError(e)) console.error('[Sales] Error loading sales_activities:', e);
+      setTableAvailability('sales_activities', false);
+    }
+  }
+
+  // 2) Load deal_events if not known unavailable
+  if (cache.deal_events !== false) {
+    try {
+      const { data: events, error: evError } = await supabase
+        .from('deal_events')
+        .select('*, created_by_user:created_by (id, email)')
+        .eq('deal_id', dealId)
+        .order('timestamp', { ascending: false });
+
+      if (evError) {
+        if (isTableError(evError)) {
+          setTableAvailability('deal_events', false);
+        } else {
+          throw evError;
+        }
+      } else {
+        setTableAvailability('deal_events', true);
+        (events || []).forEach(ev => {
+          items.push({
+            source: 'event',
+            sortAt: new Date(ev.timestamp || ev.created_at).getTime(),
+            ...ev
+          });
+        });
+      }
+    } catch (e) {
+      if (!isTableError(e)) console.error('[Sales] Error loading deal_events:', e);
+      setTableAvailability('deal_events', false);
+    }
+  }
+
+  // Sort combined by date desc
+  items.sort((a, b) => (b.sortAt - a.sortAt));
+
+  if (items.length === 0) {
+    timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No timeline events yet. Log an activity to get started.</p>';
     return;
   }
 
-  try {
-    // Note: Browser will log 404/403 errors in console if table doesn't exist or permission denied
-    // This is expected and harmless - the error is handled gracefully below
-    // Use deal_events table instead of timeline_events
-    const { data, error } = await supabase
-      .from('deal_events')
-      .select('*, created_by_user:created_by (id, email)')
-      .eq('deal_id', dealId)
-      .order('timestamp', { ascending: false });
-
-    // Handle table doesn't exist or permission errors gracefully
-    if (error) {
-      // Table doesn't exist (PGRST205, 404) or permission denied (42501, 403) - show empty state
-      const isTableError = error.code === 'PGRST205' || 
-                          error.code === '42501' || 
-                          error.status === 404 ||
-                          error.status === 403 ||
-                          error.message?.includes('permission denied') ||
-                          error.message?.includes('Could not find the table') ||
-                          error.message?.includes('schema cache');
-      
-      if (isTableError) {
-        // Cache that table is unavailable to skip future queries
-        setTableAvailability('deal_events', false);
-        // Silently handle expected errors - table may not exist or user may not have permission
-        timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Timeline events are not available.</p>';
-        return;
-      }
-      throw error;
-    }
-
-    // Cache that table is available
-    setTableAvailability('deal_events', true);
-
-    if (!data || data.length === 0) {
-      timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">No timeline events yet.</p>';
-      return;
-    }
-
-    const eventIcons = {
-      call: 'phone',
-      message: 'message-square',
-      email: 'mail',
-      quote: 'file-text',
-      meeting: 'calendar',
-      note: 'sticky-note',
-      status_change: 'refresh-cw'
-    };
-
-    timelineContainer.innerHTML = data.map(event => {
-      const icon = eventIcons[event.event_type] || 'circle';
-      const user = event.created_by_user || {};
-      // Use timestamp instead of created_at
-      const date = new Date(event.timestamp || event.created_at).toLocaleString();
-      
-      // Format event type as title
-      const title = event.event_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Event';
-      
-      // Get description from metadata if available
-      const description = event.metadata?.description || event.metadata?.message || '';
+  const currentUserId = currentUser?.id || null;
+  timelineContainer.innerHTML = items.map(item => {
+    if (item.source === 'activity') {
+      const icon = activityIcons[item.activity_type] || 'circle';
+      const title = (item.activity_type || '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Activity';
+      const dateStr = new Date(item.activity_date || item.created_at).toLocaleString();
+      const creatorName = item.creator?.full_name || item.creator?.email || 'Unknown';
+      const isOwn = item.created_by === currentUserId;
+      const outcomeLabel = item.outcome ? item.outcome.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '';
 
       return `
-        <div class="timeline-item">
+        <div class="timeline-item" data-activity-id="${item.id}">
           <div class="flex items-start gap-3">
             <div class="w-8 h-8 rounded-full bg-nfglight dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
               <i data-lucide="${icon}" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
             </div>
-            <div class="flex-1">
-              <div class="flex justify-between items-start mb-1">
+            <div class="flex-1 min-w-0">
+              <div class="flex justify-between items-start gap-2 mb-1">
                 <h4 class="font-semibold text-nftext dark:text-gray-200">${title}</h4>
-                <span class="text-xs text-gray-500 dark:text-gray-400">${date}</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400 flex-shrink-0">${dateStr}</span>
               </div>
-              ${description ? `<p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${description}</p>` : ''}
-              ${user.email ? `<p class="text-xs text-gray-500 dark:text-gray-400">by ${user.email}</p>` : ''}
+              ${outcomeLabel ? `<p class="text-xs text-gray-600 dark:text-gray-400 mb-1">Outcome: ${outcomeLabel}</p>` : ''}
+              ${item.notes ? `<p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${escapeHtml(item.notes)}</p>` : ''}
+              <p class="text-xs text-gray-500 dark:text-gray-400">by ${escapeHtml(creatorName)}</p>
+              ${isOwn ? `
+                <div class="flex gap-2 mt-2">
+                  <button type="button" class="edit-activity-btn text-xs text-nfgblue dark:text-blue-400 hover:underline" data-activity-id="${item.id}">Edit</button>
+                  <button type="button" class="delete-activity-btn text-xs text-red-600 dark:text-red-400 hover:underline" data-activity-id="${item.id}">Delete</button>
+                </div>
+              ` : ''}
             </div>
           </div>
         </div>
       `;
-    }).join('');
-
-    if (window.lucide) lucide.createIcons();
-  } catch (error) {
-    console.error('[Sales] Error rendering timeline:', error);
-    // Show empty state on any other error
-    if (timelineContainer) {
-      timelineContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-sm">Unable to load timeline events.</p>';
     }
+    // deal_events item
+    const event = item;
+    const icon = activityIcons[event.event_type] || 'circle';
+    const user = event.created_by_user || {};
+    const date = new Date(event.timestamp || event.created_at).toLocaleString();
+    const title = event.event_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Event';
+    const description = event.metadata?.description || event.metadata?.message || '';
+
+    return `
+      <div class="timeline-item">
+        <div class="flex items-start gap-3">
+          <div class="w-8 h-8 rounded-full bg-nfglight dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+            <i data-lucide="${icon}" class="w-4 h-4 text-nfgblue dark:text-blue-400"></i>
+          </div>
+          <div class="flex-1">
+            <div class="flex justify-between items-start mb-1">
+              <h4 class="font-semibold text-nftext dark:text-gray-200">${title}</h4>
+              <span class="text-xs text-gray-500 dark:text-gray-400">${date}</span>
+            </div>
+            ${description ? `<p class="text-sm text-gray-600 dark:text-gray-400 mb-1">${description}</p>` : ''}
+            ${user.email ? `<p class="text-xs text-gray-500 dark:text-gray-400">by ${user.email}</p>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  if (window.lucide) lucide.createIcons();
+
+  // Delegation for Edit/Delete
+  timelineContainer.querySelectorAll('.edit-activity-btn').forEach(btn => {
+    btn.addEventListener('click', () => openEditActivity(btn.dataset.activityId));
+  });
+  timelineContainer.querySelectorAll('.delete-activity-btn').forEach(btn => {
+    btn.addEventListener('click', () => deleteActivity(btn.dataset.activityId));
+  });
+}
+
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function openDealLogActivityModal() {
+  if (!currentDeal) return;
+  const modal = document.getElementById('deal-log-activity-modal');
+  const dealIdEl = document.getElementById('deal-log-activity-deal-id');
+  const editIdEl = document.getElementById('activity-edit-id');
+  const dateEl = document.getElementById('activity-date');
+  const titleEl = document.getElementById('deal-log-activity-modal-title');
+  if (dealIdEl) dealIdEl.value = currentDeal.id;
+  if (editIdEl) editIdEl.value = '';
+  if (titleEl) titleEl.textContent = 'Log Activity';
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  if (dateEl) dateEl.value = local;
+  if (modal) modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeDealLogActivityModal() {
+  document.getElementById('deal-log-activity-modal')?.classList.add('hidden');
+}
+
+async function submitDealLogActivity(e) {
+  e.preventDefault();
+  const dealId = document.getElementById('deal-log-activity-deal-id')?.value;
+  const editId = document.getElementById('activity-edit-id')?.value;
+  const typeEl = document.getElementById('activity-type');
+  const dateEl = document.getElementById('activity-date');
+  const outcomeEl = document.getElementById('activity-outcome');
+  const notesEl = document.getElementById('activity-notes');
+  if (!dealId || !typeEl || !dateEl) return;
+
+  const payload = {
+    deal_id: dealId,
+    activity_type: (typeEl.value || 'note').toLowerCase().replace(/\s+/g, '_'),
+    activity_date: new Date(dateEl.value || Date.now()).toISOString(),
+    outcome: (outcomeEl?.value || '').trim() || null,
+    notes: (notesEl?.value || '').trim() || null,
+    updated_at: new Date().toISOString()
+  };
+
+  if (editId) {
+    const { error } = await supabase.from('sales_activities').update(payload).eq('id', editId).eq('created_by', currentUser?.id);
+    if (error) {
+      toast.error(error.message || 'Failed to update activity', 'Error');
+      return;
+    }
+    toast.success('Activity updated', 'Saved');
+  } else {
+    payload.created_by = currentUser?.id || null;
+    const { error } = await supabase.from('sales_activities').insert(payload);
+    if (error) {
+      toast.error(error.message || 'Failed to save activity', 'Error');
+      return;
+    }
+    toast.success('Activity logged', 'Saved');
   }
+
+  closeDealLogActivityModal();
+  if (currentDeal && currentDeal.id === dealId) await renderTimeline(dealId);
+}
+
+async function openEditActivity(activityId) {
+  const { data, error } = await supabase.from('sales_activities').select('*').eq('id', activityId).eq('created_by', currentUser?.id).single();
+  if (error || !data) {
+    toast.error('Activity not found or you can only edit your own.', 'Error');
+    return;
+  }
+  const modal = document.getElementById('deal-log-activity-modal');
+  const dealIdEl = document.getElementById('deal-log-activity-deal-id');
+  const editIdEl = document.getElementById('activity-edit-id');
+  const typeEl = document.getElementById('activity-type');
+  const dateEl = document.getElementById('activity-date');
+  const outcomeEl = document.getElementById('activity-outcome');
+  const notesEl = document.getElementById('activity-notes');
+  const titleEl = document.getElementById('deal-log-activity-modal-title');
+
+  if (dealIdEl) dealIdEl.value = data.deal_id;
+  if (editIdEl) editIdEl.value = data.id;
+  if (titleEl) titleEl.textContent = 'Edit Activity';
+  if (typeEl) typeEl.value = (data.activity_type || 'note').toLowerCase();
+  if (outcomeEl) outcomeEl.value = data.outcome || '';
+  if (notesEl) notesEl.value = data.notes || '';
+  const d = new Date(data.activity_date || data.created_at);
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  if (dateEl) dateEl.value = local;
+
+  if (modal) modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function deleteActivity(activityId) {
+  if (!activityId || !confirm('Delete this activity?')) return;
+  const { error } = await supabase.from('sales_activities').delete().eq('id', activityId).eq('created_by', currentUser?.id);
+  if (error) {
+    toast.error(error.message || 'Failed to delete activity', 'Error');
+    return;
+  }
+  toast.success('Activity deleted', 'Done');
+  if (currentDeal) await renderTimeline(currentDeal.id);
 }
 
 async function renderQuotes(dealId) {
@@ -1649,31 +1842,128 @@ export async function handleText() {
   }
 }
 
-export async function handleEmail() {
-  if (!currentDeal) {
+/** Open compose modal for follow-up email or proposal (prefills To from deal) */
+export function openComposeModal(deal, type = 'follow_up') {
+  const d = deal || currentDeal;
+  if (!d) {
     toast.error('No deal selected', 'Error');
     return;
   }
-
-  const site = currentDeal.sites || {};
-  const email = site.contact_email;
-
-  if (!email) {
-    toast.error('No email available for this site', 'Error');
+  const site = d.sites || d.site || {};
+  const contact = d.contact || d.primary_contact || {};
+  const email = contact.email || site.contact_email || '';
+  if (!email && type === 'follow_up') {
+    toast.error('No email available for this deal/contact', 'Error');
     return;
   }
+  document.getElementById('compose-deal-id').value = d.id;
+  document.getElementById('compose-type').value = type;
+  document.getElementById('compose-to').value = email;
+  document.getElementById('compose-subject').value = '';
+  document.getElementById('compose-body').value = '';
+  document.getElementById('compose-template-picker').classList.add('hidden');
+  const titleEl = document.getElementById('compose-modal-title');
+  if (titleEl) titleEl.textContent = type === 'proposal' ? 'Compose Proposal' : 'Compose Follow-up Email';
+  const modal = document.getElementById('compose-email-modal');
+  if (modal) modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
 
-  const subject = prompt('Enter email subject:');
-  if (!subject) return;
+function closeComposeModal() {
+  document.getElementById('compose-email-modal')?.classList.add('hidden');
+  document.getElementById('compose-template-picker')?.classList.add('hidden');
+}
 
-  const body = prompt('Enter email body:');
-  if (!body) return;
-
+async function loadComposeTemplatePicker() {
+  const type = document.getElementById('compose-type')?.value || 'follow_up';
+  const picker = document.getElementById('compose-template-picker');
+  const listEl = document.getElementById('compose-template-list');
+  if (!listEl || !picker) return;
   try {
-    await QuoAPI.sendEmail(email, subject, body, currentDeal.id);
-  } catch (error) {
-    console.error('[Sales] Error handling email:', error);
+    const templates = await salesTemplatesService.listSalesTemplates({ templateType: type });
+    if (templates.length === 0) {
+      listEl.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No templates yet. Create one in Tools &amp; Resources → Email Templates.</p>';
+    } else {
+      listEl.innerHTML = templates.map(t => `
+        <button type="button" class="template-picker-item w-full text-left px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-600 text-sm text-gray-800 dark:text-gray-200" data-id="${t.id}">
+          ${escapeHtml(t.name)}
+        </button>
+      `).join('');
+    }
+    picker.classList.remove('hidden');
+    listEl.querySelectorAll('.template-picker-item').forEach(btn => {
+      btn.addEventListener('click', () => applyComposeTemplate(btn.dataset.id));
+    });
+  } catch (e) {
+    console.error('[Sales] Load templates for compose:', e);
+    listEl.innerHTML = '<p class="text-sm text-red-500">Could not load templates.</p>';
+    picker.classList.remove('hidden');
   }
+  if (window.lucide) lucide.createIcons();
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+async function applyComposeTemplate(templateId) {
+  const dealId = document.getElementById('compose-deal-id')?.value;
+  if (!dealId || !currentDeal || currentDeal.id !== dealId) {
+    toast.error('Deal context lost. Close and open compose again.', 'Error');
+    return;
+  }
+  try {
+    const template = await salesTemplatesService.getSalesTemplate(templateId);
+    if (!template) {
+      toast.error('Template not found', 'Error');
+      return;
+    }
+    const mergeContext = salesTemplatesService.buildMergeContext(currentDeal);
+    const { subject, body } = salesTemplatesService.renderTemplate(template, mergeContext);
+    document.getElementById('compose-subject').value = subject;
+    document.getElementById('compose-body').value = body;
+    document.getElementById('compose-template-picker').classList.add('hidden');
+    toast.success('Template applied. You can edit before sending.', 'Template applied');
+  } catch (e) {
+    console.error('[Sales] Apply template:', e);
+    toast.error('Failed to apply template', 'Error');
+  }
+}
+
+async function sendComposeEmail() {
+  const to = document.getElementById('compose-to')?.value?.trim();
+  const subject = document.getElementById('compose-subject')?.value?.trim();
+  const body = document.getElementById('compose-body')?.value?.trim();
+  const dealId = document.getElementById('compose-deal-id')?.value;
+  if (!to || !subject || !body) {
+    toast.error('Please fill in To, Subject, and Body', 'Error');
+    return;
+  }
+  try {
+    await QuoAPI.sendEmail(to, subject, body, dealId || null);
+    toast.success('Email sent', 'Success');
+    closeComposeModal();
+  } catch (error) {
+    console.error('[Sales] Send email:', error);
+    toast.error('Failed to send email', 'Error');
+  }
+}
+
+function copyComposeToClipboard() {
+  const subject = document.getElementById('compose-subject')?.value?.trim();
+  const body = document.getElementById('compose-body')?.value?.trim();
+  const text = subject ? `Subject: ${subject}\n\n${body || ''}` : (body || '');
+  if (!text) {
+    toast.error('Nothing to copy', 'Error');
+    return;
+  }
+  navigator.clipboard.writeText(text).then(() => toast.success('Copied to clipboard', 'Success')).catch(() => toast.error('Copy failed', 'Error'));
+}
+
+export async function handleEmail() {
+  openComposeModal(currentDeal, 'follow_up');
 }
 
 // ==========================================
@@ -1783,7 +2073,8 @@ async function setupEventListeners() {
   // Deal actions
   document.getElementById('call-deal-btn')?.addEventListener('click', handleCall);
   document.getElementById('text-deal-btn')?.addEventListener('click', handleText);
-  document.getElementById('email-deal-btn')?.addEventListener('click', handleEmail);
+  document.getElementById('email-deal-btn')?.addEventListener('click', () => openComposeModal(currentDeal, 'follow_up'));
+  document.getElementById('proposal-email-deal-btn')?.addEventListener('click', () => openComposeModal(currentDeal, 'proposal'));
   document.getElementById('create-quote-btn')?.addEventListener('click', openQuoteBuilder);
   document.getElementById('new-quote-btn')?.addEventListener('click', openQuoteBuilder);
 
@@ -1804,6 +2095,18 @@ async function setupEventListeners() {
 
   // Next action
   document.getElementById('save-next-action-btn')?.addEventListener('click', saveNextAction);
+
+  // Deal activity timeline: Log Activity button and modal
+  document.getElementById('log-activity-btn')?.addEventListener('click', openDealLogActivityModal);
+  document.getElementById('close-deal-log-activity-modal')?.addEventListener('click', closeDealLogActivityModal);
+  document.getElementById('cancel-deal-log-activity')?.addEventListener('click', closeDealLogActivityModal);
+  document.getElementById('deal-log-activity-form')?.addEventListener('submit', submitDealLogActivity);
+
+  // Compose email / proposal modal
+  document.getElementById('close-compose-modal')?.addEventListener('click', closeComposeModal);
+  document.getElementById('compose-use-template-btn')?.addEventListener('click', loadComposeTemplatePicker);
+  document.getElementById('compose-send-btn')?.addEventListener('click', sendComposeEmail);
+  document.getElementById('compose-copy-btn')?.addEventListener('click', copyComposeToClipboard);
 }
 
 // Export functions for external use

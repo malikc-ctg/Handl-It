@@ -416,6 +416,51 @@
             </div>
           </div>
 
+          <!-- 5. Pipeline Analytics -->
+          <div class="mb-6">
+            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-3">Pipeline Analytics</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <!-- Total Pipeline Value -->
+              <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Total Pipeline Value</h4>
+                <p id="analytics-total-pipeline" class="text-2xl font-bold text-nfgblue dark:text-blue-400">$0</p>
+                <p id="analytics-total-deals" class="text-xs text-gray-500 dark:text-gray-400 mt-1">0 active deals</p>
+                <div id="analytics-trend-pipeline" class="mt-2 text-xs"></div>
+              </div>
+              <!-- Conversion & Win Rate -->
+              <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Win Rate & Conversion</h4>
+                <div class="flex items-baseline gap-2">
+                  <span id="analytics-win-rate" class="text-2xl font-bold text-green-600 dark:text-green-400">—</span>
+                  <span class="text-sm text-gray-500 dark:text-gray-400">win rate</span>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span id="analytics-won-count">0</span> won / <span id="analytics-lost-count">0</span> lost
+                </p>
+                <div id="analytics-conversion-funnel" class="mt-3 space-y-1 text-xs"></div>
+                <div id="analytics-trend-win" class="mt-2 text-xs"></div>
+              </div>
+              <!-- Win/Loss Breakdown -->
+              <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-4 shadow-nfg">
+                <h4 class="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Win / Loss Breakdown</h4>
+                <div class="space-y-2 mb-3">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-green-600 dark:text-green-400 font-medium">Won</span>
+                    <span id="analytics-won-value" class="font-semibold">$0</span>
+                  </div>
+                  <div class="flex justify-between text-sm">
+                    <span class="text-red-600 dark:text-red-400 font-medium">Lost</span>
+                    <span id="analytics-lost-value" class="font-semibold">$0</span>
+                  </div>
+                </div>
+                <div id="analytics-loss-reasons" class="mt-2 space-y-1 text-xs">
+                  <p class="text-gray-500 dark:text-gray-400">No lost deals to analyze</p>
+                </div>
+                <div id="analytics-trend-loss" class="mt-2 text-xs"></div>
+              </div>
+            </div>
+          </div>
+
         </div>
 
         <!-- Deals Tab -->
@@ -1113,6 +1158,9 @@
               <button id="email-deal-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
                 <i data-lucide="mail" class="w-4 h-4"></i> Email
               </button>
+              <button id="proposal-email-deal-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Proposal
+              </button>
               <button id="create-quote-btn" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
                 <i data-lucide="file-text" class="w-4 h-4"></i> Create Quote
               </button>
@@ -1124,9 +1172,64 @@
 
           <!-- Timeline Section -->
           <div class="bg-white dark:bg-gray-800 border border-nfgray dark:border-gray-700 rounded-xl p-6 mb-6 shadow-nfg">
-            <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400 mb-4">Timeline</h3>
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Activity Timeline</h3>
+              <button type="button" id="log-activity-btn" class="px-3 py-1.5 text-sm bg-nfgblue hover:bg-nfgdark text-white rounded-lg transition inline-flex items-center gap-2">
+                <i data-lucide="plus" class="w-4 h-4"></i> Log Activity
+              </button>
+            </div>
             <div id="timeline-container" class="space-y-4">
               <!-- Timeline items will be rendered here -->
+            </div>
+          </div>
+
+          <!-- Log Activity Modal (deal detail) -->
+          <div id="deal-log-activity-modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col">
+              <div class="p-4 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400" id="deal-log-activity-modal-title">Log Activity</h3>
+                <button type="button" id="close-deal-log-activity-modal" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                  <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+              </div>
+              <form id="deal-log-activity-form" class="flex-1 overflow-y-auto p-6 space-y-4">
+                <input type="hidden" id="deal-log-activity-deal-id" value="">
+                <input type="hidden" id="activity-edit-id" value="">
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                  <select id="activity-type" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+                    <option value="call">Call</option>
+                    <option value="email">Email</option>
+                    <option value="meeting">Meeting</option>
+                    <option value="note">Note</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                  <input type="datetime-local" id="activity-date" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" required>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Outcome</label>
+                  <select id="activity-outcome" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+                    <option value="">—</option>
+                    <option value="contact_made">Contact made</option>
+                    <option value="no_contact">No contact</option>
+                    <option value="voicemail">Voicemail</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                    <option value="email_sent">Email sent</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes</label>
+                  <textarea id="activity-notes" rows="3" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Optional notes"></textarea>
+                </div>
+                <div class="flex justify-end gap-3 pt-2">
+                  <button type="button" id="cancel-deal-log-activity" class="px-4 py-2 border border-nfgray dark:border-gray-700 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg transition">Cancel</button>
+                  <button type="submit" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg transition">Save</button>
+                </div>
+              </form>
             </div>
           </div>
 
@@ -1249,6 +1352,53 @@
             </button>
             <button id="confirm-delete-deal" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition">
               Delete Deal
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compose Email / Proposal Modal -->
+      <div id="compose-email-modal" class="hidden fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+            <h3 id="compose-modal-title" class="text-lg font-semibold text-nfgblue dark:text-blue-400">Compose Email</h3>
+            <button type="button" id="close-compose-modal" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+              <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <input type="hidden" id="compose-deal-id">
+            <input type="hidden" id="compose-type" value="follow_up">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">To</label>
+              <input type="email" id="compose-to" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="recipient@example.com" readonly>
+            </div>
+            <div class="flex items-end gap-2">
+              <div class="flex-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                <input type="text" id="compose-subject" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Email subject">
+              </div>
+              <button type="button" id="compose-use-template-btn" class="px-4 py-2 border border-nfgblue dark:border-blue-500 text-nfgblue dark:text-blue-400 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2 whitespace-nowrap">
+                <i data-lucide="file-text" class="w-4 h-4"></i> Use template
+              </button>
+            </div>
+            <div id="compose-template-picker" class="hidden rounded-lg border border-nfgray dark:border-gray-600 bg-nfglight dark:bg-gray-700 p-3 space-y-2">
+              <p class="text-xs font-medium text-gray-600 dark:text-gray-400">Choose a template (merge fields will be filled from this deal):</p>
+              <div id="compose-template-list" class="max-h-40 overflow-y-auto space-y-1">
+                <!-- Templates loaded by JS -->
+              </div>
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Body</label>
+              <textarea id="compose-body" rows="12" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Email or proposal text... Use {contact_name}, {company_name}, {site_name}, {deal_value} for merge fields."></textarea>
+            </div>
+          </div>
+          <div class="p-4 border-t border-nfgray dark:border-gray-700 flex justify-end gap-3">
+            <button type="button" id="compose-copy-btn" class="px-4 py-2 border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="copy" class="w-4 h-4"></i> Copy
+            </button>
+            <button type="button" id="compose-send-btn" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium transition inline-flex items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Send
             </button>
           </div>
         </div>
@@ -2133,16 +2283,65 @@
   <!-- Email Templates Modal -->
   <div id="email-templates-modal" class="hidden fixed inset-0 bg-black/40 z-[90] flex items-center justify-center p-4">
     <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-3xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-y-auto">
-      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800">
-        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Email Templates</h3>
-        <button onclick="document.getElementById('email-templates-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+        <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Follow-up &amp; Proposal Templates</h3>
+        <div class="flex items-center gap-2">
+          <select id="email-templates-filter" class="px-3 py-1.5 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm">
+            <option value="">All</option>
+            <option value="follow_up">Follow-up</option>
+            <option value="proposal">Proposal</option>
+          </select>
+          <button type="button" id="email-templates-new-btn" class="px-3 py-1.5 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium inline-flex items-center gap-1">
+            <i data-lucide="plus" class="w-4 h-4"></i> New
+          </button>
+          <button onclick="document.getElementById('email-templates-modal')?.classList.add('hidden')" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
       </div>
       <div class="p-6">
         <div id="email-templates-list" class="space-y-3">
           <!-- Templates will be loaded here -->
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sales Template Form Modal (Create / Edit) -->
+  <div id="sales-template-form-modal" class="hidden fixed inset-0 bg-black/40 z-[95] flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-2xl border border-nfgray dark:border-gray-700 max-h-[90vh] overflow-hidden flex flex-col">
+      <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+        <h3 id="sales-template-form-title" class="text-lg font-semibold text-nfgblue dark:text-blue-400">New Template</h3>
+        <button type="button" id="sales-template-form-close" class="p-2 rounded-lg hover:bg-nfglight dark:hover:bg-gray-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <form id="sales-template-form" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <input type="hidden" id="sales-template-form-id">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name</label>
+          <input type="text" id="sales-template-form-name" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g. Follow-up After Meeting" required>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+          <select id="sales-template-form-type" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800">
+            <option value="follow_up">Follow-up (email)</option>
+            <option value="proposal">Proposal (email/document)</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject (for email)</label>
+          <input type="text" id="sales-template-form-subject" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="e.g. Re: Proposal for {company_name}">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Body</label>
+          <textarea id="sales-template-form-body" rows="10" class="w-full px-4 py-2 border border-nfgray dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800" placeholder="Hi {contact_name},&#10;&#10;..." required></textarea>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">Merge fields: {contact_name}, {company_name}, {site_name}, {deal_value}, {contact_email}, {deal_title}</p>
+        </div>
+      </form>
+      <div class="p-4 border-t border-nfgray dark:border-gray-700 flex justify-end gap-3">
+        <button type="button" id="sales-template-form-cancel" class="px-4 py-2 border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg text-sm">Cancel</button>
+        <button type="submit" form="sales-template-form" class="px-4 py-2 bg-nfgblue hover:bg-nfgdark text-white rounded-lg text-sm font-medium">Save</button>
       </div>
     </div>
   </div>
@@ -5244,6 +5443,132 @@
       });
     }
 
+    // Calculate and render pipeline analytics
+    function calculateAndRenderPipelineAnalytics(deals) {
+      const OPEN_STAGES = ['prospecting', 'qualification', 'proposal', 'negotiation'];
+      const closedWon = deals.filter(d => d.stage === 'closed_won');
+      const closedLost = deals.filter(d => d.stage === 'closed_lost');
+      const openDeals = deals.filter(d => OPEN_STAGES.includes(d.stage));
+
+      // Total pipeline value (open deals only)
+      const totalPipelineValue = openDeals.reduce((sum, d) => sum + getDealValue(d), 0);
+      const elTotal = document.getElementById('analytics-total-pipeline');
+      const elDeals = document.getElementById('analytics-total-deals');
+      if (elTotal) elTotal.textContent = `$${totalPipelineValue.toLocaleString()}`;
+      if (elDeals) elDeals.textContent = `${openDeals.length} active deals`;
+
+      // Trend: this month vs last month pipeline
+      const now = new Date();
+      const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const thisMonthOpen = openDeals.filter(d => {
+        const created = d.created_at ? new Date(d.created_at) : null;
+        return created && created >= thisMonthStart;
+      });
+      const lastMonthOpen = openDeals.filter(d => {
+        const created = d.created_at ? new Date(d.created_at) : null;
+        return created && created >= lastMonthStart && created < thisMonthStart;
+      });
+      const trendEl = document.getElementById('analytics-trend-pipeline');
+      if (trendEl) {
+        const diff = thisMonthOpen.length - lastMonthOpen.length;
+        if (lastMonthOpen.length > 0 || thisMonthOpen.length > 0) {
+          trendEl.innerHTML = diff >= 0
+            ? `<span class="text-green-600 dark:text-green-400">+${diff} vs last month</span>`
+            : `<span class="text-red-600 dark:text-red-400">${diff} vs last month</span>`;
+        } else {
+          trendEl.textContent = '';
+        }
+      }
+
+      // Win rate & conversion
+      const totalClosed = closedWon.length + closedLost.length;
+      const winRate = totalClosed > 0 ? Math.round((closedWon.length / totalClosed) * 100) : null;
+      const elWinRate = document.getElementById('analytics-win-rate');
+      const elWonCount = document.getElementById('analytics-won-count');
+      const elLostCount = document.getElementById('analytics-lost-count');
+      if (elWinRate) elWinRate.textContent = winRate !== null ? `${winRate}%` : '—';
+      if (elWonCount) elWonCount.textContent = closedWon.length;
+      if (elLostCount) elLostCount.textContent = closedLost.length;
+
+      // Conversion funnel (stage counts)
+      const stages = [
+        { key: 'qualification', label: 'Qualification' },
+        { key: 'proposal', label: 'Proposal' },
+        { key: 'negotiation', label: 'Negotiation' },
+        { key: 'closed_won', label: 'Won' }
+      ];
+      const funnelEl = document.getElementById('analytics-conversion-funnel');
+      if (funnelEl) {
+        funnelEl.innerHTML = stages.map(s => {
+          const count = deals.filter(d => d.stage === s.key).length;
+          return `<div class="flex justify-between"><span>${s.label}</span><span class="font-medium">${count}</span></div>`;
+        }).join('');
+      }
+
+      // Win trend: this month vs last month
+      const thisMonthWon = closedWon.filter(d => {
+        const updated = d.updated_at ? new Date(d.updated_at) : null;
+        return updated && updated >= thisMonthStart;
+      });
+      const lastMonthWon = closedWon.filter(d => {
+        const updated = d.updated_at ? new Date(d.updated_at) : null;
+        return updated && updated >= lastMonthStart && updated < thisMonthStart;
+      });
+      const trendWinEl = document.getElementById('analytics-trend-win');
+      if (trendWinEl && (thisMonthWon.length > 0 || lastMonthWon.length > 0)) {
+        const diff = thisMonthWon.length - lastMonthWon.length;
+        trendWinEl.innerHTML = `Won this month: <strong>${thisMonthWon.length}</strong>${diff !== 0 ? ` (${diff >= 0 ? '+' : ''}${diff} vs last)` : ''}`;
+      } else if (trendWinEl) trendWinEl.textContent = '';
+
+      // Won/Lost value breakdown
+      const wonValue = closedWon.reduce((sum, d) => sum + getDealValue(d), 0);
+      const lostValue = closedLost.reduce((sum, d) => sum + getDealValue(d), 0);
+      const elWonValue = document.getElementById('analytics-won-value');
+      const elLostValue = document.getElementById('analytics-lost-value');
+      if (elWonValue) elWonValue.textContent = `$${wonValue.toLocaleString()}`;
+      if (elLostValue) elLostValue.textContent = `$${lostValue.toLocaleString()}`;
+
+      // Loss reasons breakdown
+      const reasonsEl = document.getElementById('analytics-loss-reasons');
+      if (reasonsEl) {
+        const reasonCounts = {};
+        closedLost.forEach(d => {
+          const r = d.lost_reason || d.closed_reason || 'other';
+          reasonCounts[r] = (reasonCounts[r] || 0) + 1;
+        });
+        const entries = Object.entries(reasonCounts).sort((a, b) => b[1] - a[1]);
+        if (entries.length === 0) {
+          reasonsEl.innerHTML = '<p class="text-gray-500 dark:text-gray-400">No lost deals to analyze</p>';
+        } else {
+          const labels = {
+            price_too_high: 'Price',
+            competitor: 'Competitor',
+            no_decision: 'No decision',
+            budget_cut: 'Budget cut',
+            timing_not_right: 'Timing',
+            features_missing: 'Features',
+            abandoned: 'Abandoned',
+            won: 'Won',
+            lost: 'Lost',
+            other: 'Other'
+          };
+          reasonsEl.innerHTML = entries.map(([k, v]) =>
+            `<div class="flex justify-between"><span>${labels[k] || k}</span><span>${v}</span></div>`
+          ).join('');
+        }
+      }
+
+      // Lost trend
+      const thisMonthLost = closedLost.filter(d => {
+        const updated = d.updated_at ? new Date(d.updated_at) : null;
+        return updated && updated >= thisMonthStart;
+      });
+      const trendLossEl = document.getElementById('analytics-trend-loss');
+      if (trendLossEl && (thisMonthLost.length > 0 || closedLost.length > 0)) {
+        trendLossEl.textContent = `Lost this month: ${thisMonthLost.length}`;
+      } else if (trendLossEl) trendLossEl.textContent = '';
+    }
 
     // Helper functions
     function filterDealsTableByStage(stage) {

@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import * as salesTemplatesService from './services/sales-templates-service.js';
 
 // ==========================================
 // ROI CALCULATOR
@@ -194,107 +195,199 @@ async function loadPricingGuide() {
 }
 
 // ==========================================
-// EMAIL TEMPLATES
+// EMAIL TEMPLATES (sales_templates: follow-up & proposal)
 // ==========================================
+let emailTemplatesListenersAttached = false;
+
 export function openEmailTemplates() {
   const modal = document.getElementById('email-templates-modal');
   if (modal) {
     modal.classList.remove('hidden');
     if (window.lucide) lucide.createIcons();
     loadEmailTemplates();
+    attachEmailTemplatesListeners();
   }
 }
 
-function loadEmailTemplates() {
-  const templates = [
-    {
-      id: 'follow-up-1',
-      name: 'Follow-up After Meeting',
-      category: 'Follow-up',
-      content: `Subject: Following Up on Our Discussion
+function getEmailTemplatesFilter() {
+  const sel = document.getElementById('email-templates-filter');
+  return (sel && sel.value) || '';
+}
 
-Hi [Name],
-
-Thank you for taking the time to meet with me today. I wanted to follow up on our conversation about [topic].
-
-As discussed, I've attached the proposal we reviewed. Please let me know if you have any questions or would like to schedule a follow-up call.
-
-I'm available at [your phone] or [your email] to discuss next steps.
-
-Best regards,
-[Your Name]`
-    },
-    {
-      id: 'proposal-1',
-      name: 'Proposal Submission',
-      category: 'Proposal',
-      content: `Subject: Proposal for [Company Name]
-
-Hi [Name],
-
-I'm excited to share our proposal for [service type]. Based on our discussion, I've prepared a customized solution that addresses your specific needs.
-
-Key highlights:
-- [Benefit 1]
-- [Benefit 2]
-- [Benefit 3]
-
-The proposal is attached for your review. I'd be happy to walk through it with you at your convenience.
-
-Looking forward to your feedback.
-
-Best regards,
-[Your Name]`
-    },
-    {
-      id: 'thank-you-1',
-      name: 'Thank You After Deal',
-      category: 'Thank You',
-      content: `Subject: Thank You for Your Business
-
-Hi [Name],
-
-Thank you for choosing [Company Name]! We're thrilled to have you as a client and look forward to serving you.
-
-Your account manager, [Manager Name], will be in touch shortly to coordinate the onboarding process.
-
-If you have any questions in the meantime, please don't hesitate to reach out.
-
-Thank you again for your trust in us.
-
-Best regards,
-[Your Name]`
-    }
-  ];
-
+async function loadEmailTemplates() {
   const container = document.getElementById('email-templates-list');
-  if (container) {
-    container.innerHTML = templates.map(template => `
-      <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4 hover:bg-nfglight dark:hover:bg-gray-700 transition cursor-pointer" onclick="window.salesTools?.viewEmailTemplate('${template.id}')">
-        <div class="flex items-start justify-between mb-2">
-          <div>
-            <h4 class="font-semibold text-gray-900 dark:text-white">${template.name}</h4>
-            <span class="text-xs text-gray-500 dark:text-gray-400">${template.category}</span>
+  if (!container) return;
+  const filter = getEmailTemplatesFilter();
+  container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">Loading...</p>';
+  try {
+    const options = filter ? { templateType: filter } : {};
+    let templates = await salesTemplatesService.listSalesTemplates(options);
+    if (templates.length === 0 && !filter) {
+      templates = getFallbackEmailTemplates();
+    }
+    if (templates.length === 0) {
+      container.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">No templates yet. Click <strong>New</strong> to create one.</p>';
+    } else {
+      container.innerHTML = templates.map(t => {
+        const typeLabel = (t.template_type || t.category) === 'proposal' ? 'Proposal' : 'Follow-up';
+        const preview = (t.subject ? t.subject + ' — ' : '') + (t.body || t.content || '').substring(0, 80);
+        const safeId = (t.id || '').replace(/"/g, '&quot;');
+        const safeName = (t.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        return `
+          <div class="border border-nfgray dark:border-gray-700 rounded-lg p-4 hover:bg-nfglight dark:hover:bg-gray-700 transition">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <h4 class="font-semibold text-gray-900 dark:text-white">${safeName}</h4>
+                <span class="text-xs text-gray-500 dark:text-gray-400">${typeLabel}</span>
+              </div>
+              <div class="flex items-center gap-1">
+                <button type="button" class="template-edit-btn p-1.5 rounded hover:bg-nfgblue/10 text-nfgblue dark:text-blue-400" data-id="${safeId}" title="Edit">
+                  <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+                <button type="button" class="template-copy-btn p-1.5 rounded hover:bg-nfgblue/10 text-nfgblue dark:text-blue-400" data-id="${safeId}" title="Copy">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
+                <button type="button" class="template-delete-btn p-1.5 rounded hover:bg-red-500/10 text-red-600 dark:text-red-400" data-id="${safeId}" title="Delete">
+                  <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">${(preview || '').replace(/</g, '&lt;').replace(/>/g, '&gt;').substring(0, 120)}...</p>
           </div>
-          <button class="text-nfgblue dark:text-blue-400 hover:text-nfgdark dark:hover:text-blue-300" onclick="event.stopPropagation(); window.salesTools?.copyEmailTemplate('${template.id}')">
-            <i data-lucide="copy" class="w-4 h-4"></i>
-          </button>
-        </div>
-        <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">${template.content.substring(0, 100)}...</p>
-      </div>
-    `).join('');
+        `;
+      }).join('');
+      container.querySelectorAll('.template-edit-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); openEditTemplateForm(btn.dataset.id); }));
+      container.querySelectorAll('.template-copy-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); copyEmailTemplate(btn.dataset.id); }));
+      container.querySelectorAll('.template-delete-btn').forEach(btn => btn.addEventListener('click', (e) => { e.stopPropagation(); deleteTemplate(btn.dataset.id); }));
+    }
     if (window.lucide) lucide.createIcons();
+  } catch (err) {
+    console.error('[Sales Tools] loadEmailTemplates:', err);
+    container.innerHTML = '<p class="text-sm text-red-500">Failed to load templates. You can still use the compose modal with manual text.</p>';
+  }
+}
+
+function getFallbackEmailTemplates() {
+  return [
+    { id: 'fallback-follow-up', name: 'Follow-up After Meeting', template_type: 'follow_up', subject: 'Following Up on Our Discussion', body: 'Hi {contact_name},\n\nThank you for taking the time to meet. I wanted to follow up on our conversation.\n\nBest regards,' },
+    { id: 'fallback-proposal', name: 'Proposal Submission', template_type: 'proposal', subject: 'Proposal for {company_name}', body: 'Hi {contact_name},\n\nI\'m pleased to share our proposal for {site_name}. Please let me know if you have any questions.\n\nBest regards,' }
+  ];
+}
+
+function attachEmailTemplatesListeners() {
+  if (emailTemplatesListenersAttached) return;
+  emailTemplatesListenersAttached = true;
+  document.getElementById('email-templates-filter')?.addEventListener('change', () => loadEmailTemplates());
+  document.getElementById('email-templates-new-btn')?.addEventListener('click', openNewTemplateForm);
+  document.getElementById('sales-template-form-close')?.addEventListener('click', closeTemplateForm);
+  document.getElementById('sales-template-form-cancel')?.addEventListener('click', closeTemplateForm);
+  document.getElementById('sales-template-form')?.addEventListener('submit', (e) => { e.preventDefault(); saveTemplateForm(); });
+}
+
+function openNewTemplateForm() {
+  document.getElementById('sales-template-form-id').value = '';
+  document.getElementById('sales-template-form-title').textContent = 'New Template';
+  document.getElementById('sales-template-form-name').value = '';
+  document.getElementById('sales-template-form-type').value = 'follow_up';
+  document.getElementById('sales-template-form-subject').value = '';
+  document.getElementById('sales-template-form-body').value = '';
+  document.getElementById('sales-template-form-modal').classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+async function openEditTemplateForm(id) {
+  if (!id) return;
+  try {
+    const t = await salesTemplatesService.getSalesTemplate(id);
+    if (!t) { toast.error('Template not found', 'Error'); return; }
+    document.getElementById('sales-template-form-id').value = t.id;
+    document.getElementById('sales-template-form-title').textContent = 'Edit Template';
+    document.getElementById('sales-template-form-name').value = t.name || '';
+    document.getElementById('sales-template-form-type').value = t.template_type || 'follow_up';
+    document.getElementById('sales-template-form-subject').value = t.subject || '';
+    document.getElementById('sales-template-form-body').value = t.body || '';
+    document.getElementById('sales-template-form-modal').classList.remove('hidden');
+    if (window.lucide) lucide.createIcons();
+  } catch (e) {
+    toast.error('Failed to load template', 'Error');
+  }
+}
+
+function closeTemplateForm() {
+  document.getElementById('sales-template-form-modal')?.classList.add('hidden');
+}
+
+async function saveTemplateForm() {
+  const id = document.getElementById('sales-template-form-id')?.value?.trim();
+  const name = document.getElementById('sales-template-form-name')?.value?.trim();
+  const body = document.getElementById('sales-template-form-body')?.value?.trim();
+  if (!name || !body) {
+    toast.error('Name and body are required', 'Error');
+    return;
+  }
+  try {
+    if (id) {
+      await salesTemplatesService.updateSalesTemplate(id, {
+        name,
+        template_type: document.getElementById('sales-template-form-type').value,
+        subject: document.getElementById('sales-template-form-subject')?.value?.trim() || null,
+        body
+      });
+      toast.success('Template updated', 'Success');
+    } else {
+      await salesTemplatesService.createSalesTemplate({
+        name,
+        template_type: document.getElementById('sales-template-form-type').value,
+        subject: document.getElementById('sales-template-form-subject')?.value?.trim() || null,
+        body
+      });
+      toast.success('Template created', 'Success');
+    }
+    closeTemplateForm();
+    loadEmailTemplates();
+  } catch (e) {
+    console.error('[Sales Tools] saveTemplateForm:', e);
+    toast.error(e.message || 'Failed to save template', 'Error');
+  }
+}
+
+async function deleteTemplate(id) {
+  if (!id || id.startsWith('fallback-')) {
+    toast.info('This is a built-in template and cannot be deleted.', 'Info');
+    return;
+  }
+  if (!confirm('Delete this template? This cannot be undone.')) return;
+  try {
+    await salesTemplatesService.deleteSalesTemplate(id);
+    toast.success('Template deleted', 'Success');
+    loadEmailTemplates();
+  } catch (e) {
+    toast.error('Failed to delete template', 'Error');
   }
 }
 
 export function viewEmailTemplate(templateId) {
-  // This would show full template in a modal or expand view
-  toast.info('Template viewer coming soon', 'Info');
+  toast.info('Open a deal and use "Email" or "Proposal" then "Use template" to use this template with merge fields.', 'Info');
 }
 
-export function copyEmailTemplate(templateId) {
-  // This would copy template to clipboard
-  toast.success('Template copied to clipboard', 'Success');
+export async function copyEmailTemplate(templateId) {
+  if (!templateId) return;
+  if (templateId.startsWith('fallback-')) {
+    const t = getFallbackEmailTemplates().find(x => x.id === templateId);
+    if (t) {
+      const text = (t.subject ? `Subject: ${t.subject}\n\n` : '') + (t.body || '');
+      navigator.clipboard.writeText(text).then(() => toast.success('Copied to clipboard', 'Success')).catch(() => toast.error('Copy failed', 'Error'));
+    }
+    return;
+  }
+  try {
+    const t = await salesTemplatesService.getSalesTemplate(templateId);
+    if (!t) { toast.error('Template not found', 'Error'); return; }
+    const text = (t.subject ? `Subject: ${t.subject}\n\n` : '') + (t.body || '');
+    navigator.clipboard.writeText(text).then(() => toast.success('Copied to clipboard', 'Success')).catch(() => toast.error('Copy failed', 'Error'));
+  } catch (e) {
+    toast.error('Failed to copy template', 'Error');
+  }
 }
 
 // ==========================================
