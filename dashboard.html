@@ -1654,6 +1654,18 @@
       }
     }
 
+    // Expose helper for other modules (e.g., morning notifications)
+    window.openClockInModal = function () {
+      const clockModal = document.getElementById('clockInOutModal');
+      if (clockModal) {
+        clockModal.classList.remove('hidden');
+        clockModal.classList.add('flex');
+        updateClockModal();
+      } else {
+        window.location.href = 'dashboard.html#clock-in';
+      }
+    };
+
     function updateModalTimer() {
       if (!currentTimeEntry) return;
       const modalClockTime = document.getElementById('modal-clock-time');

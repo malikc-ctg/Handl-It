@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import { escapeHtml } from './escape-html.js';
 // Push notifications are managed in Settings page, removed from dropdown
 
 // Notification types and their Lucide icon names
@@ -272,7 +273,8 @@ function renderNotifications(notifications) {
     return `
     <div class="notification-item ${notification.read ? '' : 'unread'}" 
          data-notification-id="${notification.id}"
-         data-link="${notification.link || '#'}">
+         data-link="${notification.link || '#'}"
+         data-reminder-type="${notification.metadata?.reminder_type || ''}">
       <div class="notification-item-content">
         <div class="notification-icon ${notification.type}">
           <i data-lucide="${iconName}" class="w-5 h-5"></i>
@@ -294,9 +296,16 @@ function renderNotifications(notifications) {
     item.addEventListener('click', async () => {
       const notificationId = item.dataset.notificationId;
       const link = item.dataset.link;
+      const reminderType = item.dataset.reminderType;
       
       // Mark as read
       await markAsRead(notificationId);
+      
+      // Special handling for morning reminders
+      if (reminderType === 'morning_motivation') {
+        handleMorningReminderClick();
+        return;
+      }
       
       // Navigate if link exists
       if (link && link !== '#') {
@@ -310,6 +319,26 @@ function renderNotifications(notifications) {
   // Initialize Lucide icons for notification items
   if (window.lucide) {
     window.lucide.createIcons();
+  }
+}
+
+function handleMorningReminderClick() {
+  closeNotificationCenter();
+  
+  if (typeof window.openClockInModal === 'function') {
+    window.openClockInModal();
+    return;
+  }
+  
+  const clockModal = document.getElementById('clockInOutModal');
+  if (clockModal) {
+    clockModal.classList.remove('hidden');
+    clockModal.classList.add('flex');
+    return;
+  }
+  
+  if (!window.location.pathname.endsWith('dashboard.html')) {
+    window.location.href = 'dashboard.html#clock-in';
   }
 }
 
@@ -628,15 +657,6 @@ function renderNotificationMetadata(notification) {
   if (!rows) return '';
   
   return `<div class="notification-meta">${rows}</div>`;
-}
-
-/**
- * Helper: Escape HTML
- */
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 /**
