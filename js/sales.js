@@ -3,6 +3,7 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import { escapeHtml } from './escape-html.js';
 import * as salesTemplatesService from './services/sales-templates-service.js';
 
 // ==========================================
@@ -701,13 +702,6 @@ async function renderTimeline(dealId) {
   timelineContainer.querySelectorAll('.delete-activity-btn').forEach(btn => {
     btn.addEventListener('click', () => deleteActivity(btn.dataset.activityId));
   });
-}
-
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 function openDealLogActivityModal() {
@@ -1900,12 +1894,6 @@ async function loadComposeTemplatePicker() {
     picker.classList.remove('hidden');
   }
   if (window.lucide) lucide.createIcons();
-}
-
-function escapeHtml(s) {
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
 }
 
 async function applyComposeTemplate(templateId) {

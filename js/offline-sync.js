@@ -1,5 +1,7 @@
 import { offlineSyncManager, OPERATION_TYPES, SYNCABLE_TABLES } from './offline-sync-manager.js';
 
+export { OPERATION_TYPES, SYNCABLE_TABLES };
+
 /**
  * Check if app is online
  */
@@ -197,6 +199,15 @@ export function initOfflineSync() {
   setInterval(() => offlineSyncManager.emitStatus(), 5000);
 
   console.log('[OfflineSync] Offline sync initialized');
+}
+
+// Expose lightweight debug helpers for manual QA
+if (typeof window !== 'undefined') {
+  window.offlineSyncDebug = {
+    getQueue: () => offlineSyncManager.getQueue(),
+    syncNow: () => syncOfflineQueue(),
+    clearFailed: () => clearFailedOperations()
+  };
 }
 
 // Auto-initialize when module loads

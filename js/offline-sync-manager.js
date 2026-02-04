@@ -42,6 +42,34 @@ class OfflineSyncManager {
       } else {
         this.queue = [];
       }
+
+      // Migrate any legacy localStorage queue entries
+      if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+        const legacyRaw = localStorage.getItem('nfg_offline_queue');
+        if (legacyRaw) {
+          try {
+            const legacyQueue = JSON.parse(legacyRaw);
+            if (Array.isArray(legacyQueue) && legacyQueue.length > 0) {
+              const merged = [...this.queue];
+              legacyQueue.forEach(item => {
+                if (!merged.find(op => op.id === item.id)) {
+                  merged.push({
+                    ...item,
+                    status: item.status || 'pending'
+                  });
+                }
+              });
+              merged.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+              this.queue = merged;
+              await offlineQueueDB.clearOperations();
+              await offlineQueueDB.saveOperations(this.queue);
+            }
+            localStorage.removeItem('nfg_offline_queue');
+          } catch (error) {
+            console.warn('[OfflineSyncManager] Failed to migrate legacy queue:', error);
+          }
+        }
+      }
     } catch (error) {
       console.warn('[OfflineSyncManager] Failed to load queue from IndexedDB:', error);
       this.queue = [];

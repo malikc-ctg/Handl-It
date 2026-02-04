@@ -7,6 +7,7 @@ import {
   isOnline, 
   getPendingOperationsCount, 
   getFailedOperationsCount,
+  getQueuedOperations,
   syncOfflineQueue,
   retryFailedOperations,
   clearFailedOperations
@@ -16,6 +17,7 @@ let indicatorElement = null;
 let syncButton = null;
 let statusText = null;
 let lastStatusDetail = null;
+let queueModalElement = null;
 
 /**
  * Create offline indicator UI
@@ -193,6 +195,16 @@ function updateActions(actionsContainer, online, hasPending, hasFailed) {
     syncButton = syncBtn;
   }
 
+  if (hasPending || hasFailed) {
+    const viewBtn = document.createElement('button');
+    viewBtn.className = 'px-3 py-1.5 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded-lg text-xs font-medium transition hover:bg-gray-200 dark:hover:bg-gray-600';
+    viewBtn.innerHTML = '<i data-lucide="list" class="w-3 h-3 inline-block mr-1"></i> View Queue';
+    viewBtn.addEventListener('click', async () => {
+      await openQueueModal();
+    });
+    actionsContainer.appendChild(viewBtn);
+  }
+
   if (hasFailed) {
     const retryBtn = document.createElement('button');
     retryBtn.className = 'px-3 py-1.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-xs font-medium transition';
@@ -249,6 +261,94 @@ function showIndicator() {
   if (indicatorElement) {
     updateIndicator();
   }
+}
+
+/**
+ * Queue modal helpers
+ */
+function ensureQueueModal() {
+  if (queueModalElement) return queueModalElement;
+
+  const modal = document.createElement('div');
+  modal.id = 'offline-queue-modal';
+  modal.className = 'fixed inset-0 bg-black/40 z-[60] hidden';
+  modal.innerHTML = `
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-lg border border-nfgray dark:border-gray-700 max-h-[80vh] flex flex-col">
+        <div class="flex items-center justify-between p-4 border-b border-nfgray dark:border-gray-700">
+          <div>
+            <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">Offline Queue</p>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Pending Operations</h3>
+          </div>
+          <button id="offline-queue-close" class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+        <div id="offline-queue-list" class="flex-1 overflow-y-auto p-4 space-y-3 text-left text-sm">
+        </div>
+        <div class="p-4 border-t border-nfgray dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400">
+          Items are replayed sequentially when a connection is available.
+        </div>
+      </div>
+    </div>
+  `;
+
+  modal.addEventListener('click', (event) => {
+    if (event.target === modal) {
+      closeQueueModal();
+    }
+  });
+
+  modal.querySelector('#offline-queue-close')?.addEventListener('click', () => closeQueueModal());
+
+  document.body.appendChild(modal);
+  queueModalElement = modal;
+  if (window.lucide) lucide.createIcons();
+  return modal;
+}
+
+async function openQueueModal() {
+  const modal = ensureQueueModal();
+  const list = modal.querySelector('#offline-queue-list');
+  const operations = getQueuedOperations();
+
+  if (!list) return;
+
+  if (!operations || operations.length === 0) {
+    list.innerHTML = `
+      <div class="text-center py-6 text-gray-500 dark:text-gray-400">
+        <i data-lucide="check-circle" class="w-8 h-8 mx-auto mb-2 text-green-500"></i>
+        <p>No queued operations 🎉</p>
+      </div>
+    `;
+  } else {
+    list.innerHTML = operations.map(op => {
+      const time = new Date(op.timestamp).toLocaleString();
+      return `
+        <div class="border border-gray-200 dark:border-gray-700 rounded-xl p-3 flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">${op.table}</span>
+            <span class="px-2 py-0.5 text-[11px] font-semibold rounded-full ${op.status === 'failed' ? 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200'}">
+              ${op.status || 'pending'}
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-sm">
+            <span class="font-medium text-gray-900 dark:text-gray-100">${op.operation?.toUpperCase()}</span>
+            <span class="text-xs text-gray-500 dark:text-gray-400">${time}</span>
+          </div>
+          ${op.recordId ? `<p class="text-xs text-gray-500 dark:text-gray-400">Record: ${op.recordId}</p>` : ''}
+          ${op.error ? `<p class="text-xs text-red-500 mt-1">Last error: ${op.error}</p>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
+  modal.classList.remove('hidden');
+  if (window.lucide) lucide.createIcons();
+}
+
+function closeQueueModal() {
+  queueModalElement?.classList.add('hidden');
 }
 
 /**

@@ -5,6 +5,7 @@
 
 import { supabase } from './supabase.js';
 import { toast } from './notifications.js';
+import { escapeHtml } from './escape-html.js';
 import * as accountsService from './accounts-service.js';
 import { createSkeletonTableRows, createEmptyState } from './skeleton.js';
 
@@ -370,14 +371,6 @@ function renderAccounts() {
   // Attach event listeners to action buttons after rendering
   attachAccountActionListeners();
   attachContactActionListeners();
-}
-
-// Escape HTML to prevent XSS
-function escapeHtml(text) {
-  if (!text) return '';
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }
 
 // Open account drawer
