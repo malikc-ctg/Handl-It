@@ -3918,7 +3918,8 @@
     }
     
     // Load contacts for priority actions
-    async function loadContactsForPriorityActions() {
+    // forPriorityTab: when true, always filter to current user's contacts (for Priority Actions tab only)
+    async function loadContactsForPriorityActions(forPriorityTab = false) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
@@ -3936,8 +3937,8 @@
           .not('contact_status', 'in', '("lost","converted")')
           .order('last_contact_attempt_at', { ascending: true, nullsFirst: true });
 
-        // Filter by assigned user if rep
-        if (profile && profile.role === 'rep') {
+        // Filter to current user's contacts: always when forPriorityTab, otherwise only when role is rep
+        if (forPriorityTab || (profile && profile.role === 'rep')) {
           query = query.or(`assigned_user_id.eq.${user.id},created_by.eq.${user.id}`);
         }
 
@@ -3956,7 +3957,8 @@
 
     // Helper functions to load data
     // Expose to window for quote wizard to refresh deals
-    window.loadDealsForDashboard = async function loadDealsForDashboard() {
+    // forPriorityTab: when true, always filter to current user's deals (for Priority Actions tab only)
+    window.loadDealsForDashboard = async function loadDealsForDashboard(forPriorityTab = false) {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return [];
@@ -3968,14 +3970,14 @@
           .select('*')
           .order('updated_at', { ascending: false });
 
-        // Filter by assigned user if rep
+        // Filter to current user's deals: always when forPriorityTab, otherwise only when role is rep
         const { data: profile } = await supabase
           .from('user_profiles')
           .select('role')
           .eq('id', user.id)
           .single();
 
-        if (profile && profile.role === 'rep') {
+        if (forPriorityTab || (profile && profile.role === 'rep')) {
           query = query.or(`assigned_user_id.eq.${user.id},created_by.eq.${user.id}`);
         }
 
@@ -4602,12 +4604,15 @@
       if (window.lucide) lucide.createIcons();
       
       try {
+        // Load only current user's deals and contacts for Priority Actions tab
         const [dealsData, quotesData, contactsData] = await Promise.all([
-          loadDealsForDashboard(),
+          loadDealsForDashboard(true),
           loadQuotesForDashboard(),
-          loadContactsForPriorityActions()
+          loadContactsForPriorityActions(true)
         ]);
-        let actions = generatePriorityActions(dealsData || [], quotesData || [], contactsData || []) || [];
+        const userDealIds = new Set((dealsData || []).map(d => d.id));
+        const quotesForUser = (quotesData || []).filter(q => !q.deal_id || userDealIds.has(q.deal_id));
+        let actions = generatePriorityActions(dealsData || [], quotesForUser, contactsData || []) || [];
         // Enrich: link contact -> deal where possible
         (dealsData || []).forEach(deal => {
           const pid = deal.primary_contact_id;
