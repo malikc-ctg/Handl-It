@@ -43,7 +43,10 @@ CREATE TRIGGER trigger_sales_templates_updated_at
 
 COMMENT ON TABLE sales_templates IS 'Company-scoped templates for follow-up emails and proposals; supports merge fields like {contact_name}, {company_name}, {site_name}, {deal_value}.';
 
--- RLS: company-scoped access (users see only their company's templates)
+-- Grant required for authenticated role (avoids 403 / permission denied)
+GRANT ALL ON sales_templates TO authenticated;
+
+-- RLS: users see only their own rows (company_id = auth.uid()) or shared (company_id IS NULL)
 ALTER TABLE sales_templates ENABLE ROW LEVEL SECURITY;
 
 -- Allow service role full access
@@ -53,22 +56,15 @@ CREATE POLICY "Service role full access to sales_templates"
   USING (true)
   WITH CHECK (true);
 
--- Authenticated users: read/insert/update/delete only rows for their company.
--- Uses user_profiles.company_id if present; fallback to auth.uid() so single-tenant still works.
+-- Authenticated: manage rows where company_id IS NULL or company_id = auth.uid() (no dependency on user_profiles.company_id)
 CREATE POLICY "Users can manage own company sales_templates"
   ON sales_templates FOR ALL
   TO authenticated
   USING (
     company_id IS NULL
-    OR company_id IN (
-      SELECT COALESCE(company_id, id) FROM user_profiles WHERE id = auth.uid()
-      UNION SELECT auth.uid()
-    )
+    OR company_id = auth.uid()
   )
   WITH CHECK (
     company_id IS NULL
-    OR company_id IN (
-      SELECT COALESCE(company_id, id) FROM user_profiles WHERE id = auth.uid()
-      UNION SELECT auth.uid()
-    )
+    OR company_id = auth.uid()
   );
