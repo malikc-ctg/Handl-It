@@ -24,7 +24,7 @@ export const QUOTE_CONFIG = {
     property_manager: 199            // Base per-unit turnover price
   },
 
-  // Sqft bands with multipliers
+  // Sqft bands with multipliers (support up to 50k sq ft per property)
   // Baseline is band_2 (1201-1600 sqft) with multiplier 1.00
   sqftBands: [
     { min: 0, max: 1200, multiplier: 0.92, label: 'band_1', walkthroughRequired: false },
@@ -32,7 +32,12 @@ export const QUOTE_CONFIG = {
     { min: 1601, max: 2000, multiplier: 1.05, label: 'band_3', walkthroughRequired: false },
     { min: 2001, max: 2600, multiplier: 1.10, label: 'band_4', walkthroughRequired: true },
     { min: 2601, max: 3500, multiplier: 1.18, label: 'band_5', walkthroughRequired: true },
-    { min: 3501, max: Infinity, multiplier: null, label: 'band_6', customOnly: true, walkthroughRequired: true }
+    { min: 3501, max: 5000, multiplier: 1.25, label: 'band_6', walkthroughRequired: true },
+    { min: 5001, max: 8000, multiplier: 1.35, label: 'band_7', walkthroughRequired: true },
+    { min: 8001, max: 12000, multiplier: 1.45, label: 'band_8', walkthroughRequired: true },
+    { min: 12001, max: 20000, multiplier: 1.55, label: 'band_9', walkthroughRequired: true },
+    { min: 20001, max: 50000, multiplier: 1.70, label: 'band_10', walkthroughRequired: true },
+    { min: 50001, max: Infinity, multiplier: null, label: 'band_custom', customOnly: true, walkthroughRequired: true }
   ],
 
   // Frequency multipliers (non-linear curve)
@@ -124,12 +129,16 @@ export const QUOTE_CONFIG = {
         high_touch_disinfection: 0.04
       },
       touchpointMax: 0.25,
-      // Offices can handle larger sqft without walkthrough
+      // Offices can handle larger sqft without walkthrough (up to 50k)
       sqftBands: [
         { min: 0, max: 1200, multiplier: 0.92, walkthroughRequired: false },
         { min: 1201, max: 1600, multiplier: 1.00, walkthroughRequired: false },
         { min: 1601, max: 2500, multiplier: 1.08, walkthroughRequired: false },
-        { min: 2501, max: 3500, multiplier: 1.15, walkthroughRequired: true }
+        { min: 2501, max: 3500, multiplier: 1.15, walkthroughRequired: true },
+        { min: 3501, max: 6000, multiplier: 1.22, walkthroughRequired: true },
+        { min: 6001, max: 10000, multiplier: 1.32, walkthroughRequired: true },
+        { min: 10001, max: 20000, multiplier: 1.45, walkthroughRequired: true },
+        { min: 20001, max: 50000, multiplier: 1.60, walkthroughRequired: true }
       ]
     },
 
@@ -253,12 +262,15 @@ export const QUOTE_CONFIG = {
         high_touch_disinfection: 0.04
       },
       touchpointMax: 0.30,
-      // Industrial spaces scale differently by sqft
+      // Industrial spaces scale differently by sqft (up to 50k)
       sqftBands: [
         { min: 0, max: 1200, multiplier: 0.90, walkthroughRequired: false },
         { min: 1201, max: 1600, multiplier: 1.00, walkthroughRequired: false },
         { min: 1601, max: 3000, multiplier: 1.12, walkthroughRequired: true },
-        { min: 3001, max: 5000, multiplier: 1.25, walkthroughRequired: true }
+        { min: 3001, max: 5000, multiplier: 1.25, walkthroughRequired: true },
+        { min: 5001, max: 10000, multiplier: 1.38, walkthroughRequired: true },
+        { min: 10001, max: 20000, multiplier: 1.52, walkthroughRequired: true },
+        { min: 20001, max: 50000, multiplier: 1.68, walkthroughRequired: true }
       ],
       // Industrial often has unique complexity (hazmat, heavy equipment)
       complexityFactors: {
@@ -295,13 +307,15 @@ export const QUOTE_CONFIG = {
         { maxVisits: 16, multiplier: 2.45 },
         { maxVisits: 20, multiplier: 2.85 }
       ],
-      // Condo/apartment common areas scale by floors/size
+      // Condo/apartment common areas scale by floors/size (up to 50k)
       sqftBands: [
         { min: 0, max: 1500, multiplier: 0.90, walkthroughRequired: false },
         { min: 1501, max: 2500, multiplier: 1.00, walkthroughRequired: false },
         { min: 2501, max: 4000, multiplier: 1.15, walkthroughRequired: true },
         { min: 4001, max: 6000, multiplier: 1.30, walkthroughRequired: true },
-        { min: 6001, max: 10000, multiplier: 1.50, walkthroughRequired: true }
+        { min: 6001, max: 10000, multiplier: 1.50, walkthroughRequired: true },
+        { min: 10001, max: 20000, multiplier: 1.65, walkthroughRequired: true },
+        { min: 20001, max: 50000, multiplier: 1.82, walkthroughRequired: true }
       ],
       complexityFactors: {
         flooring: {
@@ -354,12 +368,15 @@ export const QUOTE_CONFIG = {
         }
       },
       complexityMax: 0.25,
-      // Restaurants may need walkthroughs earlier due to kitchen complexity
+      // Restaurants may need walkthroughs earlier due to kitchen complexity (up to 50k)
       sqftBands: [
         { min: 0, max: 1200, multiplier: 0.92, walkthroughRequired: false },
         { min: 1201, max: 1600, multiplier: 1.00, walkthroughRequired: false },
         { min: 1601, max: 2200, multiplier: 1.10, walkthroughRequired: true },
-        { min: 2201, max: 3000, multiplier: 1.20, walkthroughRequired: true }
+        { min: 2201, max: 3000, multiplier: 1.20, walkthroughRequired: true },
+        { min: 3001, max: 6000, multiplier: 1.32, walkthroughRequired: true },
+        { min: 6001, max: 12000, multiplier: 1.45, walkthroughRequired: true },
+        { min: 12001, max: 50000, multiplier: 1.60, walkthroughRequired: true }
       ]
     },
 
@@ -380,13 +397,16 @@ export const QUOTE_CONFIG = {
         { maxVisits: 8, multiplier: 1.85 },   // Twice weekly
         { maxVisits: 12, multiplier: 2.60 }   // 3x weekly
       ],
-      // Residential sqft bands
+      // Residential sqft bands (up to 50k for large estates)
       sqftBands: [
         { min: 0, max: 1000, multiplier: 0.85, walkthroughRequired: false },
         { min: 1001, max: 1500, multiplier: 1.00, walkthroughRequired: false },
         { min: 1501, max: 2200, multiplier: 1.15, walkthroughRequired: false },
         { min: 2201, max: 3000, multiplier: 1.30, walkthroughRequired: false },
-        { min: 3001, max: 4500, multiplier: 1.50, walkthroughRequired: true }
+        { min: 3001, max: 4500, multiplier: 1.50, walkthroughRequired: true },
+        { min: 4501, max: 8000, multiplier: 1.65, walkthroughRequired: true },
+        { min: 8001, max: 15000, multiplier: 1.80, walkthroughRequired: true },
+        { min: 15001, max: 50000, multiplier: 1.95, walkthroughRequired: true }
       ],
       complexityFactors: {
         flooring: {
@@ -421,13 +441,16 @@ export const QUOTE_CONFIG = {
         { maxVisits: 4, multiplier: 3.60 },   // Four jobs/month
         { maxVisits: 8, multiplier: 6.80 }    // High volume realtor
       ],
-      // Realtor sqft bands
+      // Realtor sqft bands (up to 50k)
       sqftBands: [
         { min: 0, max: 1000, multiplier: 0.80, walkthroughRequired: false },
         { min: 1001, max: 1500, multiplier: 1.00, walkthroughRequired: false },
         { min: 1501, max: 2200, multiplier: 1.20, walkthroughRequired: false },
         { min: 2201, max: 3000, multiplier: 1.40, walkthroughRequired: true },
-        { min: 3001, max: 5000, multiplier: 1.70, walkthroughRequired: true }
+        { min: 3001, max: 5000, multiplier: 1.70, walkthroughRequired: true },
+        { min: 5001, max: 10000, multiplier: 1.90, walkthroughRequired: true },
+        { min: 10001, max: 25000, multiplier: 2.10, walkthroughRequired: true },
+        { min: 25001, max: 50000, multiplier: 2.30, walkthroughRequired: true }
       ],
       // Deep cleans have higher complexity
       complexityFactors: {
@@ -470,7 +493,11 @@ export const QUOTE_CONFIG = {
         { min: 0, max: 800, multiplier: 0.85, walkthroughRequired: false },
         { min: 801, max: 1200, multiplier: 1.00, walkthroughRequired: false },
         { min: 1201, max: 1800, multiplier: 1.18, walkthroughRequired: false },
-        { min: 1801, max: 2500, multiplier: 1.35, walkthroughRequired: true }
+        { min: 1801, max: 2500, multiplier: 1.35, walkthroughRequired: true },
+        { min: 2501, max: 5000, multiplier: 1.50, walkthroughRequired: true },
+        { min: 5001, max: 10000, multiplier: 1.68, walkthroughRequired: true },
+        { min: 10001, max: 25000, multiplier: 1.85, walkthroughRequired: true },
+        { min: 25001, max: 50000, multiplier: 2.00, walkthroughRequired: true }
       ],
       complexityFactors: {
         flooring: {

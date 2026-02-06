@@ -873,7 +873,8 @@ function setupQuoteEngineListeners() {
 function calculateQuoteFromEngine() {
   // Get basic form inputs
   const serviceType = document.getElementById('quote-service-type')?.value;
-  const sqftEstimate = parseFloat(document.getElementById('quote-sqft-estimate')?.value) || null;
+  let sqftEstimate = parseFloat(document.getElementById('quote-sqft-estimate')?.value) || null;
+  if (sqftEstimate != null && sqftEstimate > 50000) sqftEstimate = 50000; // Cap at 50k per property
   const frequencyPerMonth = parseInt(document.getElementById('quote-frequency-per-month')?.value) || 4;
   const flooring = document.getElementById('quote-flooring')?.value || 'mostly_hard';
   const afterHours = document.getElementById('quote-after-hours')?.checked || false;
