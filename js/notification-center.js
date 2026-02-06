@@ -69,7 +69,11 @@ function createNotificationBell() {
     return;
   }
   
-  const header = document.querySelector('header .flex.items-center.gap-2:last-child');
+  const header = document.querySelector(
+    'header .flex.items-center.gap-2:last-child, ' +
+    'header > div > div.flex.items-center:last-child, ' +
+    'header > div > div:last-child'
+  );
   if (!header) {
     console.warn('⚠️ Could not find header to insert notification bell');
     return;

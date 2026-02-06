@@ -1926,13 +1926,17 @@
       }
       
       try {
-        const { error } = await supabaseClient
+        let { error } = await supabaseClient
           .from('sites')
-          .update({ 
-            archived_at: now,
-            status: 'Paused'
-          })
+          .update({ archived_at: now, status: 'Paused' })
           .in('id', siteIds);
+        
+        if (error && error.message && error.message.includes('archived_at')) {
+          ({ error } = await supabaseClient
+            .from('sites')
+            .update({ status: 'Paused' })
+            .in('id', siteIds));
+        }
         
         if (error) {
           toast.error('Failed to archive sites: ' + error.message);
