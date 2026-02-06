@@ -1444,6 +1444,10 @@ export function openQuoteBuilder() {
   quoteLineItems = { good: [], better: [], best: [] };
   renderQuoteBuilder();
   document.getElementById('quote-builder-modal')?.classList.remove('hidden');
+  // Wire up quote engine so the Calculated Quote section updates when user changes service type, sqft, etc.
+  if (window.quoteWizard && typeof window.quoteWizard.ensureQuoteEngineListenersAndCalculate === 'function') {
+    window.quoteWizard.ensureQuoteEngineListenersAndCalculate();
+  }
 }
 
 function renderQuoteBuilder() {

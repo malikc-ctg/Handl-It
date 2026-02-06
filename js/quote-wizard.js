@@ -142,6 +142,15 @@ export function openQuoteWizard() {
   if (window.lucide) lucide.createIcons();
 }
 
+/**
+ * Ensure quote engine listeners are attached and run calculation once.
+ * Call this when the quote modal is opened from deal detail (sales.js) so the Calculated Quote section updates.
+ */
+export function ensureQuoteEngineListenersAndCalculate() {
+  setupQuoteEngineListeners();
+  calculateQuoteFromEngine();
+}
+
 // Reset the quote engine form to defaults
 function resetQuoteEngineForm() {
   const fields = {
