@@ -35,60 +35,99 @@
       }
     }
   </script>
+  <style>
+    body {
+      min-height: 100vh;
+      background: linear-gradient(160deg, #f0f4ff 0%, #e8eef9 40%, #fff 100%);
+      font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    @media (min-width: 768px) {
+      body { background: linear-gradient(165deg, #eef2fb 0%, #e3ebf8 35%, #f8fafc 100%); }
+    }
+    .login-card {
+      box-shadow: 0 4px 24px rgba(13, 71, 161, 0.08), 0 1px 3px rgba(0,0,0,0.04);
+      border: 1px solid rgba(13, 71, 161, 0.06);
+    }
+    .login-card:focus-within { box-shadow: 0 8px 32px rgba(13, 71, 161, 0.12), 0 1px 3px rgba(0,0,0,0.06); }
+    .btn-primary {
+      background: linear-gradient(180deg, #0D47A1 0%, #0A3A84 100%);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(13, 71, 161, 0.35); }
+    .input-focus:focus { border-color: #0D47A1; box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.12); }
+    .social-btn { transition: background 0.15s ease, border-color 0.15s ease; }
+    .social-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+  </style>
 </head>
-<body class="bg-nfbg font-inter flex items-center justify-center min-h-screen">
-  <div class="bg-white shadow-nfg rounded-xl border border-nfgray p-8 w-full max-w-md">
-    <!-- NFG Logo -->
-    <div class="text-center mb-4">
-      <img 
-        src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU" 
-        alt="NFG" 
-        class="h-12 mx-auto mb-2"
-      />
+<body class="font-inter flex items-center justify-center min-h-screen px-4 py-10 sm:py-12">
+  <div class="w-full max-w-[420px]">
+    <!-- Logo -->
+    <div class="text-center mb-8 sm:mb-10">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <img
+          src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/NFG%20one.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL05GRyBvbmUucG5nIiwiaWF0IjoxNzYyOTc5NzU5LCJleHAiOjQ4ODUwNDM3NTl9.fnJIDQep2yYlgGKlBRNnkrUoUzXzG7eac39GG6NQPuU"
+          alt="NFG One"
+          class="h-10 w-auto"
+          onerror="this.style.display='none'"
+        />
+        <div>
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight text-nfgblue">NFG</span>
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight text-nfgdark"> One</span>
+        </div>
+      </div>
+      <p class="text-gray-500 text-sm">Where operations meet innovation.</p>
     </div>
-    <h1 class="text-2xl font-semibold text-nfgblue text-center mb-2">
-      NFG Dashboard
-    </h1>
-    <p class="text-center text-sm text-nftext mb-6">Sign in to manage bookings, jobs, and reports.</p>
 
-    <form id="login-form" class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-nftext mb-1">Email</label>
-        <input type="email" name="email" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" placeholder="you@company.com" required />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-nftext mb-1">Password</label>
-        <input type="password" name="password" class="w-full border border-nfgray rounded-xl p-2.5 focus:ring-2 focus:ring-nfgblue outline-none" placeholder="••••••••" required />
-      </div>
-      <button type="submit" class="w-full bg-nfgblue hover:bg-nfgdark text-white rounded-xl py-2.5 font-medium transition">Sign In</button>
-      <p id="auth-error" class="text-red-600 text-center text-sm hidden"></p>
-    </form>
+    <!-- Login Card -->
+    <div class="login-card bg-white rounded-2xl p-8 sm:p-10 transition-shadow duration-200">
+      <h1 id="login-greeting" class="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1 tracking-tight">Sign in</h1>
+      <p id="login-subline" class="text-gray-500 text-sm mb-6 sm:mb-8">Sign in to manage bookings, jobs, and reports.</p>
 
-    <!-- Social Sign In -->
-    <div class="mt-6">
-      <div class="relative flex items-center justify-center my-4">
-        <div class="h-px bg-nfgray w-full"></div>
-        <span class="absolute bg-white px-3 text-xs text-gray-500">or continue with</span>
-      </div>
-      <div class="grid grid-cols-1 gap-3">
-        <button id="google-signin" type="button" class="w-full border border-nfgray rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-nfglight/40 transition">
-          <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL2dvb2dsZS1sb2dvLXBuZy13ZWJpbmFyLW9wdGltaXppbmctZm9yLXN1Y2Nlc3MtZ29vZ2xlLWJ1c2luZXNzLXdlYmluYXItMTMucG5nIiwiaWF0IjoxNzYzMzI0MDc5LCJleHAiOjMzMjY3Nzg4MDc5fQ.yz-31Wo7nyjNYRK9PCx9MlRVxvPk0OorVVvR37ly_cY" alt="Google logo" class="w-5 h-5 object-contain" />
-          <span>Google</span>
+      <form id="login-form" class="space-y-5">
+        <div>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" placeholder="you@company.com" required
+            class="input-focus w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition bg-gray-50/50" />
+        </div>
+        <div>
+          <label for="password" class="block text-sm font-medium text-gray-700 mb-2">Password</label>
+          <input type="password" id="password" name="password" autocomplete="current-password" placeholder="••••••••" required
+            class="input-focus w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition bg-gray-50/50" />
+        </div>
+        <button type="submit" id="submit-btn" class="btn-primary w-full py-3.5 rounded-xl text-white font-medium focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+          Sign in
         </button>
-        <button id="microsoft-signin" type="button" class="w-full border border-nfgray rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-nfglight/40 transition">
-          <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/microsoft-color.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL21pY3Jvc29mdC1jb2xvci5wbmciLCJpYXQiOjE3NjMzMjQzODcsImV4cCI6MzE3MDkxNzg4Mzg3fQ.9NIa6u9LYaULMsaXl5HkFzGE7-Tkef3o2iobyVOiPBw" alt="Microsoft logo" class="w-5 h-5 object-contain" />
-          <span>Microsoft</span>
-        </button>
+        <p id="auth-error" class="text-red-600 text-center text-sm hidden"></p>
+      </form>
+
+      <!-- Social Sign In -->
+      <div class="mt-7">
+        <div class="relative flex items-center justify-center my-4">
+          <div class="h-px bg-gray-200 w-full"></div>
+          <span class="absolute bg-white px-3 text-xs text-gray-400">or continue with</span>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <button id="google-signin" type="button" class="social-btn w-full border border-gray-200 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 text-gray-700">
+            <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/google-logo-png-webinar-optimizing-for-success-google-business-webinar-13.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL2dvb2dsZS1sb2dvLXBuZy13ZWJpbmFyLW9wdGltaXppbmctZm9yLXN1Y2Nlc3MtZ29vZ2xlLWJ1c2luZXNzLXdlYmluYXItMTMucG5nIiwiaWF0IjoxNzYzMzI0MDc5LCJleHAiOjMzMjY3Nzg4MDc5fQ.yz-31Wo7nyjNYRK9PCx9MlRVxvPk0OorVVvR37ly_cY" alt="Google" class="w-5 h-5 object-contain" />
+            <span>Google</span>
+          </button>
+          <button id="microsoft-signin" type="button" class="social-btn w-full border border-gray-200 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 text-gray-700">
+            <img src="https://zqcbldgheimqrnqmbbed.supabase.co/storage/v1/object/sign/app-images/microsoft-color.png?token=eyJraWQiOiJzdG9yYWdlLXVybC1zaWduaW5nLWtleV8xN2RmNDhlMi0xNGJlLTQ5NzMtODZlNy0zZTc0MjgzMWIzOTQiLCJhbGciOiJIUzI1NiJ9.eyJ1cmwiOiJhcHAtaW1hZ2VzL21pY3Jvc29mdC1jb2xvci5wbmciLCJpYXQiOjE3NjMzMjQzODcsImV4cCI6MzE3MDkxNzg4Mzg3fQ.9NIa6u9LYaULMsaXl5HkFzGE7-Tkef3o2iobyVOiPBw" alt="Microsoft" class="w-5 h-5 object-contain" />
+            <span>Microsoft</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-gray-200 text-center space-y-2">
+        <p class="text-sm text-gray-600">
+          Don't have an account?
+          <a href="./signup.html" class="font-medium hover:underline" style="color: #0D47A1;">Sign up</a>
+        </p>
+        <button id="signup-demo" type="button" class="text-gray-500 hover:text-gray-700 text-xs">or create a demo account</button>
       </div>
     </div>
 
-    <div class="mt-6 border-t border-nfgray pt-4 text-center space-y-2">
-      <p class="text-sm text-gray-600">
-        Don't have an account? 
-        <a href="./signup.html" class="text-nfgblue hover:text-nfgdark font-medium">Sign Up</a>
-      </p>
-      <button id="signup-demo" class="text-gray-500 hover:text-gray-700 text-xs">or create a demo account</button>
-    </div>
+    <p class="text-center mt-8 text-gray-400 text-sm">© <span id="current-year"></span> NFG One — Northern Facilities Group</p>
   </div>
 
   <script type="module" src="./js/supabase.js"></script>
@@ -98,12 +137,27 @@
   <!-- Login Form Handler -->
   <script type="module">
     import { supabase } from './js/supabase.js'
+    import { getLastUserName } from './js/auth.js'
     
     const form = document.getElementById('login-form')
     const errorEl = document.getElementById('auth-error')
     const demoBtn = document.getElementById('signup-demo')
     const googleBtn = document.getElementById('google-signin')
     const msBtn = document.getElementById('microsoft-signin')
+    
+    // Current year in footer
+    const yearEl = document.getElementById('current-year')
+    if (yearEl) yearEl.textContent = new Date().getFullYear()
+    
+    // Welcome back greeting when we remember the user
+    const greetingEl = document.getElementById('login-greeting')
+    const sublineEl = document.getElementById('login-subline')
+    const lastName = getLastUserName()
+    if (greetingEl && sublineEl && lastName) {
+      const name = lastName.replace(/</g, '')
+      greetingEl.textContent = `Welcome back, ${name}`
+      sublineEl.textContent = "We're glad to see you again. Sign in to continue."
+    }
     
     console.log('🔐 Initializing login form...')
     console.log('📋 Form element:', form ? 'Found' : 'Not found')
