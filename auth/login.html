@@ -22,95 +22,95 @@
   
   <style>
     body {
-      background: linear-gradient(135deg, #E3ECFA 0%, #FFFFFF 100%);
       min-height: 100vh;
+      background: linear-gradient(160deg, #f0f4ff 0%, #e8eef9 40%, #fff 100%);
+      font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
     }
+    @media (min-width: 768px) {
+      body { background: linear-gradient(165deg, #eef2fb 0%, #e3ebf8 35%, #f8fafc 100%); }
+    }
+    .login-card {
+      box-shadow: 0 4px 24px rgba(13, 71, 161, 0.08), 0 1px 3px rgba(0,0,0,0.04);
+      border: 1px solid rgba(13, 71, 161, 0.06);
+    }
+    .login-card:focus-within { box-shadow: 0 8px 32px rgba(13, 71, 161, 0.12), 0 1px 3px rgba(0,0,0,0.06); }
+    .btn-primary {
+      background: linear-gradient(180deg, #0D47A1 0%, #0A3A84 100%);
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(13, 71, 161, 0.35); }
+    .input-focus:focus { border-color: #0D47A1; box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.12); }
+    .social-btn { transition: background 0.15s ease, border-color 0.15s ease; }
+    .social-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
   </style>
 </head>
-<body class="flex items-center justify-center min-h-screen px-4 py-8">
+<body class="flex items-center justify-center min-h-screen px-4 py-10 sm:py-12">
   
-  <div class="w-full max-w-md">
-    <!-- Header -->
-    <div class="text-center mb-8">
+  <div class="w-full max-w-[420px]">
+    <!-- Logo -->
+    <div class="text-center mb-8 sm:mb-10">
       <div class="flex items-center justify-center gap-2 mb-2">
         <img src="/assets/logo.png" alt="NFG One Logo" class="nfg-logo" onerror="this.style.display='none'">
         <div>
-          <span class="text-3xl font-bold" style="color: #0D47A1;">NFG</span>
-          <span class="text-3xl font-bold" style="color: #0A3A84;"> One</span>
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight" style="color: #0D47A1;">NFG</span>
+          <span class="text-2xl sm:text-3xl font-bold tracking-tight" style="color: #0A3A84;"> One</span>
         </div>
       </div>
-      <p class="text-gray-600 text-sm">Where operations meet innovation.</p>
+      <p class="text-gray-500 text-sm">Where operations meet innovation.</p>
     </div>
     
     <!-- Login Card -->
-    <div class="bg-white rounded-2xl border border-gray-200 shadow-lg p-8">
-      <h1 class="text-2xl font-bold text-gray-900 mb-2">Sign In</h1>
-      <p class="text-gray-600 text-sm mb-6">Enter your email to receive a sign-in link</p>
+    <div class="login-card bg-white rounded-2xl p-8 sm:p-10 transition-shadow duration-200">
+      <h1 id="login-greeting" class="text-2xl sm:text-3xl font-semibold text-gray-900 mb-1 tracking-tight">Sign in</h1>
+      <p id="login-subline" class="text-gray-500 text-sm mb-6 sm:mb-8">Enter your email to receive a sign-in link.</p>
       
-      <!-- Form -->
-      <form id="login-form" class="space-y-4">
+      <form id="login-form" class="space-y-5">
         <div>
-          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-            Email Address
-          </label>
+          <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email address</label>
           <input
             type="email"
             id="email"
             name="email"
             required
             autocomplete="email"
-            placeholder="you@example.com"
-            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+            placeholder="you@company.com"
+            class="input-focus w-full px-4 py-3 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 outline-none transition bg-gray-50/50"
           >
         </div>
         
         <button
           type="submit"
           id="submit-btn"
-          class="w-full py-3 rounded-xl text-white font-medium transition hover:opacity-90 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          style="background-color: #0D47A1;"
-          onmouseover="this.style.backgroundColor='#0A3A84'"
-          onmouseout="this.style.backgroundColor='#0D47A1'"
+          class="btn-primary w-full py-3.5 rounded-xl text-white font-medium focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
-          <span id="submit-text">Send Sign-In Link</span>
-          <span id="submit-loading" class="hidden">Sending...</span>
+          <span id="submit-text">Send sign-in link</span>
+          <span id="submit-loading" class="hidden">Sending…</span>
         </button>
       </form>
       
-      <!-- Social Sign In -->
-      <div class="mt-6">
+      <div class="mt-7">
         <div class="relative flex items-center justify-center my-4">
           <div class="h-px bg-gray-200 w-full"></div>
-          <span class="absolute bg-white px-3 text-xs text-gray-500">or continue with</span>
+          <span class="absolute bg-white px-3 text-xs text-gray-400">or continue with</span>
         </div>
-        <div class="grid grid-cols-1 gap-3">
-          <button id="google-signin" type="button" class="w-full border border-gray-300 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-50">
+        <div class="grid grid-cols-2 gap-3">
+          <button id="google-signin" type="button" class="social-btn w-full border border-gray-200 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 text-gray-700">
             <img src="/assets/google.svg" alt="" class="w-5 h-5" />
             <span>Google</span>
           </button>
-          <button id="microsoft-signin" type="button" class="w-full border border-gray-300 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 hover:bg-gray-50">
+          <button id="microsoft-signin" type="button" class="social-btn w-full border border-gray-200 rounded-xl py-2.5 text-sm font-medium flex items-center justify-center gap-2 text-gray-700">
             <img src="/assets/microsoft.svg" alt="" class="w-5 h-5" />
             <span>Microsoft</span>
           </button>
         </div>
       </div>
       
-      <!-- Help Links -->
-      <div class="mt-6 text-center space-y-2">
-        <a
-          href="/auth/reset.html"
-          class="text-sm hover:underline"
-          style="color: #0D47A1;"
-        >
-          Reset your password
-        </a>
+      <div class="mt-6 text-center">
+        <a href="/auth/reset.html" class="text-sm font-medium hover:underline" style="color: #0D47A1;">Reset your password</a>
       </div>
     </div>
     
-    <!-- Footer -->
-    <div class="text-center mt-8 text-gray-500 text-sm">
-      © <span id="current-year"></span> NFG One — Northern Facilities Group
-    </div>
+    <p class="text-center mt-8 text-gray-400 text-sm">© <span id="current-year"></span> NFG One — Northern Facilities Group</p>
   </div>
   
   <!-- Scripts -->
@@ -132,7 +132,18 @@
         requireNoAuth = authModule.requireNoAuth
         showToast = authModule.showToast
         validateEmail = authModule.validateEmail
+        const getLastUserName = authModule.getLastUserName
         console.log('✅ Auth module loaded')
+        
+        // Personalized greeting when we remember the user
+        const greetingEl = document.getElementById('login-greeting')
+        const sublineEl = document.getElementById('login-subline')
+        const lastName = getLastUserName()
+        if (greetingEl && sublineEl && lastName) {
+          const name = lastName.replace(/</g, '') // basic safety
+          greetingEl.textContent = `Welcome back, ${name}`
+          sublineEl.textContent = "We're glad to see you again. Enter your email to sign in."
+        }
       } catch (importError) {
         console.error('❌ Failed to import modules:', importError)
         document.body.innerHTML = `

@@ -878,6 +878,13 @@
         
         currentUserProfile = profile;
         console.log('Current user profile:', currentUserProfile);
+        // Remember name for "Welcome back, ___" on login page
+        try {
+          const fullName = profile?.full_name?.trim();
+          const email = profile?.email?.trim() || user?.email?.trim();
+          const display = fullName ? fullName.split(/\s+/)[0] : (email ? email.split('@')[0] : null);
+          if (display) localStorage.setItem('nfg_last_user_name', display);
+        } catch (_) {}
         return user;
       } catch (error) {
         console.error('Error getting current user:', error);

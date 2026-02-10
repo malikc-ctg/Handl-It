@@ -126,3 +126,37 @@ export function formatError(error) {
   if (error?.message) return error.message
   return 'An unexpected error occurred'
 }
+
+const WELCOME_BACK_STORAGE_KEY = 'nfg_last_user_name'
+
+/** Get the display name we saved for "Welcome back, ___" on the login page. */
+export function getLastUserName() {
+  try {
+    return localStorage.getItem(WELCOME_BACK_STORAGE_KEY) || null
+  } catch {
+    return null
+  }
+}
+
+/** After successful sign-in, save current user's name so login page can show "Welcome back, ___". */
+export async function saveLastUserForWelcomeBack() {
+  try {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user?.id) return
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('full_name, email')
+      .eq('id', user.id)
+      .single()
+    const fullName = profile?.full_name?.trim()
+    const email = profile?.email?.trim() || user?.email?.trim()
+    let display = fullName
+      ? fullName.split(/\s+/)[0]
+      : (email ? (email.split('@')[0] || email) : null)
+    if (display) {
+      localStorage.setItem(WELCOME_BACK_STORAGE_KEY, display)
+    }
+  } catch (e) {
+    console.warn('Could not save last user for welcome back:', e)
+  }
+}

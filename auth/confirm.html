@@ -91,7 +91,7 @@
   
   <!-- Scripts -->
   <script type="module">
-    import { setSessionFromUrl, formatError } from '/js/auth.js'
+    import { setSessionFromUrl, formatError, saveLastUserForWelcomeBack } from '/js/auth.js'
     
     // Set current year
     document.getElementById('current-year').textContent = new Date().getFullYear()
@@ -108,6 +108,8 @@
         const result = await setSessionFromUrl()
         
         if (result.ok) {
+          // Save name for "Welcome back, ___" on next login
+          await saveLastUserForWelcomeBack()
           // Success - show success state for 800ms, then redirect
           loadingState.classList.add('hidden')
           successState.classList.remove('hidden')
