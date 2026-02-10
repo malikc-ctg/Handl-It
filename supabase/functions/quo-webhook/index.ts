@@ -79,6 +79,88 @@ function normalizePhoneNumber(phone: string): string {
   return cleaned
 }
 
+// Sync call to Priority Actions: update deal + contact + sales_activities
+async function syncCallToPriorityActions(
+  supabase: any,
+  siteId: number,
+  payload: QuoWebhookPayload,
+  call: { id: string; ended_at?: string | null; started_at?: string | null }
+): Promise<void> {
+  const answered = payload.outcome === 'answered'
+  const activityDate = payload.ended_at || payload.started_at || new Date().toISOString()
+  const tomorrow = new Date()
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  tomorrow.setHours(9, 0, 0, 0)
+  const tomorrowIso = tomorrow.toISOString()
+
+  const { data: deals, error: dealsError } = await supabase
+    .from('deals')
+    .select('id, primary_contact_id, company_id, assigned_user_id, assigned_to, stage')
+    .eq('site_id', siteId)
+
+  if (dealsError || !deals?.length) return
+
+  const closedStages = ['won', 'lost', 'closed_won', 'closed_lost']
+  const openDeals = (deals as any[]).filter(
+    (d) => !closedStages.includes(d.stage) && !String(d.stage || '').toLowerCase().includes('closed')
+  )
+  if (openDeals.length === 0) return
+
+  for (const deal of openDeals) {
+    const dealId = deal.id
+    const companyId = deal.company_id || null
+    const assignedUserId = deal.assigned_user_id || deal.assigned_to || null
+    const contactId = deal.primary_contact_id || null
+
+    await supabase
+      .from('deals')
+      .update({
+        last_touch_at: new Date().toISOString(),
+        ...(answered ? {} : { next_action_type: 'callback', next_action_date: tomorrowIso }),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', dealId)
+
+    if (contactId) {
+      const { data: contact } = await supabase.from('contacts').select('no_contact_streak, total_contact_attempts').eq('id', contactId).single()
+      const currentStreak = (contact?.no_contact_streak ?? 0) as number
+      const newStreak = answered ? 0 : Math.min(2, currentStreak + 1)
+      const totalAttempts = ((contact as any)?.total_contact_attempts ?? 0) + 1
+      await supabase
+        .from('contacts')
+        .update({
+          last_contact_attempt_at: new Date().toISOString(),
+          total_contact_attempts: totalAttempts,
+          ...(answered
+            ? { last_contacted_at: new Date().toISOString(), no_contact_streak: 0 }
+            : { no_contact_streak: newStreak, next_follow_up_date: tomorrowIso, next_follow_up_type: 'call' }),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', contactId)
+    }
+
+    const activityRow: Record<string, unknown> = {
+      company_id: companyId,
+      deal_id: dealId,
+      contact_id: contactId,
+      assigned_user_id: assignedUserId,
+      activity_type: 'call',
+      outcome: answered ? 'contact_made' : 'no_contact',
+      activity_date: activityDate,
+      created_by: assignedUserId,
+      updated_at: new Date().toISOString()
+    }
+    if (payload.duration_seconds != null) {
+      activityRow.duration_minutes = Math.round(payload.duration_seconds / 60)
+    }
+    if (!answered) {
+      activityRow.next_action_date = tomorrowIso
+      activityRow.next_action_type = 'callback'
+    }
+    await supabase.from('sales_activities').insert(activityRow)
+  }
+}
+
 // Find site by phone number match
 async function findSiteByPhone(supabase: any, phoneNumber: string): Promise<number | null> {
   const normalized = normalizePhoneNumber(phoneNumber)
@@ -258,6 +340,20 @@ async function processCallWebhook(
       .from('quo_webhook_logs')
       .update({ processed: true })
       .eq('id', webhookLog.id)
+    
+    // Step 8: Sync to Priority Actions (deal + contact + sales_activities)
+    if (siteId && payload.outcome) {
+      try {
+        await syncCallToPriorityActions(supabase, siteId, payload, call)
+      } catch (syncErr: any) {
+        logStructured(createStructuredLog('warn', 'Priority Actions sync failed (call still recorded)', {
+          event_type: payload.event_type,
+          call_id: webhookId,
+          site_id: siteId,
+          error: syncErr?.message
+        }))
+      }
+    }
     
     logStructured(createStructuredLog('info', 'Webhook processed successfully', {
       event_type: payload.event_type,

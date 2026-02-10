@@ -534,15 +534,47 @@
                     <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Duration</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Overtime</th>
                     <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Status</th>
+                    <th class="px-4 py-3 text-left font-medium text-gray-700 dark:text-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody id="time-entries-table" class="divide-y divide-nfgray">
                   <tr>
-                    <td colspan="7" class="px-4 py-8 text-center text-gray-500">Loading...</td>
+                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">Loading...</td>
                   </tr>
                 </tbody>
               </table>
             </div>
+          </div>
+        </div>
+        
+        <!-- Adjust Time Entry Modal -->
+        <div id="adjust-time-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full">
+            <div class="p-4 border-b border-nfgray dark:border-gray-700 flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-nfgblue dark:text-blue-400">Adjust time entry</h3>
+              <button type="button" id="close-adjust-time-modal" class="p-2 hover:bg-nfglight dark:hover:bg-gray-700 rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+              </button>
+            </div>
+            <form id="adjust-time-form" class="p-4 space-y-4">
+              <input type="hidden" id="adjust-time-entry-id" value="">
+              <div>
+                <label for="adjust-clock-in" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Clock In</label>
+                <input type="datetime-local" id="adjust-clock-in" required class="w-full px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              </div>
+              <div>
+                <label for="adjust-clock-out" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Clock Out</label>
+                <input type="datetime-local" id="adjust-clock-out" required class="w-full px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-nfgblue outline-none text-sm">
+              </div>
+              <div>
+                <label for="adjust-time-notes" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Notes (optional)</label>
+                <textarea id="adjust-time-notes" rows="2" class="w-full px-3 py-2 rounded-xl border border-nfgray dark:border-gray-600 bg-white dark:bg-gray-800 focus:ring-2 focus:ring-nfgblue outline-none text-sm" placeholder="Reason for adjustment..."></textarea>
+              </div>
+              <div class="flex gap-2 justify-end pt-2">
+                <button type="button" id="cancel-adjust-time" class="px-4 py-2 rounded-xl border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-sm font-medium">Cancel</button>
+                <button type="submit" id="save-adjust-time" class="px-4 py-2 rounded-xl bg-nfgblue hover:bg-nfgdark text-white text-sm font-medium">Save</button>
+              </div>
+            </form>
           </div>
         </div>
         
@@ -2629,7 +2661,7 @@
         const avgHours = (totalSeconds / 3600 / days).toFixed(1);
         document.getElementById('time-avg-hours').textContent = `${avgHours}h`;
         
-        // Render time entries table
+        window.timeSheetEntries = entries;
         renderTimeEntriesTable(entries, 'time-entries-table', true);
       } catch (error) {
         console.error('Error in loadMyTimeSheet:', error);
@@ -2645,7 +2677,7 @@
       if (entries.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+            <td colspan="8" class="px-4 py-8 text-center text-gray-500">
               No time entries found for this period
             </td>
           </tr>
@@ -2683,6 +2715,10 @@
         };
         
         const statusBadge = `<span class="px-2 py-1 rounded-full text-xs font-medium ${statusColors[entry.status] || statusColors.pending}">${entry.status}</span>`;
+        const canAdjust = !!entry.clock_out;
+        const adjustBtn = canAdjust
+          ? `<button type="button" class="adjust-time-btn px-3 py-1 rounded-lg border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-xs font-medium" data-entry-id="${entry.id}">Adjust</button>`
+          : '<span class="text-gray-400 text-xs">—</span>';
         
         return `
           <tr class="hover:bg-nfglight dark:hover:bg-gray-700">
@@ -2696,9 +2732,18 @@
             <td class="px-4 py-3 font-medium">${duration}</td>
             <td class="px-4 py-3">${overtimeBadge}</td>
             <td class="px-4 py-3">${statusBadge}</td>
+            <td class="px-4 py-3">${adjustBtn}</td>
           </tr>
         `;
       }).join('');
+      
+      tbody.querySelectorAll('.adjust-time-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const entryId = btn.getAttribute('data-entry-id');
+          const entry = (window.timeSheetEntries || window.pendingTimeEntries || []).find(e => e.id === entryId);
+          if (entry) openAdjustTimeModal(entry);
+        });
+      });
     }
     
     // Admin: Load staff list for filter
@@ -2775,6 +2820,7 @@
           });
         }
         
+        window.pendingTimeEntries = entries || [];
         renderPendingTimeEntriesTable(entries || []);
       } catch (error) {
         console.error('Error in loadPendingTimeEntries:', error);
@@ -2847,34 +2893,33 @@
             <td class="px-4 py-3 font-medium">${duration}</td>
             <td class="px-4 py-3">${overtimeBadge}</td>
             <td class="px-4 py-3">
-              ${entry.status === 'pending' ? `
-                <div class="flex gap-2">
-                  <button 
-                    onclick="approveTimeEntry('${entry.id}')" 
-                    class="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs"
-                  >
-                    Approve
-                  </button>
-                  <button 
-                    onclick="rejectTimeEntry('${entry.id}')" 
-                    class="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs"
-                  >
-                    Reject
-                  </button>
-                </div>
-              ` : `
-                <span class="px-2 py-1 rounded-full text-xs font-medium ${
-                  entry.status === 'approved' 
-                    ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
-                    : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                }">${entry.status}</span>
-              `}
+              <div class="flex flex-wrap gap-2 items-center">
+                ${entry.clock_out ? `
+                  <button type="button" class="adjust-time-btn-admin px-3 py-1 rounded-lg border border-nfgray dark:border-gray-600 hover:bg-nfglight dark:hover:bg-gray-700 text-xs font-medium" data-entry-id="${entry.id}">Adjust</button>
+                ` : ''}
+                ${entry.status === 'pending' ? `
+                  <button onclick="approveTimeEntry('${entry.id}')" class="px-3 py-1 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs">Approve</button>
+                  <button onclick="rejectTimeEntry('${entry.id}')" class="px-3 py-1 rounded-lg bg-red-600 text-white hover:bg-red-700 text-xs">Reject</button>
+                ` : `
+                  <span class="px-2 py-1 rounded-full text-xs font-medium ${
+                    entry.status === 'approved' 
+                      ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                      : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                  }">${entry.status}</span>
+                `}
+              </div>
             </td>
           </tr>
         `;
       }).join('');
       
-      // Attach checkbox listeners
+      document.querySelectorAll('#pending-time-entries-table .adjust-time-btn-admin').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const entryId = btn.getAttribute('data-entry-id');
+          const entry = (window.pendingTimeEntries || []).find(e => e.id === entryId);
+          if (entry) openAdjustTimeModal(entry);
+        });
+      });
       attachCheckboxListeners();
     }
     
@@ -2944,6 +2989,92 @@
       await loadPendingTimeEntries();
       await loadTimeReports();
     };
+    
+    // Adjust time entry (after clock out): open modal and save
+    function openAdjustTimeModal(entry) {
+      const isOwn = entry.user_id === currentUser?.id;
+      const isAdmin = (currentUserProfile?.role === 'admin' || currentUserProfile?.role === 'super_admin');
+      if (!isOwn && !isAdmin) {
+        toast.error('You can only adjust your own time entries');
+        return;
+      }
+      const modal = document.getElementById('adjust-time-modal');
+      const idEl = document.getElementById('adjust-time-entry-id');
+      const clockInEl = document.getElementById('adjust-clock-in');
+      const clockOutEl = document.getElementById('adjust-clock-out');
+      const notesEl = document.getElementById('adjust-time-notes');
+      if (!modal || !idEl || !clockInEl || !clockOutEl) return;
+      idEl.value = entry.id;
+      const toLocalDatetime = (iso) => {
+        const d = new Date(iso);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const h = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+        return `${y}-${m}-${day}T${h}:${min}`;
+      };
+      clockInEl.value = toLocalDatetime(entry.clock_in);
+      clockOutEl.value = entry.clock_out ? toLocalDatetime(entry.clock_out) : '';
+      if (notesEl) notesEl.value = entry.notes || '';
+      modal.classList.remove('hidden');
+      modal.classList.add('flex');
+      if (window.lucide) window.lucide.createIcons();
+    }
+    
+    function closeAdjustTimeModal() {
+      const modal = document.getElementById('adjust-time-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+    }
+    
+    async function saveAdjustedTime(e) {
+      e.preventDefault();
+      const idEl = document.getElementById('adjust-time-entry-id');
+      const clockInEl = document.getElementById('adjust-clock-in');
+      const clockOutEl = document.getElementById('adjust-clock-out');
+      const notesEl = document.getElementById('adjust-time-notes');
+      const entryId = idEl?.value;
+      if (!entryId || !clockInEl?.value || !clockOutEl?.value) {
+        toast.error('Clock in and clock out are required');
+        return;
+      }
+      const clockIn = new Date(clockInEl.value);
+      const clockOut = new Date(clockOutEl.value);
+      if (clockOut <= clockIn) {
+        toast.error('Clock out must be after clock in');
+        return;
+      }
+      const totalDurationSeconds = Math.round((clockOut - clockIn) / 1000);
+      const isOvertime = totalDurationSeconds > 8 * 3600;
+      const payload = {
+        clock_in: clockIn.toISOString(),
+        clock_out: clockOut.toISOString(),
+        total_duration: totalDurationSeconds,
+        is_overtime: isOvertime,
+        updated_at: new Date().toISOString()
+      };
+      if (notesEl && notesEl.value.trim()) payload.notes = notesEl.value.trim();
+      const { error } = await supabase
+        .from('staff_time_logs')
+        .update(payload)
+        .eq('id', entryId);
+      if (error) {
+        toast.error('Failed to save: ' + (error.message || 'Unknown error'));
+        return;
+      }
+      toast.success('Time entry updated');
+      closeAdjustTimeModal();
+      await loadMyTimeSheet();
+      await loadPendingTimeEntries();
+      await loadTimeReports();
+    }
+    
+    document.getElementById('close-adjust-time-modal')?.addEventListener('click', closeAdjustTimeModal);
+    document.getElementById('cancel-adjust-time')?.addEventListener('click', closeAdjustTimeModal);
+    document.getElementById('adjust-time-form')?.addEventListener('submit', saveAdjustedTime);
     
     // Bulk approve selected entries
     async function bulkApproveTimeEntries() {

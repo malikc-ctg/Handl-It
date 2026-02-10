@@ -306,7 +306,7 @@ function renderNotifications(notifications) {
       await markAsRead(notificationId);
       
       // Special handling for morning reminders
-      if (reminderType === 'morning_motivation') {
+      if (reminderType === 'morning_motivation' || reminderType === 'clock_out_12h') {
         handleMorningReminderClick();
         return;
       }
