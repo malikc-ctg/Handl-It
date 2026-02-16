@@ -1,28 +1,23 @@
 /**
  * E2E Test: Sales Portal Core Flow
  * Rep creates lead/deal -> calls -> webhook logs call -> summary -> next action -> quote -> send -> accept -> win
+ * Skipped in CI: requires authenticated session and backend (Supabase).
  */
 
 import { test, expect } from '@playwright/test'
 
 test.describe('Sales Portal Core Flow', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to app
     await page.goto('/index.html')
-    
-    // Login as sales rep (client role)
-    // This would need actual auth setup
-    // For now, we'll test the flow assuming auth is handled
   })
 
   test('complete sales flow: lead -> call -> webhook -> quote -> win', async ({ page }) => {
+    if (process.env.CI) test.skip(true, 'E2E requires authenticated session and backend')
     // Step 1: Rep creates lead/deal (site)
     await page.goto('/dashboard.html')
-    
-    // Click "Add Site" button
+    await page.waitForSelector('[data-target="addSiteModal"], #add-site-btn', { state: 'visible', timeout: 10000 })
     await page.click('button:has-text("Add Site")')
-    
-    // Fill site form
+    await page.waitForSelector('#add-site-form input[name="name"]', { state: 'visible', timeout: 5000 })
     await page.fill('input[name="name"]', 'Test Lead Company')
     await page.fill('input[name="address"]', '123 Test St, Test City')
     await page.fill('input[name="contact_phone"]', '+15551234567')
