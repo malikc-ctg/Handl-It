@@ -3654,10 +3654,10 @@
         }
       });
       
-      // Show/hide dashboard tabs container (hide for tools tab)
+      // Show/hide dashboard tabs container (hide for tools and priority actions tabs)
       const tabsContainer = document.getElementById('sales-dashboard-tabs');
       if (tabsContainer) {
-        if (targetTabName === 'tools') {
+        if (targetTabName === 'tools' || targetTabName === 'priority') {
           tabsContainer.classList.add('hidden');
         } else {
           tabsContainer.classList.remove('hidden');
