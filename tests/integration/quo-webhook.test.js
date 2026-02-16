@@ -7,8 +7,9 @@ import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import { createTestUser, createTestSite, cleanupTestData } from '../fixtures/factories.js'
 
 const WEBHOOK_URL = process.env.QUO_WEBHOOK_URL || 'http://localhost:54321/functions/v1/quo-webhook'
+const hasSupabaseKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
 
-describe('Quo Webhook Integration', () => {
+describe.skipIf(!hasSupabaseKey)('Quo Webhook Integration', () => {
   let testUser, testSite
   const cleanupIds = { userIds: [], siteIds: [] }
 

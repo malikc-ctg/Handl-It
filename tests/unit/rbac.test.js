@@ -9,8 +9,9 @@ import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zqcbldgheimqrnqmbbed.supabase.co'
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || ''
+const hasSupabaseKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
 
-describe('RBAC Enforcement', () => {
+describe.skipIf(!hasSupabaseKey)('RBAC Enforcement', () => {
   let adminUser, clientUser, staffUser
   let adminSite, clientSite
   const cleanupIds = { userIds: [], siteIds: [] }

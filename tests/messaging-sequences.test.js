@@ -84,7 +84,14 @@ class MockSupabase {
     }
 
     if (functionName === 'enqueue_next_sequence_step') {
-      // Mock enqueueing
+      const enrollment = this.data.sequence_enrollments.find(
+        (e) => e.id === params.enrollment_id_param
+      )
+      // No next step when at final step (e.g. current_step_order >= 5)
+      if (enrollment && (enrollment.current_step_order || 0) >= 5) {
+        enrollment.status = 'completed'
+        return { data: null, error: null }
+      }
       const messageId = Math.random().toString()
       this.data.messages_outbound.push({
         id: messageId,
@@ -136,7 +143,12 @@ describe('Stop Rules - Reply Detection', () => {
 
     mockSupabase.data.messages_inbound.push(inboundMessage)
 
-    // Process stop rules
+    // Process stop rules (call RPC that stops enrollment)
+    mockSupabase.rpc('stop_sequence_enrollment', {
+      enrollment_id_param: enrollment.id,
+      reason: 'reply'
+    })
+
     const { data: updatedEnrollment } = mockSupabase
       .from('sequence_enrollments')
       .select('*')
@@ -176,14 +188,14 @@ describe('Stop Rules - Reply Detection', () => {
     mockSupabase.data.messages_inbound.push(inboundMessage)
 
     // Process stop rules (should NOT stop)
-    const { data: enrollment } = mockSupabase
+    const { data: fetchedEnrollment } = mockSupabase
       .from('sequence_enrollments')
       .select('*')
       .eq('id', 'enrollment-1')
       .single()
 
     // Assert: Enrollment should remain active
-    expect(enrollment?.status).toBe('active')
+    expect(fetchedEnrollment?.status).toBe('active')
   })
 })
 

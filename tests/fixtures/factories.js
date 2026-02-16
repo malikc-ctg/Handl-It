@@ -6,9 +6,10 @@
 import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zqcbldgheimqrnqmbbed.supabase.co'
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+// Use placeholder when key not set so module loads in CI; real Supabase calls will fail without a valid key
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'test-placeholder-key-no-real-access'
 
-if (!SUPABASE_SERVICE_KEY) {
+if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
   console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set. Tests may fail.')
 }
 

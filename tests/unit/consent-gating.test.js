@@ -9,8 +9,9 @@ import { createClient } from '@supabase/supabase-js'
 
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://zqcbldgheimqrnqmbbed.supabase.co'
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || ''
+const hasSupabaseKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
 
-describe('Consent and Location Gating', () => {
+describe.skipIf(!hasSupabaseKey)('Consent and Location Gating', () => {
   let testUser, testSite
   const cleanupIds = { userIds: [], siteIds: [], callIds: [] }
 
