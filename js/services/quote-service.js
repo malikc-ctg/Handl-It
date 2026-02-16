@@ -38,11 +38,7 @@ export async function getQuoteTemplates(vertical = null) {
 /**
  * Create a new quote from template or scratch
  * 
- * @param {Object} quoteData - Quote data
- * @param {string} quoteData.deal_id - Deal ID
- * @param {string} [quoteData.template_id] - Template ID (optional)
- * @param {string} [quoteData.variant] - Variant: 'good', 'better', 'best'
- * @param {Array} [quoteData.line_items] - Line items array
+ * @param {{ deal_id: string; template_id?: string; variant?: string; line_items?: any[]; currency?: string; valid_until?: string; notes?: string }} quoteData - Quote data
  * @returns {Promise<Object>} Created quote
  */
 export async function createQuote(quoteData) {
@@ -64,9 +60,9 @@ export async function createQuote(quoteData) {
         version: 1,
         status: 'drafted',
         total_amount,
-        currency: quoteData.currency || 'USD',
-        valid_until: quoteData.valid_until || null,
-        notes: quoteData.notes || null
+        currency: (quoteData && quoteData.currency) || 'USD',
+        valid_until: (quoteData && quoteData.valid_until) || null,
+        notes: (quoteData && quoteData.notes) || null
       })
       .select()
       .single();

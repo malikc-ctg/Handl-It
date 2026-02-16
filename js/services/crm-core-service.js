@@ -108,7 +108,7 @@ export async function createLead(leadData) {
  * @param {number} [options.page=1] - Page number
  * @param {number} [options.limit=50] - Items per page
  * @param {string} [options.status] - Filter by status
- * @returns {Promise<{data: Array|null, error: Error|null}>}
+ * @returns {Promise<{data: Array|null, count: number, error: Error|null}>}
  */
 export async function getLeads(workspaceId, options = {}) {
   try {
@@ -127,11 +127,13 @@ export async function getLeads(workspaceId, options = {}) {
       query = query.eq('status', status)
     }
     
-    const { data, error, count } = await query
+    const response = await query;
+    const { data, error } = response;
+    const count = /** @type {number|undefined} */ (response.count) ?? 0;
     
     if (error) throw error
     
-    return { data, count, error: null }
+    return /** @type {{ data: Array|null; count: number; error: null }} */ ({ data, count, error: null })
   } catch (error) {
     console.error('Error fetching leads:', error)
     return { data: null, count: 0, error }

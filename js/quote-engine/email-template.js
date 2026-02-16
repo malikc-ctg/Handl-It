@@ -114,9 +114,7 @@ export function generateQuoteEmail(quoteResult, businessData, contactData, input
  * Generate walkthrough welcome email
  * @param {Object} businessData - Business/account information
  * @param {Object} contactData - Contact information
- * @param {Object} options - Additional options including booking time
- * @param {string} options.bookingDate - Booking date (YYYY-MM-DD format)
- * @param {string} options.bookingTime - Booking time (HH:MM format)
+ * @param {{ bookingDate?: string; bookingTime?: string }} [options] - Additional options including booking time
  * @returns {string} Plain text email
  */
 export function generateWalkthroughWelcomeEmail(businessData, contactData, options = {}) {

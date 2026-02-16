@@ -40,7 +40,7 @@ export function calculatePriorityScore(deal) {
   if (deal.last_touch_at) {
     const now = new Date();
     const lastTouch = new Date(deal.last_touch_at);
-    daysSinceTouch = (now - lastTouch) / (1000 * 60 * 60 * 24);
+    daysSinceTouch = (now.getTime() - lastTouch.getTime()) / (1000 * 60 * 60 * 24);
   }
   
   // Exponential decay: urgency drops over time
@@ -53,13 +53,8 @@ export function calculatePriorityScore(deal) {
 /**
  * Get prioritized deal queue with pagination
  * 
- * @param {Object} options - Query options
- * @param {number} options.limit - Number of deals to return
- * @param {number} options.offset - Pagination offset
- * @param {string} options.stage - Filter by stage
- * @param {string} options.assignedTo - Filter by assigned user
- * @param {string} options.companyId - Company ID (from user context)
- * @returns {Promise<{data: Array, total: number}>}
+ * @param {{ limit?: number; offset?: number; stage?: string; assignedTo?: string; companyId?: string }} [options] - Query options
+ * @returns {Promise<{data: Array, total: number, limit: number, offset: number}>}
  */
 export async function getDealQueue(options = {}) {
   const {
@@ -96,7 +91,9 @@ export async function getDealQueue(options = {}) {
       query = query.eq('assigned_to', assignedTo);
     }
     
-    const { data, error, count } = await query;
+    const response = await query;
+    const { data, error } = response;
+    const count = /** @type {number|undefined} */ (response.count);
     
     if (error) throw error;
     
@@ -106,12 +103,12 @@ export async function getDealQueue(options = {}) {
       calculated_priority_score: calculatePriorityScore(deal)
     })).sort((a, b) => (b.calculated_priority_score || 0) - (a.calculated_priority_score || 0));
     
-    return {
+    return /** @type {{ data: Array, total: number, limit: number, offset: number }} */ ({
       data: dealsWithScores,
-      total: count || 0,
+      total: count ?? 0,
       limit,
       offset
-    };
+    });
   } catch (error) {
     console.error('[Deal Service] Error fetching deal queue:', error);
     throw error;
@@ -307,7 +304,7 @@ export async function getDealTimeline(dealId) {
     });
     
     // Sort by timestamp (newest first)
-    timeline.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    timeline.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
     
     return timeline;
   } catch (error) {
@@ -350,7 +347,7 @@ function getNextActionSuggestions(deal, timeline) {
   // Check last touch
   const lastTouch = timeline[0];
   const daysSinceTouch = lastTouch 
-    ? (new Date() - new Date(lastTouch.timestamp)) / (1000 * 60 * 60 * 24)
+    ? (Date.now() - new Date(lastTouch.timestamp).getTime()) / (1000 * 60 * 60 * 24)
     : 999;
   
   // Stage-based actions
@@ -437,7 +434,7 @@ function getNextActionSuggestions(deal, timeline) {
  * 
  * @param {string} dealId - Deal ID
  * @param {string} newStage - New stage
- * @param {string} userId - User ID performing the action
+ * @param {string} [_userId] - User ID performing the action (optional)
  * @returns {Promise<Object>} Updated deal
  */
 export async function updateDealStage(dealId, newStage, _userId) {

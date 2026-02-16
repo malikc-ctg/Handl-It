@@ -52,9 +52,7 @@ export async function createWalkthroughRequest(data) {
  * Send walkthrough welcome email via Resend
  * @param {Object} businessData - Business/account information
  * @param {Object} contactData - Contact information
- * @param {Object} options - Additional options including booking time
- * @param {string} options.bookingDate - Booking date (YYYY-MM-DD format)
- * @param {string} options.bookingTime - Booking time (HH:MM format)
+ * @param {{ bookingDate?: string; bookingTime?: string }} [options] - Additional options including booking time
  * @returns {Promise<boolean>} Success status
  */
 export async function sendWalkthroughWelcomeEmail(businessData, contactData, options = {}) {

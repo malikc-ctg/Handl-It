@@ -8,10 +8,7 @@ import { supabase } from '../supabase.js';
  * Get sales funnel analytics
  * Calls -> Connections -> Quotes -> Wins
  * 
- * @param {Object} options - Query options
- * @param {string} options.companyId - Company ID
- * @param {Date} options.startDate - Start date
- * @param {Date} options.endDate - End date
+ * @param {{ companyId?: string; startDate?: Date; endDate?: Date }} [options] - Query options
  * @returns {Promise<Object>} Analytics data
  */
 export async function getSalesFunnelAnalytics(options = {}) {
@@ -19,9 +16,9 @@ export async function getSalesFunnelAnalytics(options = {}) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Not authenticated');
     
-    const companyId = options.companyId || user.id;
-    const startDate = options.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
-    const endDate = options.endDate || new Date();
+    const companyId = options?.companyId || user.id;
+    const startDate = options?.startDate || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
+    const endDate = options?.endDate || new Date();
     
     // Get calls count for deals in this company
     const { data: deals, error: dealsError } = await supabase

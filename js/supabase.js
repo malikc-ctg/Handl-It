@@ -1,5 +1,6 @@
 // NFG One — Supabase Client Initialization
 // Reads env vars from window.ENV (injected by each page)
+/// <reference path="./globals.d.ts" />
 
 // @ts-ignore - CDN import, TypeScript cannot resolve
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'

@@ -7,12 +7,7 @@ import { supabase } from '../supabase.js';
 /**
  * Create a deal event (immutable log)
  * 
- * @param {Object} eventData - Event data
- * @param {string} eventData.deal_id - Deal ID
- * @param {string} eventData.event_type - Event type
- * @param {Object} [eventData.old_value] - Old value (for updates)
- * @param {Object} [eventData.new_value] - New value (for updates)
- * @param {Object} [eventData.metadata] - Additional metadata
+ * @param {{ deal_id: string; event_type: string; user_id?: string; old_value?: any; new_value?: any; metadata?: any }} eventData - Event data
  * @returns {Promise<Object>} Created event
  */
 export async function createDealEvent(eventData) {
@@ -25,7 +20,7 @@ export async function createDealEvent(eventData) {
       .insert({
         deal_id: eventData.deal_id,
         event_type: eventData.event_type,
-        user_id: eventData.user_id || user.id,
+        user_id: (eventData && eventData.user_id) || user.id,
         old_value: eventData.old_value || null,
         new_value: eventData.new_value || null,
         metadata: eventData.metadata || {},

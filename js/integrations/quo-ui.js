@@ -270,7 +270,7 @@ window.linkCallToSite = async (callId, siteId) => {
     if (callItem) {
       // Reload the timeline
       const siteIdEl = callItem.closest('[data-site-id]');
-      const siteId = siteIdEl && 'dataset' in siteIdEl ? siteIdEl.dataset.siteId : null;
+      const siteId = siteIdEl ? (siteIdEl.getAttribute?.('data-site-id') || (/** @type {HTMLElement} */ (siteIdEl).dataset?.siteId)) : null;
       if (siteId) {
         await renderCallsTimeline(siteId)
       }
@@ -296,7 +296,7 @@ window.createNextActionTask = async (callId, actionText) => {
     const callItem = document.querySelector(`[data-call-id="${callId}"]`)
     if (callItem) {
       const siteIdEl = callItem.closest('[data-site-id]');
-      const siteId = siteIdEl && 'dataset' in siteIdEl ? siteIdEl.dataset.siteId : null;
+      const siteId = siteIdEl ? (siteIdEl.getAttribute?.('data-site-id') || (/** @type {HTMLElement} */ (siteIdEl).dataset?.siteId)) : null;
       if (siteId) {
         await renderCallsTimeline(siteId)
       }

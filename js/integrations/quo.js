@@ -23,7 +23,7 @@ export function normalizePhoneNumber(phone, defaultCountryCode = '1') {
   if (!phone) return null
   
   // Remove all non-digit characters
-  let digits = phone.replace(/\D/g, '')
+  const digits = phone.replace(/\D/g, '')
   
   if (digits.length === 0) return null
   
@@ -137,7 +137,7 @@ export async function linkCallToSite(callData) {
       // Filter to active sites and sort by most recent
       const activeSites = sites
         .filter(s => s.status === 'Active')
-        .sort((a, b) => new Date(b.created_at || 0) - new Date(a.created_at || 0))
+        .sort((a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime())
       
       if (activeSites.length > 0) {
         matches.push(...activeSites.map(s => ({ site_id: s.id, phone, site_name: s.name })))
@@ -334,7 +334,7 @@ export async function getCallsNeedingReview() {
 /**
  * Manually link a call to a site
  * @param {string} callId - Call UUID
- * @param {number} siteId - Site ID
+ * @param {string} siteId - Site ID (UUID)
  * @param {string} userId - User ID performing the link
  * @returns {Promise<object>} - Update result
  */

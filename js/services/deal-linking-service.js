@@ -63,9 +63,7 @@ export async function onQuoteRevisionSent(quoteId, revisionNumber, followUpHours
  * 
  * @param {string} quoteId - Quote ID
  * @param {number} revisionNumber - Revision number
- * @param {Object} signerInfo - Signer information
- * @param {string} signerInfo.name - Signer name
- * @param {string} signerInfo.email - Signer email
+ * @param {{ name?: string; email?: string }} [signerInfo] - Signer information
  * @returns {Promise<{dealId: string}>}
  */
 export async function onQuoteAccepted(quoteId, revisionNumber, signerInfo = {}) {
@@ -73,8 +71,8 @@ export async function onQuoteAccepted(quoteId, revisionNumber, signerInfo = {}) 
     const { data, error } = await supabase.rpc('on_quote_accepted', {
       p_quote_id: quoteId,
       p_revision_number: revisionNumber,
-      p_signer_name: signerInfo.name || null,
-      p_signer_email: signerInfo.email || null
+      p_signer_name: (signerInfo && signerInfo.name) || null,
+      p_signer_email: (signerInfo && signerInfo.email) || null
     });
 
     if (error) {
